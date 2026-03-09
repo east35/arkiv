@@ -30,7 +30,7 @@ export function ScoreDistributionChart({ data }: ScoreDistributionChartProps) {
             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
           />
           <Bar dataKey="count" fill="#8884d8" radius={[4, 4, 0, 0]}>
-            {data.map((entry, index) => (
+            {data.map((_entry, index) => (
               <Cell key={`cell-${index}`} fill={`hsl(var(--primary) / ${0.3 + (index / 10) * 0.7})`} />
             ))}
           </Bar>
