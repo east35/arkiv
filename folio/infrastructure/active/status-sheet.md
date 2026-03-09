@@ -10,11 +10,12 @@ kind: null
 sdd_lane: null
 dependencies: []
 tags: ["shelflog"]
-updated_at: "2026-03-09T14:17:09.185955+00:00"
+updated_at: "2026-03-09T14:19:29.915254+00:00"
 created_at: "2026-03-09T13:58:53.318722+00:00"
 ---
 ## Notes
-The order of the list determines the hierarchy of the sheet. Details, followed by dates, notes, etc. 
+
+The order of the list determines the hierarchy of the sheet. Details, followed by dates, notes, etc.
 
 ## Behavior
 
@@ -58,9 +59,10 @@ The order of the list determines the hierarchy of the sheet. Details, followed b
 - Time Played (I want this expressed as Hours and Minutes, no need for seconds. If we can scrape this data from Steam, even better. Data entry should be fuzzy, don't want to have to follow a strict method like HH:MM or H:M) 
 
 # Progress (Books)
-- Page count. Need to pull page total from source. 
+- Page count. Need to pull page total from source.
 
 ## Dates
+
 These dates are critical. It's how the app tracks core analytics. Start date should always be visible. The second date relates to the status. 
 
 # Started
@@ -81,7 +83,15 @@ These dates are critical. It's how the app tracks core analytics. Start date sho
 # Dropped
 - Opens native date picker
 - Auto adds current date when status changes to "Dropped" 
-- MM/DD/YYYY, HH:MM AM/PM 
+- MM/DD/YYYY, HH:MM AM/PM
+
+## Notes
+- Free text field for notes and comments.
+
+## Call to actions
+- Delete (pops 'are you sure' alert)
+- Update (saves any changes to data. Disabled until data manipulated)
 
 ## Metadata
-Tertiary information such as: backlog status date, data source (if pulled from external API), lists it populates in. 
+
+Tertiary information such as: backlog status date, data source (if pulled from external API), lists it populates in.
