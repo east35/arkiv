@@ -8,9 +8,9 @@ owner: "east35"
 phase: null
 kind: null
 sdd_lane: null
-dependencies: []
+dependencies: ["status-sheet", "top-level-navigation"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T15:12:56.282175+00:00"
+updated_at: "2026-03-09T15:15:00.972753+00:00"
 created_at: "2026-03-09T14:55:38.875879+00:00"
 ---
 ## Layout
@@ -46,6 +46,7 @@ Refer to 'Views' section for full details
 - Table View
 
 ## Poster View
+
 Responsive grid layout of the object previews (cover with details below)
 
 # Object Preview
@@ -60,6 +61,7 @@ On desktop, hover will display icons. On mobile, initial tap to display icons.
 - activity history.
 
 ## Table View
+
 # Columns
 - Cover preview
 - Title
