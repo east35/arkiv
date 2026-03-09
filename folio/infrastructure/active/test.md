@@ -1,5 +1,5 @@
 ---
-title: "IA: Object Model, Video Game"
+title: "IA Object Model: Video Game"
 slug: "test"
 status: active
 category: infrastructure
@@ -10,7 +10,7 @@ kind: null
 sdd_lane: null
 dependencies: []
 tags: ["shelflog"]
-updated_at: "2026-03-09T14:45:47.346533+00:00"
+updated_at: "2026-03-09T14:52:12.126708+00:00"
 created_at: "2026-03-09T13:35:41.076211+00:00"
 ---
 # Overview
