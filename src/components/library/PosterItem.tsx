@@ -31,11 +31,11 @@ const statusIcons: Record<Status, React.ReactNode> = {
 }
 
 const statusColors: Record<Status, string> = {
-  backlog: "bg-slate-500/10 text-slate-500 hover:bg-slate-500/20 border-slate-500/20",
-  in_progress: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20",
-  completed: "bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20",
-  paused: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border-yellow-500/20",
-  dropped: "bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20",
+  backlog: "bg-slate-500 text-white border-slate-600",
+  in_progress: "bg-blue-600 text-white border-blue-700",
+  completed: "bg-green-600 text-white border-green-700",
+  paused: "bg-yellow-600 text-white border-yellow-700",
+  dropped: "bg-red-600 text-white border-red-700",
 }
 
 export function PosterItem({ item, onEdit }: PosterItemProps) {
@@ -61,7 +61,7 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
             
             {/* Status Badge (Top Right) */}
             <div className="absolute top-2 right-2">
-              <Badge variant="outline" className={cn("backdrop-blur-md bg-background/50", statusColors[item.status])}>
+              <Badge variant="outline" className={cn(statusColors[item.status])}>
                 {statusIcons[item.status]}
               </Badge>
             </div>
@@ -101,8 +101,8 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
           </div>
         </Link>
 
-        {/* Quick Actions Menu (Top Right - visible on hover or focus) */}
-        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+        {/* Quick Actions Menu (Top Left - visible on hover, focus, or touch) */}
+        <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8 text-white hover:text-white hover:bg-black/20")} aria-label="Item actions">
               <MoreHorizontal className="h-4 w-4" />

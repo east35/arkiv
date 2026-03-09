@@ -8,7 +8,10 @@ import {
   Gamepad2, 
   MoreHorizontal, 
   Edit,
-  Trash2
+  Trash2,
+  Loader2,
+  SearchX,
+  ListPlus,
 } from "lucide-react"
 
 import { useShelfStore } from "@/store/useShelfStore"
@@ -22,17 +25,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
 import { cn } from "@/lib/utils"
 import type { FullItem, Status } from "@/types"
 
 const statusColors: Record<Status, string> = {
-  backlog: "bg-slate-500/10 text-slate-500 hover:bg-slate-500/20 border-slate-500/20",
-  in_progress: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20",
-  completed: "bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20",
-  paused: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border-yellow-500/20",
-  dropped: "bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20",
+  backlog: "bg-slate-500 text-white border-slate-600",
+  in_progress: "bg-blue-600 text-white border-blue-700",
+  completed: "bg-green-600 text-white border-green-700",
+  paused: "bg-yellow-600 text-white border-yellow-700",
+  dropped: "bg-red-600 text-white border-red-700",
 }
 
 export default function ItemDetail() {
@@ -43,6 +48,7 @@ export default function ItemDetail() {
   
   const [item, setItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isManageListsOpen, setIsManageListsOpen] = useState(false)
 
   // Find item in store or fetch
   useEffect(() => {
@@ -60,9 +66,31 @@ export default function ItemDetail() {
     }
   }, [id, items, fetchItems])
 
-  // If still loading or not found
-  if (!item && !items.length) return <div className="p-8 text-center text-muted-foreground">Loading...</div>
-  if (!item) return <div className="p-8 text-center text-muted-foreground">Item not found</div>
+  // Loading state: show spinner while items are being fetched
+  if (!item && !items.length) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  // 404 state: items loaded but this ID doesn't exist
+  if (!item) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
+        <SearchX className="h-12 w-12" />
+        <div className="text-center">
+          <p className="text-lg font-medium">Item not found</p>
+          <p className="text-sm">It may have been deleted or the link is invalid.</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/")}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Library
+        </Button>
+      </div>
+    )
+  }
 
   const isGame = item.media_type === "game"
   const coverUrl = item.cover_url || (isGame 
@@ -77,35 +105,42 @@ export default function ItemDetail() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 pb-20">
+    <div className="max-w-5xl mx-auto min-h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <Link to={-1 as any} className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Link>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsSheetOpen(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Status
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
-              <MoreHorizontal className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 px-4 sm:px-6 mb-6 border-b">
+        <div className="flex items-center justify-between max-w-5xl mx-auto">
+          <Link to={-1 as any} className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Link>
+          
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
+                <MoreHorizontal className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsSheetOpen(true)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Status
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
+                  <ListPlus className="h-4 w-4 mr-2" />
+                  Add to List...
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8 px-4 sm:px-6 pb-20">
         
         {/* Left: Cover & Quick Stats */}
         <div className="space-y-6">
@@ -116,11 +151,19 @@ export default function ItemDetail() {
               className="w-full h-full object-cover"
             />
             <div className="absolute top-3 right-3">
-              <Badge className={cn("backdrop-blur-md bg-background/80 shadow-sm", statusColors[item.status])} variant="outline">
+              <Badge className={cn("shadow-sm", statusColors[item.status])} variant="outline">
                 <span className="capitalize font-semibold">{item.status.replace("_", " ")}</span>
               </Badge>
             </div>
           </div>
+
+          <Button 
+            className="w-full bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 font-semibold" 
+            size="lg"
+            onClick={() => setIsSheetOpen(true)}
+          >
+            {item.status.replace("_", " ").toUpperCase()}
+          </Button>
 
           <div className="space-y-4">
             {/* Score */}
@@ -256,6 +299,14 @@ export default function ItemDetail() {
         open={isSheetOpen} 
         onOpenChange={setIsSheetOpen} 
       />
+
+      {item && (
+        <ManageListsDialog
+          itemId={item.id}
+          open={isManageListsOpen}
+          onOpenChange={setIsManageListsOpen}
+        />
+      )}
     </div>
   )
 }

@@ -7,22 +7,24 @@ import { TableItem } from "./TableItem"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import type { FullItem, MediaType } from "@/types"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 import { Link } from "react-router-dom"
 
 interface LibraryViewProps {
   mediaType?: MediaType
+  hideSearch?: boolean
 }
 
-export default function LibraryView({ mediaType }: LibraryViewProps) {
+export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps) {
   const { viewMode, getFilteredItems } = useShelfStore()
   const { fetchItems } = useItems()
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
-  
+  const [loading, setLoading] = useState(!useShelfStore.getState().items.length)
+
   // Initial fetch
   useEffect(() => {
-    fetchItems()
+    fetchItems().finally(() => setLoading(false))
   }, [fetchItems])
 
   const items = getFilteredItems(mediaType)
@@ -41,23 +43,29 @@ export default function LibraryView({ mediaType }: LibraryViewProps) {
   }
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold tracking-tight capitalize">
-          {mediaType ? mediaType + "s" : "Library"}
-        </h1>
-        <Link to="/search">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Item
-          </Button>
-        </Link>
+    <div className="flex flex-col min-h-full">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold tracking-tight capitalize">
+            {mediaType ? mediaType + "s" : "Library"}
+          </h1>
+          <Link to="/search">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Item
+            </Button>
+          </Link>
+        </div>
+
+        <LibraryControls mediaType={mediaType} hideSearch={hideSearch} />
       </div>
 
-      <LibraryControls mediaType={mediaType} />
-
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4 sm:mx-0 sm:px-0">
-        {items.length === 0 ? (
+      <div className="flex-1 px-4 sm:px-6 pb-8">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
             <p className="text-lg font-medium mb-2">No items found</p>
             <p className="text-sm">Try adjusting your filters or add some new items.</p>

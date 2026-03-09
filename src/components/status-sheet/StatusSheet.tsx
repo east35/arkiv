@@ -146,16 +146,18 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
     if (!item) return
 
     try {
-      // Helper to convert form values (string | number) back to clean numbers or nulls
-      const cleanNumber = (val: string | number | undefined | null) => {
+      // Convert form values (string | number) to clamped numbers or null.
+      const cleanNumber = (val: string | number | undefined | null, min = 0, max?: number) => {
         if (val === "" || val === null || val === undefined) return null
         const n = Number(val)
-        return isNaN(n) ? null : n
+        if (isNaN(n)) return null
+        const clamped = Math.max(min, max != null ? Math.min(n, max) : n)
+        return clamped
       }
 
       const coreUpdates: Partial<FullItem> = {
         status: values.status,
-        user_score: cleanNumber(values.user_score),
+        user_score: cleanNumber(values.user_score, 0, 10),
         notes: values.notes || null,
         started_at: values.started_at?.toISOString() ?? null,
         completed_at: values.completed_at?.toISOString() ?? null,
@@ -168,12 +170,12 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
 
       if (item.media_type === "book") {
         extensionUpdates = {
-          progress: cleanNumber(values.progress),
+          progress: cleanNumber(values.progress, 0),
         }
       } else {
         extensionUpdates = {
-          progress_hours: cleanNumber(values.progress_hours) || 0,
-          progress_minutes: cleanNumber(values.progress_minutes) || 0,
+          progress_hours: cleanNumber(values.progress_hours, 0) || 0,
+          progress_minutes: cleanNumber(values.progress_minutes, 0, 59) || 0,
         }
       }
 

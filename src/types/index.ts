@@ -149,6 +149,7 @@ export interface UserPreferences {
   user_id: string
   username: string | null
   hide_hover_overlay: boolean
+  theme: "light" | "dark" | "system"
   date_format: DateFormat
   time_format: TimeFormat
   steam_id: string | null

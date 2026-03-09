@@ -13,18 +13,20 @@ export default function Lists() {
   }, [fetchLists])
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Lists</h1>
-          <p className="text-muted-foreground mt-1">
-            Organize your collection into custom lists.
-          </p>
+    <div className="flex flex-col min-h-full">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Lists</h1>
+            <p className="text-muted-foreground mt-1">
+              Organize your collection into custom lists.
+            </p>
+          </div>
+          <CreateListDialog />
         </div>
-        <CreateListDialog />
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex-1 px-4 sm:px-6 pb-8">
         {lists.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
             <p className="text-lg font-medium mb-2">No lists yet</p>

@@ -13,9 +13,10 @@ import type { Status, Source, SortField } from "@/types"
 
 interface LibraryControlsProps {
   mediaType?: "game" | "book"
+  hideSearch?: boolean
 }
 
-export function LibraryControls({ mediaType }: LibraryControlsProps) {
+export function LibraryControls({ mediaType, hideSearch }: LibraryControlsProps) {
   const { 
     filters, 
     sort, 
@@ -28,15 +29,17 @@ export function LibraryControls({ mediaType }: LibraryControlsProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-4">
       {/* Search */}
-      <div className="relative w-full sm:w-72">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder={`Search ${mediaType ? mediaType + "s" : "library"}...`}
-          className="pl-9"
-          value={filters.search}
-          onChange={(e) => setFilters({ search: e.target.value })}
-        />
-      </div>
+      {!hideSearch && (
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={`Search ${mediaType ? mediaType + "s" : "library"}...`}
+            className="pl-9"
+            value={filters.search}
+            onChange={(e) => setFilters({ search: e.target.value })}
+          />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         {/* Status Filter */}

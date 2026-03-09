@@ -15,12 +15,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
   LayoutGrid,
-  Search,
   Gamepad2,
   BookOpen,
-  BarChart2,
   List,
-  Upload,
+  BarChart3,
   Settings,
   LogOut,
   Menu,
@@ -53,26 +51,24 @@ export function AppSidebar({ className, onNavClick }: { className?: string, onNa
   const location = useLocation()
   const { signOut } = useAuth()
 
-  const items = [
+  const mainItems = [
     { to: "/", icon: LayoutGrid, label: "Home" },
-    { to: "/search", icon: Search, label: "Search" },
-    { to: "/games", icon: Gamepad2, label: "Games" },
     { to: "/books", icon: BookOpen, label: "Books" },
-    { to: "/statistics", icon: BarChart2, label: "Statistics" },
+    { to: "/games", icon: Gamepad2, label: "Games" },
     { to: "/lists", icon: List, label: "Lists" },
-    { to: "/import", icon: Upload, label: "Import" },
-    { to: "/settings", icon: Settings, label: "Settings" },
+    { to: "/statistics", icon: BarChart3, label: "Statistics" },
   ]
 
   return (
-    <div className={cn("pb-12 h-full border-r bg-background", className)}>
+    <div className={cn("h-full border-r bg-background", className)}>
       <div className="space-y-4 py-4 h-full flex flex-col">
         <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            ShelfLog
-          </h2>
+          <div className="mb-2 px-4">
+            <img src="/logo/shelf-log_white.svg" alt="ShelfLog" className="h-8 hidden dark:block" />
+            <img src="/logo/shelf-log_black.svg" alt="ShelfLog" className="h-8 dark:hidden" />
+          </div>
           <div className="space-y-1">
-            {items.map((item) => (
+            {mainItems.map((item) => (
               <NavItem
                 key={item.to}
                 to={item.to}
@@ -84,7 +80,14 @@ export function AppSidebar({ className, onNavClick }: { className?: string, onNa
             ))}
           </div>
         </div>
-        <div className="mt-auto px-3 py-2">
+        <div className="mt-auto px-3 py-2 space-y-1">
+          <NavItem
+            to="/settings"
+            icon={Settings}
+            label="Settings"
+            active={location.pathname === "/settings"}
+            onClick={onNavClick}
+          />
           <AlertDialog>
             <AlertDialogTrigger className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-muted-foreground hover:text-foreground")}>
               <LogOut className="mr-2 h-4 w-4" />

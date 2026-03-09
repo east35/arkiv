@@ -14,11 +14,12 @@ import ItemDetail from "@/pages/ItemDetail"
 import Login from "@/pages/Login"
 import Register from "@/pages/Register"
 
+import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 
 function App() {
   return (
-    <>
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -41,7 +42,7 @@ function App() {
         </Route>
       </Routes>
       <Toaster />
-    </>
+    </ThemeProvider>
   )
 }
 

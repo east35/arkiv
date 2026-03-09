@@ -110,15 +110,19 @@ export default function Import() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Import</h1>
-        <p className="text-muted-foreground mt-1">
-          Import your library from a Yamtrack CSV export.
-        </p>
+    <div className="flex flex-col min-h-full">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Import</h1>
+            <p className="text-muted-foreground mt-1">
+              Import your library from a Yamtrack CSV export.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4 sm:mx-0 sm:px-0 space-y-6 pb-8 max-w-3xl">
+      <div className="flex-1 px-4 sm:px-6 pb-8 space-y-6 max-w-3xl">
 
         {/* Upload Zone */}
         {!parseResult && (

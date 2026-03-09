@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
-import { ArrowLeft, Trash2, MoreHorizontal, LayoutGrid, Table as TableIcon } from "lucide-react"
+import { ArrowLeft, Trash2, MoreHorizontal, LayoutGrid, Table as TableIcon, Loader2, FileQuestion } from "lucide-react"
 import { format } from "date-fns"
 
 import { useShelfStore } from "@/store/useShelfStore"
@@ -104,8 +104,29 @@ export default function ListDetail() {
     }
   }
 
-  if (loading && !list) return <div className="p-8 text-center text-muted-foreground">Loading...</div>
-  if (!list) return <div className="p-8 text-center text-muted-foreground">List not found</div>
+  if (loading && !list) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!list) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
+        <FileQuestion className="h-12 w-12" />
+        <div className="text-center">
+          <p className="text-lg font-medium">List not found</p>
+          <p className="text-sm">It may have been deleted or the link is invalid.</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/lists")}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Lists
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
@@ -183,7 +204,7 @@ export default function ListDetail() {
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="absolute top-2 left-2 h-6 w-6 opacity-0 group-hover/list-item:opacity-100 transition-opacity z-10"
+                      className="absolute top-2 left-2 h-6 w-6 opacity-0 group-hover/list-item:opacity-100 focus:opacity-100 transition-opacity z-10"
                       title="Remove from list"
                       onClick={(e) => {
                         e.stopPropagation()
@@ -206,7 +227,7 @@ export default function ListDetail() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover/list-item:opacity-100 transition-opacity"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover/list-item:opacity-100 focus:opacity-100 transition-opacity"
                       title="Remove from list"
                       onClick={() => handleRemoveFromList(item.id)}
                     >

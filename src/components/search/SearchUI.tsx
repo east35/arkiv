@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Search as SearchIcon, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { MediaTypePicker } from "./MediaTypePicker"
@@ -10,8 +11,9 @@ import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import type { MediaType, FullItem } from "@/types"
 
 export function SearchUI() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [mediaType, setMediaType] = useState<MediaType>("game")
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState(searchParams.get("q") || "")
   
   // State for post-add editing
   const [newItem, setNewItem] = useState<FullItem | null>(null)
@@ -20,6 +22,15 @@ export function SearchUI() {
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
   const { results, loading, search, clearResults } = useExternalSearch()
   const { commit, committingId } = useCommitItem()
+
+  // Keep URL in sync with query state
+  useEffect(() => {
+    if (query) {
+      setSearchParams({ q: query }, { replace: true })
+    } else {
+      setSearchParams({}, { replace: true })
+    }
+  }, [query, setSearchParams])
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -45,32 +56,35 @@ export function SearchUI() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="text-center space-y-2 mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Add to Library</h1>
-        <p className="text-muted-foreground">Find games and books to track.</p>
-      </div>
-
-      <div className="space-y-4">
-        <MediaTypePicker value={mediaType} onChange={setMediaType} />
-        
-        <div className="relative">
-          <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder={`Search for ${mediaType}s...`}
-            className="pl-9 h-10 text-base"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {loading && (
-            <div className="absolute right-3 top-3">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+    <div className="max-w-3xl mx-auto min-h-full flex flex-col">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Add to Library</h1>
+              <p className="text-muted-foreground">Find games and books to track.</p>
             </div>
-          )}
+            <MediaTypePicker value={mediaType} onChange={setMediaType} />
+          </div>
+
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder={`Search for ${mediaType}s...`}
+              className="pl-9 h-10 text-base"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {loading && (
+              <div className="absolute right-3 top-3">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 px-4 sm:px-6 pb-8">
         {results.map((result) => (
           <SearchResultItem 
             key={result.id} 

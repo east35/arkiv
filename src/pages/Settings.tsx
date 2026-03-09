@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react"
-import { Loader2, Download } from "lucide-react"
+import { Loader2, Download, Upload, RefreshCw, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import { usePreferences } from "@/hooks/usePreferences"
 import { useShelfStore } from "@/store/useShelfStore"
 import { useItems } from "@/hooks/useItems"
+import { useTheme } from "@/components/theme-provider"
+import { useMetadataEnrich, type EnrichReport } from "@/hooks/useMetadataEnrich"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,9 +37,14 @@ export default function Settings() {
   const { fetchPreferences, updatePreferences } = usePreferences()
   const { items } = useShelfStore()
   const { fetchItems } = useItems()
+  const { setTheme } = useTheme()
+  const navigate = useNavigate()
+  const { progress: enrichProgress, scan, execute: executeEnrich, reset: resetEnrich } = useMetadataEnrich()
 
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<UserPreferences>>({})
+  const [sparseCount, setSparseCount] = useState<number | null>(null)
+  const [enrichReport, setEnrichReport] = useState<EnrichReport | null>(null)
 
   // Fetch prefs on mount
   useEffect(() => {
@@ -50,7 +58,27 @@ export default function Settings() {
     }
   }, [preferences])
 
+  const handleThemeChange = (val: string | null) => {
+    if (!val) return
+    const newTheme = val as "light" | "dark" | "system"
+    setTheme(newTheme)
+    setFormData({ ...formData, theme: newTheme })
+  }
+
   const handleSave = async () => {
+    // Basic username validation
+    if (formData.username) {
+      const u = formData.username.trim()
+      if (u.length < 2 || u.length > 30) {
+        toast.error("Username must be 2–30 characters")
+        return
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(u)) {
+        toast.error("Username can only contain letters, numbers, and underscores")
+        return
+      }
+    }
+
     setLoading(true)
     try {
       await updatePreferences(formData)
@@ -104,15 +132,19 @@ export default function Settings() {
   }
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your account, preferences, and data.
-        </p>
+    <div className="flex flex-col min-h-full">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your account, preferences, and data.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex-1 px-4 sm:px-6 pb-8">
         <Tabs defaultValue="account" className="max-w-3xl">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto">
             <TabsTrigger value="account">Account</TabsTrigger>
@@ -211,6 +243,23 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="theme">Theme</Label>
+                  <Select 
+                    value={formData.theme || "system"} 
+                    onValueChange={handleThemeChange}
+                  >
+                    <SelectTrigger id="theme">
+                      <SelectValue placeholder="Select theme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="flex items-center justify-between space-x-2">
                   <Label htmlFor="hover-overlay" className="flex flex-col space-y-1">
                     <span>Hide Hover Overlay</span>
@@ -278,6 +327,126 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Enrich Library */}
+                <div className="bg-muted/50 p-4 rounded-lg border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Enrich Library</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Backfill missing metadata (genres, descriptions, etc.) from IGDB & Google Books.
+                      </p>
+                    </div>
+                    {enrichProgress.phase === "idle" && !enrichReport && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const sparse = scan()
+                          setSparseCount(sparse.length)
+                        }}
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Scan
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Scan result — confirm before enriching */}
+                  {sparseCount !== null && enrichProgress.phase === "idle" && !enrichReport && (
+                    <div className="flex items-center justify-between bg-background p-3 rounded border">
+                      <p className="text-sm">
+                        {sparseCount === 0
+                          ? "All items already have full metadata."
+                          : <><strong>{sparseCount}</strong> items need enrichment.</>}
+                      </p>
+                      {sparseCount > 0 && (
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            const report = await executeEnrich()
+                            setEnrichReport(report)
+                          }}
+                        >
+                          Enrich Now
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Progress bar */}
+                  {enrichProgress.phase === "enriching" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">
+                          Enriching… {enrichProgress.current} / {enrichProgress.total}
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{ width: `${(enrichProgress.current / enrichProgress.total) * 100}%` }}
+                        />
+                      </div>
+                      <div className="flex gap-4 text-xs text-muted-foreground">
+                        <span>✓ {enrichProgress.enriched} enriched</span>
+                        <span>⊘ {enrichProgress.skipped} skipped</span>
+                        {enrichProgress.errors.length > 0 && (
+                          <span className="text-destructive">✗ {enrichProgress.errors.length} errors</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Report */}
+                  {enrichReport && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-green-600">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span className="text-sm font-medium">Enrichment complete</span>
+                      </div>
+                      <div className="flex gap-4 text-xs text-muted-foreground">
+                        <span>✓ {enrichReport.enriched} enriched</span>
+                        <span>⊘ {enrichReport.skipped} skipped</span>
+                        {enrichReport.errors.length > 0 && (
+                          <span className="text-destructive">✗ {enrichReport.errors.length} errors</span>
+                        )}
+                      </div>
+                      {enrichReport.errors.length > 0 && (
+                        <details className="text-xs text-destructive">
+                          <summary className="cursor-pointer">View errors</summary>
+                          <ul className="mt-1 space-y-0.5 pl-4 list-disc">
+                            {enrichReport.errors.map((e, i) => <li key={i}>{e}</li>)}
+                          </ul>
+                        </details>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          resetEnrich()
+                          setSparseCount(null)
+                          setEnrichReport(null)
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">Import Library</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Import your library from a Yamtrack CSV export.
+                    </p>
+                  </div>
+                  <Button variant="outline" onClick={() => navigate("/import")}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import CSV
+                  </Button>
+                </div>
+
                 <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
                   <div>
                     <h4 className="font-medium">Export Library</h4>
