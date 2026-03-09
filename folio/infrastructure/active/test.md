@@ -10,7 +10,7 @@ kind: null
 sdd_lane: null
 dependencies: []
 tags: ["shelflog"]
-updated_at: "2026-03-09T13:58:20.318128+00:00"
+updated_at: "2026-03-09T14:45:47.346533+00:00"
 created_at: "2026-03-09T13:35:41.076211+00:00"
 ---
 # Overview
@@ -20,17 +20,9 @@ created_at: "2026-03-09T13:35:41.076211+00:00"
 - Genres
 - Description
 - Status (opens status sheet) 
-- Source Score
+- IGDB Score
 - User Score
 - Related Content (refer to section)
-
-# History
-- Started
-- Ended
-- Progress (time played)
-
-# User Notes
-- Notes from status sheet
 
 # Details
 - Format
@@ -38,7 +30,7 @@ created_at: "2026-03-09T13:35:41.076211+00:00"
 - Themes
 - Platforms
 - Companies
-- Source
+- source
 
 # Actions
 - Add to list
