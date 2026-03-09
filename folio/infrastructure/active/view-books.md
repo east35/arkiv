@@ -10,7 +10,7 @@ kind: null
 sdd_lane: null
 dependencies: ["status-sheet", "top-level-navigation"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T15:25:09.241973+00:00"
+updated_at: "2026-03-09T16:21:23.725692+00:00"
 created_at: "2026-03-09T15:23:52.687145+00:00"
 ---
 ## Layout
@@ -25,13 +25,18 @@ created_at: "2026-03-09T15:23:52.687145+00:00"
 - global search pattern
 - limited to tracked objects
 
-# Filter
+# Filter 1
 - All
 - Backlog
 - Completed
 - In Progress
 - Paused
 - Dropped
+
+# Filter 2
+- Steam
+- Manually Entered
+- Custom Source
 
 # Sort
 - Rating
