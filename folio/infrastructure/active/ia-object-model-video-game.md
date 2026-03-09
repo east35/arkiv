@@ -10,7 +10,7 @@ kind: null
 sdd_lane: null
 dependencies: ["status-sheet"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T15:25:38.488394+00:00"
+updated_at: "2026-03-09T16:22:23.208657+00:00"
 created_at: "2026-03-09T15:19:23.764284+00:00"
 ---
 # Overview
@@ -30,7 +30,8 @@ created_at: "2026-03-09T15:19:23.764284+00:00"
 - Themes
 - Platforms
 - Companies
-- source
+- Source
+- Collection (Steam, Custom Source). Should be editable if not coming from external source. 
 
 # Actions
 - Add to list
