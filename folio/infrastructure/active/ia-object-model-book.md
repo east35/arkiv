@@ -10,7 +10,7 @@ kind: null
 sdd_lane: null
 dependencies: ["status-sheet"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T15:20:47.633618+00:00"
+updated_at: "2026-03-09T16:22:55.458706+00:00"
 created_at: "2026-03-09T13:52:58.83078+00:00"
 ---
 # Overview
@@ -40,6 +40,7 @@ created_at: "2026-03-09T13:52:58.83078+00:00"
 - Themes
 - ISBN
 - Source
+- Collection (Calibre, should be editable if not coming from external provider). 
 
 # Actions
 - Add to list
