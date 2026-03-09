@@ -8,9 +8,9 @@ owner: "east35"
 phase: null
 kind: null
 sdd_lane: null
-dependencies: []
+dependencies: ["status-sheet"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T15:21:01.94872+00:00"
+updated_at: "2026-03-09T15:25:38.488394+00:00"
 created_at: "2026-03-09T15:19:23.764284+00:00"
 ---
 # Overview
