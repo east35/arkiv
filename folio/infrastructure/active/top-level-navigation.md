@@ -8,9 +8,9 @@ owner: "east35"
 phase: null
 kind: null
 sdd_lane: null
-dependencies: ["ia-object-model-book"]
+dependencies: ["ia-object-model-book", "ia-object-model-video-game"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T14:51:35.81396+00:00"
+updated_at: "2026-03-09T15:20:19.992399+00:00"
 created_at: "2026-03-09T14:19:54.675877+00:00"
 ---
 ## Home
