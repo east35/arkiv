@@ -1,5 +1,5 @@
 ---
-title: "Inivital Feature Set"
+title: "Initial Feature Set"
 slug: "folio-inivital-feature-set"
 status: draft
 category: capability
@@ -10,9 +10,10 @@ kind: null
 sdd_lane: null
 dependencies: []
 tags: ["shelflog"]
-updated_at: "2026-03-08T18:07:42.918134+00:00"
+updated_at: "2026-03-09T13:35:28.720561+00:00"
 created_at: "2026-03-08T18:07:42.918134+00:00"
 ---
+
 
 ## Intent
 
