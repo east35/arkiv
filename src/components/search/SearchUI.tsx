@@ -1,0 +1,97 @@
+import { useState, useEffect } from "react"
+import { Search as SearchIcon, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { MediaTypePicker } from "./MediaTypePicker"
+import { SearchResultItem } from "./SearchResultItem"
+import { useDebounce } from "@/hooks/useDebounce"
+import { useExternalSearch, SEARCH_DEBOUNCE_MS } from "@/hooks/useExternalSearch"
+import { useCommitItem, SHEET_CLOSE_DELAY_MS } from "@/hooks/useCommitItem"
+import { StatusSheet } from "@/components/status-sheet/StatusSheet"
+import type { MediaType, FullItem } from "@/types"
+
+export function SearchUI() {
+  const [mediaType, setMediaType] = useState<MediaType>("game")
+  const [query, setQuery] = useState("")
+  
+  // State for post-add editing
+  const [newItem, setNewItem] = useState<FullItem | null>(null)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  
+  const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
+  const { results, loading, search, clearResults } = useExternalSearch()
+  const { commit, committingId } = useCommitItem()
+
+  useEffect(() => {
+    if (debouncedQuery) {
+      search(debouncedQuery, mediaType)
+    } else {
+      clearResults()
+    }
+  }, [debouncedQuery, mediaType, search, clearResults])
+
+  const handleAdd = async (result: { id: string | number; title: string }) => {
+    const item = await commit(result.id, mediaType)
+    if (item) {
+      setNewItem(item)
+      setIsSheetOpen(true)
+    }
+  }
+
+  const handleSheetOpenChange = (open: boolean) => {
+    setIsSheetOpen(open)
+    if (!open) {
+      setTimeout(() => setNewItem(null), SHEET_CLOSE_DELAY_MS)
+    }
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="text-center space-y-2 mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Add to Library</h1>
+        <p className="text-muted-foreground">Find games and books to track.</p>
+      </div>
+
+      <div className="space-y-4">
+        <MediaTypePicker value={mediaType} onChange={setMediaType} />
+        
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder={`Search for ${mediaType}s...`}
+            className="pl-9 h-10 text-base"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {loading && (
+            <div className="absolute right-3 top-3">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {results.map((result) => (
+          <SearchResultItem 
+            key={result.id} 
+            result={result} 
+            onAdd={() => handleAdd(result)}
+            isAdding={committingId === result.id}
+          />
+        ))}
+        
+        {!loading && debouncedQuery && results.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            No results found for "{query}"
+          </div>
+        )}
+      </div>
+
+      <StatusSheet 
+        item={newItem} 
+        open={isSheetOpen} 
+        onOpenChange={handleSheetOpenChange} 
+      />
+    </div>
+  )
+}

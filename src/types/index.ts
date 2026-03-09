@@ -1,0 +1,234 @@
+/**
+ * ShelfLog — Core Type Definitions
+ *
+ * These types mirror the Supabase schema and are used throughout
+ * the frontend for type-safe data handling.
+ */
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+/** Supported media types */
+export type MediaType = "game" | "book"
+
+/** Item tracking statuses */
+export type Status = "backlog" | "in_progress" | "paused" | "completed" | "dropped"
+
+/** Data source for an item */
+export type Source = "igdb" | "google_books" | "manual"
+
+/** Date display format preference */
+export type DateFormat = "iso" | "eu" | "us" | "long"
+
+/** Time display format preference */
+export type TimeFormat = "12hr" | "24hr"
+
+/** Library view mode */
+export type ViewMode = "poster" | "table"
+
+/** Sort options for library views */
+export type SortField = "rating" | "title" | "progress" | "started_at" | "completed_at"
+
+/** Sort direction */
+export type SortDirection = "asc" | "desc"
+
+// ---------------------------------------------------------------------------
+// Database Row Types
+// ---------------------------------------------------------------------------
+
+/** Core item — shared fields for all tracked media */
+export interface Item {
+  id: string
+  user_id: string
+  media_type: MediaType
+  title: string
+  cover_url: string | null
+  genres: string[]
+  description: string | null
+  status: Status
+  user_score: number | null
+  source_score: number | null
+  notes: string | null
+  source: Source
+  external_id: string | null
+  started_at: string | null
+  completed_at: string | null
+  paused_at: string | null
+  dropped_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** Book-specific extension fields */
+export interface BookFields {
+  item_id: string
+  author: string | null
+  publisher: string | null
+  publish_date: string | null
+  page_count: number | null
+  progress: number | null
+  format: string | null
+  themes: string[]
+  isbn: string | null
+  collection: string | null
+}
+
+/** Game-specific extension fields */
+export interface GameFields {
+  item_id: string
+  developer: string | null
+  publisher: string | null
+  release_date: string | null
+  platforms: string[]
+  format: string | null
+  themes: string[]
+  screenshots: string[]
+  progress_hours: number
+  progress_minutes: number
+  collection: string | null
+}
+
+/** Full book: core item + book-specific fields */
+export interface BookItem extends Item {
+  media_type: "book"
+  book: BookFields
+}
+
+/** Full game: core item + game-specific fields */
+export interface GameItem extends Item {
+  media_type: "game"
+  game: GameFields
+}
+
+/** Union type for any fully-hydrated item */
+export type FullItem = BookItem | GameItem
+
+// ---------------------------------------------------------------------------
+// Lists
+// ---------------------------------------------------------------------------
+
+/** User-created list */
+export interface List {
+  id: string
+  user_id: string
+  name: string
+  description: string | null
+  cover_item_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** Junction row: item membership in a list */
+export interface ListItem {
+  id: string
+  list_id: string
+  item_id: string
+  added_at: string
+}
+
+// ---------------------------------------------------------------------------
+// Activity
+// ---------------------------------------------------------------------------
+
+/** Single status transition event */
+export interface ActivityLogEntry {
+  id: string
+  user_id: string
+  item_id: string
+  from_status: Status | null
+  to_status: Status
+  occurred_at: string
+}
+
+// ---------------------------------------------------------------------------
+// User Preferences
+// ---------------------------------------------------------------------------
+
+export interface UserPreferences {
+  user_id: string
+  username: string | null
+  hide_hover_overlay: boolean
+  date_format: DateFormat
+  time_format: TimeFormat
+  steam_id: string | null
+  calibre_path: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ---------------------------------------------------------------------------
+// UI State Types
+// ---------------------------------------------------------------------------
+
+/** Filter state for library views */
+export interface LibraryFilters {
+  status: Status | "all"
+  source: Source | "all"
+  search: string
+}
+
+/** Sort state for library views */
+export interface LibrarySort {
+  field: SortField
+  direction: SortDirection
+}
+
+// ---------------------------------------------------------------------------
+// API Response Types (Edge Function payloads)
+// ---------------------------------------------------------------------------
+
+/** IGDB search result (compact) */
+export interface IgdbSearchResult {
+  id: number
+  name: string
+  cover: string | null
+  platforms: string[]
+  summary: string | null
+  releaseDate: string | null
+}
+
+/** IGDB full details */
+export interface IgdbGameDetails {
+  id: number
+  name: string
+  summary: string | null
+  cover: string | null
+  genres: string[]
+  themes: string[]
+  platforms: string[]
+  developer: string | null
+  publisher: string | null
+  screenshots: string[]
+  releaseDate: string | null
+  sourceScore: number | null
+  parentGame: string | null
+  remasters: string[]
+  standaloneExpansions: string[]
+  similarGames: Array<{ name: string; cover: string | null }>
+}
+
+/** Google Books search result (compact) */
+export interface GoogleBooksSearchResult {
+  id: string
+  title: string
+  authors: string[]
+  thumbnail: string | null
+  pageCount: number | null
+  publishedDate: string | null
+}
+
+/** Google Books full details */
+export interface GoogleBooksDetails {
+  id: string
+  title: string
+  authors: string[]
+  publisher: string | null
+  publishedDate: string | null
+  description: string | null
+  pageCount: number | null
+  categories: string[]
+  thumbnail: string | null
+  isbn: string | null
+  averageRating: number | null
+}

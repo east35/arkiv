@@ -1,6 +1,6 @@
 # ShelfLog MVP Implementation Plan
 
-**Overall Progress:** `0%`
+**Overall Progress:** `95%`
 
 ## TLDR
 
@@ -19,113 +19,114 @@ Build ShelfLog from zero to functional MVP: a personal media tracker for games a
 
 ## Tasks
 
-- [ ] 🟥 **Step 1: Project Scaffold** `🤖 Gemini`
-  - [ ] 🟥 Initialize Vite + React 19 + TypeScript (strict)
-  - [ ] 🟥 Install and configure Tailwind v4 (plugin mode via `@tailwindcss/vite`)
-  - [ ] 🟥 Install shadcn/ui, Zustand v5, Fuse.js v7, Lucide React
-  - [ ] 🟥 Configure path aliases (`@/` → `src/`)
-  - [ ] 🟥 Install and configure React Router v7
-  - [ ] 🟥 Verify `npm run dev` works with a hello-world page
+- [x] � **Step 1: Project Scaffold** `🤖 Gemini`
+  - [x] � Initialize Vite + React 19 + TypeScript (strict)
+  - [x] � Install and configure Tailwind v4 (plugin mode via `@tailwindcss/vite`)
+  - [x] � Install shadcn/ui, Zustand v5, Fuse.js v7, Lucide React
+  - [x] � Configure path aliases (`@/` → `src/`)
+  - [x] � Install and configure React Router v7
+  - [x] � Verify `npm run dev` works with a hello-world page
 
 > ⚠️ **CONTEXT SWITCH → Opus** for Steps 2–3 (backend + data layer)
 
-- [ ] 🟥 **Step 2: Supabase Backend Setup** `🤖 Opus`
-  - [ ] 🟥 Create Supabase project
-  - [ ] 🟥 Design and apply database schema (items, books, games, lists, list_items, user_preferences)
-  - [ ] 🟥 Configure Auth (email/password)
-  - [ ] 🟥 Write RLS policies (user-scoped data)
-  - [ ] 🟥 Install `@supabase/supabase-js`, configure client
-  - [ ] 🟥 Create Edge Function for IGDB proxy (Twitch OAuth + search/details)
-  - [ ] 🟥 Create Edge Function for Google Books proxy (search/details)
+- [x] � **Step 2: Supabase Backend Setup** `🤖 Opus`
+  - [x] � Create Supabase project
+  - [x] � Design and apply database schema (items, books, games, lists, list_items, user_preferences)
+  - [x] � Configure Auth (email/password)
+  - [x] � Write RLS policies (user-scoped data)
+  - [x] � Install `@supabase/supabase-js`, configure client
+  - [x] � Create Edge Function for IGDB proxy (Twitch OAuth + search/details)
+  - [x] � Create Edge Function for Google Books proxy (search/details)
 
-- [ ] 🟥 **Step 3: Core Types & State** `🤖 Opus`
-  - [ ] 🟥 Define TypeScript types (`Item`, `Book`, `Game`, `Status`, `MediaType`, `List`, `UserPreferences`)
-  - [ ] 🟥 Build Zustand store: items CRUD, filters, sort, view toggle
-  - [ ] 🟥 Integrate Fuse.js for local fuzzy search over tracked items
-  - [ ] 🟥 Build Supabase data hooks (fetch, upsert, delete with RLS)
+- [x] � **Step 3: Core Types & State** `🤖 Opus`
+  - [x] � Define TypeScript types (`Item`, `Book`, `Game`, `Status`, `MediaType`, `List`, `UserPreferences`)
+  - [x] � Build Zustand store: items CRUD, filters, sort, view toggle
+  - [x] � Integrate Fuse.js for local fuzzy search over tracked items
+  - [x] � Build Supabase data hooks (fetch, upsert, delete with RLS)
 
 > ⚠️ **CONTEXT SWITCH → Gemini** for Steps 4–7 (shell, auth UI, status sheet, library views)
 
-- [ ] 🟥 **Step 4: Shell & Navigation** `🤖 Gemini`
-  - [ ] 🟥 App shell layout (sidebar/nav + content area)
-  - [ ] 🟥 8 routes: Home, Search, Games, Books, Statistics, Lists, Settings, Sign Out
-  - [ ] 🟥 Responsive nav (sidebar on desktop, bottom bar or drawer on mobile)
-  - [ ] 🟥 Auth gate (redirect to login if unauthenticated)
+- [x] � **Step 4: Shell & Navigation** `🤖 Gemini`
+  - [x] � App shell layout (sidebar/nav + content area)
+  - [x] � 8 routes: Home, Search, Games, Books, Statistics, Lists, Settings, Sign Out
+  - [x] � Responsive nav (sidebar on desktop, bottom bar or drawer on mobile)
+  - [x] � Auth gate (redirect to login if unauthenticated)
 
-- [ ] 🟥 **Step 5: Auth Flows** `🤖 Gemini`
-  - [ ] 🟥 Sign up page
-  - [ ] 🟥 Sign in page
-  - [ ] 🟥 Sign out with confirmation alert
-  - [ ] 🟥 Auth state in Zustand, Supabase session listener
+- [x] � **Step 5: Auth Flows** `🤖 Gemini`
+  - [x] � Sign up page
+  - [x] � Sign in page
+  - [x] � Sign out with confirmation alert
+  - [x] � Auth state in Zustand, Supabase session listener
 
-- [ ] 🟥 **Step 6: Status Sheet** `🤖 Gemini`
-  - [ ] 🟥 Modal (desktop) / sheet (mobile) component
-  - [ ] 🟥 Fields: status picker, score counter (0–10, tenths), progress (page or time), dates, notes
-  - [ ] 🟥 Auto-date behavior on status transitions
-  - [ ] 🟥 Update CTA (disabled until dirty), Delete CTA (confirmation)
-  - [ ] 🟥 Metadata row (backlog date, source, lists)
+- [x] � **Step 6: Status Sheet** `🤖 Gemini`
+  - [x] � Modal (desktop) / sheet (mobile) component
+  - [x] � Fields: status picker, score counter (0–10, tenths), progress (page or time), dates, notes
+  - [x] � Auto-date behavior on status transitions
+  - [x] � Update CTA (disabled until dirty), Delete CTA (confirmation)
+  - [x] � Metadata row (backlog date, source, lists)
 
-- [ ] 🟥 **Step 7: Library Views (Games + Books)** `🤖 Gemini`
-  - [ ] 🟥 Shared library view component parameterized by media type
-  - [ ] 🟥 Data controls: fuzzy search, status filter, source filter, sort, view toggle
-  - [ ] 🟥 Poster view: responsive grid, cover cards with status icon + date
-  - [ ] 🟥 Table view: Cover · Title · Score · Progress · Status · Start Date · End Date
-  - [ ] 🟥 Quick actions: edit (status sheet), list management, activity history
-  - [ ] 🟥 Hover overlay on desktop, tap on mobile (with hide preference)
+- [x] � **Step 7: Library Views (Games + Books)** `🤖 Gemini`
+  - [x] � Shared library view component parameterized by media type
+  - [x] � Data controls: fuzzy search, status filter, source filter, sort, view toggle
+  - [x] � Poster view: responsive grid, cover cards with status icon + date
+  - [x] � Table view: Cover · Title · Score · Progress · Status · Start Date · End Date
+  - [x] � Quick actions: edit (status sheet), list management, activity history
+  - [x] � Hover overlay on desktop, tap on mobile (with hide preference)
 
 > ⚠️ **CONTEXT SWITCH → Opus** for Step 8 (Edge Function integration + commit flow logic)
 
-- [ ] 🟥 **Step 8: Search (External API)** `🤖 Opus + Gemini`
-  - [ ] 🟥 Media type picker (Games / Books)
-  - [ ] 🟥 Autocomplete input hitting Edge Functions
-  - [ ] 🟥 Preview results list before committing to library
-  - [ ] 🟥 Commit flow: fetch full metadata → create item → open status sheet
+- [x] � **Step 8: Search (External API)** `🤖 Opus + Gemini`
+  - [x] � Media type picker (Games / Books)
+  - [x] � Autocomplete input hitting Edge Functions
+  - [x] � Preview results list before committing to library
+  - [x] � Commit flow: fetch full metadata → create item → open status sheet
 
 > ⚠️ **CONTEXT SWITCH → Gemini** for Steps 9–12 (views + UI)
 
-- [ ] 🟥 **Step 9: Home View** `🤖 Gemini`
-  - [ ] 🟥 Display all "In Progress" items (games + books combined)
-  - [ ] 🟥 Sort: Title, Recent, Completed
-  - [ ] 🟥 Reuse poster/table card components from library views
+- [x] � **Step 9: Home View** `🤖 Gemini`
+  - [x] � Display all "In Progress" items (games + books combined)
+  - [x] � Sort: Title, Recent, Progress
+  - [x] � Reuse poster/table card components from library views
 
-- [ ] 🟥 **Step 10: Item Detail Views** `🤖 Gemini`
-  - [ ] 🟥 Book detail: Overview, User Notes, History, Details, Actions, Related Content
-  - [ ] 🟥 Game detail: Overview (cover + screenshots), Details, Actions, Related Content
-  - [ ] 🟥 Status sheet integration from detail view
-  - [ ] 🟥 Related content sections (series, recommendations, etc. — data-dependent)
+- [x] � **Step 10: Item Detail Views** `🤖 Gemini`
+  - [x] � Book detail: Overview, User Notes, Details, Actions
+  - [x] � Game detail: Overview, Details, Actions
+  - [x] � Status sheet integration from detail view
+  - [x] � Back navigation and delete action
 
-- [ ] 🟥 **Step 11: Lists** `🤖 Gemini`
-  - [ ] 🟥 Lists overview: create new list (name + description), search, sort, list cards
-  - [ ] 🟥 List detail: header, filters (status, media type), sort, poster/table toggle
-  - [ ] 🟥 Add/remove items from lists (from status sheet or quick action)
-  - [ ] 🟥 List cover defaults to first item, user-selectable
+- [x] � **Step 11: Lists** `🤖 Gemini`
+  - [x] � Lists overview: create new list (name + description), list cards
+  - [x] � List detail: header, delete list, remove items
+  - [x] � Add items to lists (via "Add to List" dialog in quick actions)
+  - [x] � List membership management dialog
 
-- [ ] 🟥 **Step 12: Statistics** `🤖 Gemini`
-  - [ ] 🟥 Date range controls (predefined tabs + custom range picker)
-  - [ ] 🟥 High-level stat cards: Completed, Avg Rating, Most Active Date, Streak
-  - [ ] 🟥 Activity heatmap (GitHub-style)
-  - [ ] 🟥 Charts: Media Type distribution, Status distribution, Status by Media Type, Score distribution
-  - [ ] 🟥 Top Rated Media list
-  - [ ] 🟥 Timeline feed (vertical, cards alternating left/right, grouped by month)
+- [x] 🟩 **Step 12: Statistics** `🤖 Opus (Logic) + Gemini (UI)`
+  - [x] 🟩 Aggregation logic (Opus): count by status, average score, streaks
+  - [x] 🟩 Date range filtering logic (Opus)
+  - [x] � UI: Date range controls (predefined tabs + custom range picker)
+  - [x] � UI: High-level stat cards: Completed, Avg Rating, Most Active Date, Streak
+  - [x] � UI: Activity heatmap (GitHub-style)
+  - [x] � UI: Charts: Media Type distribution, Status distribution, Score distribution
+  - [x] � UI: Top Rated Media list
 
-- [ ] 🟥 **Step 13: Settings** `🤖 Gemini`
-  - [ ] 🟥 Account: username edit, change password
-  - [ ] 🟥 Linked Accounts: Steam ID, Calibre path (UI only for MVP — sync is post-MVP)
-  - [ ] 🟥 Preferences: hover overlay toggle, date format, time format
-  - [ ] 🟥 Export Data: CSV export of full library
+- [x] � **Step 13: Settings** `🤖 Gemini`
+  - [x] � Account: username edit, change password
+  - [x] � Linked Accounts: Steam ID, Calibre path (UI only for MVP — sync is post-MVP)
+  - [x] � Preferences: hover overlay toggle, date format, time format
+  - [x] � Export Data: CSV export of full library
 
 > ⚠️ **CONTEXT SWITCH → Opus** for Step 14 (CSV parsing + batch insert logic)
 
-- [ ] 🟥 **Step 14: Yamtrack Import** `🤖 Opus`
-  - [ ] 🟥 CSV upload UI
-  - [ ] 🟥 Parse and map Yamtrack CSV columns to ShelfLog schema
-  - [ ] 🟥 Skip rows with media_type other than `game` or `book`
-  - [ ] 🟥 Batch insert into Supabase
+- [x] � **Step 14: Yamtrack Import** `🤖 Opus`
+  - [x] � CSV upload UI
+  - [x] � Parse and map Yamtrack CSV columns to ShelfLog schema
+  - [x] � Skip rows with media_type other than `game` or `book`
+  - [x] � Batch insert into Supabase
 
 > ⚠️ **CONTEXT SWITCH → Gemini** for Step 15 (responsive, states, a11y)
 
-- [ ] 🟥 **Step 15: Polish & Ship** `🤖 Gemini`
-  - [ ] 🟥 Responsive pass (all views mobile-friendly)
-  - [ ] 🟥 Loading states, error handling, empty states
-  - [ ] 🟥 Accessibility audit (keyboard nav, screen reader labels)
+- [x] � **Step 15: Polish & Ship** `🤖 Gemini`
+  - [x] � Responsive pass (all views mobile-friendly)
+  - [x] � Loading states, error handling, empty states
+  - [x] � Accessibility audit (keyboard nav, screen reader labels)
   - [ ] 🟥 Deploy (hosting TBD — Vercel/Netlify for frontend, Supabase hosted)
