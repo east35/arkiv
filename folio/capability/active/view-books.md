@@ -10,7 +10,7 @@ kind: null
 sdd_lane: null
 dependencies: ["status-sheet", "top-level-navigation"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T16:29:44.132946+00:00"
+updated_at: "2026-03-09T17:32:56.529023+00:00"
 created_at: "2026-03-09T15:23:52.687145+00:00"
 ---
 ## Layout
@@ -34,7 +34,7 @@ created_at: "2026-03-09T15:23:52.687145+00:00"
 - Dropped
 
 # Filter 2
-- Steam
+- Calibre
 - Manually Entered
 - Custom Source
 
