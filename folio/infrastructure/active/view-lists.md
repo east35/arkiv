@@ -1,5 +1,5 @@
 ---
-title: "View: Lists"
+title: "View: Lists Overview"
 slug: "view-lists"
 status: active
 category: infrastructure
@@ -10,7 +10,7 @@ kind: null
 sdd_lane: null
 dependencies: []
 tags: ["shelflog"]
-updated_at: "2026-03-09T15:51:08.330992+00:00"
+updated_at: "2026-03-09T15:54:40.053037+00:00"
 created_at: "2026-03-09T15:43:47.073539+00:00"
 ---
 Note: a list can have both books and games
@@ -21,6 +21,7 @@ Note: a list can have both books and games
 - Object List
 
 ## Data Controls
+
 # New List CTA
 Open 'Create New List" Sheet view/modal
 - Title 
@@ -42,5 +43,3 @@ Open 'Create New List" Sheet view/modal
 - List description
 - Object count
 - Desktop on hover, mobile on tap:  display list edit button (Open 'Create New List" Sheet view/modal but in filled state).
-
-
