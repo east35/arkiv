@@ -1,5 +1,5 @@
 ---
-title: "⏺ # ShelfLog — Project Scaffold Reference"
+title: "ShelfLog — Project Scaffold"
 slug: "shelflog-project-scaffold-reference"
 status: active
 category: infrastructure
@@ -10,13 +10,16 @@ kind: null
 sdd_lane: null
 dependencies: []
 tags: ["shelflog"]
-updated_at: "2026-03-09T16:26:51.198634+00:00"
+updated_at: "2026-03-09T16:27:17.542305+00:00"
 created_at: "2026-03-09T16:25:54.894529+00:00"
 ---
 ## ShelfLog — Project Scaffold Reference
 
+
+
 ## Stack
-  - **Runtime:** Node v25.2.1, npm v11.6.2
+
+- **Runtime:** Node v25.2.1, npm v11.6.2
   - **Bundler:** Vite 6 + `@vitejs/plugin-react`
   - **Language:** TypeScript ~5.7 (strict mode)
   - **UI:** React 19
