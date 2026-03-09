@@ -1,5 +1,5 @@
 ---
-title: "IA: Object Model"
+title: "IA: Object Model, Video Game"
 slug: "test"
 status: active
 category: infrastructure
@@ -10,12 +10,12 @@ kind: null
 sdd_lane: null
 dependencies: []
 tags: ["shelflog"]
-updated_at: "2026-03-09T13:51:07.054949+00:00"
+updated_at: "2026-03-09T13:52:20.3608+00:00"
 created_at: "2026-03-09T13:35:41.076211+00:00"
 ---
 # Overview
 - Cover
-- Screenshots (video game)
+- Screenshots
 - Title
 - Genres
 - Description
@@ -38,16 +38,14 @@ created_at: "2026-03-09T13:35:41.076211+00:00"
 - Sync metadata
 
 # Related Content
-- Video game: Remasters, Standalone Expansions, Recommendations
-- Book: Series, Recommendations
+- Parent Game
+- Remasters
+- Standalone Expansions
+- Recommendations
 
 # Status
-- Panning
+- Backlog
 - In Progress
 - Paused
 - Completed
 - Dropped
-
-## Notes
-
-test
