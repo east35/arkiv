@@ -10,7 +10,7 @@ kind: null
 sdd_lane: null
 dependencies: ["ia-object-model-book", "ia-object-model-video-game"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T16:28:14.928085+00:00"
+updated_at: "2026-03-09T17:33:23.59697+00:00"
 created_at: "2026-03-09T14:19:54.675877+00:00"
 ---
 ## Home
@@ -30,14 +30,14 @@ created_at: "2026-03-09T14:19:54.675877+00:00"
 
 - View Title
 - View Subtitle
-- Book Object Preview
+- Game Object Preview
 - Review 'Object View: Games' note
 
 ## Books
 
 - View Title
 - View Subtitle
-- Game Object Preview
+- Book Object Preview
 - Review 'Object View: Books' note
 
 ## Statistics
