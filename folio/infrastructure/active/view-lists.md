@@ -8,9 +8,9 @@ owner: "east35"
 phase: null
 kind: null
 sdd_lane: null
-dependencies: []
+dependencies: ["top-level-navigation"]
 tags: ["shelflog"]
-updated_at: "2026-03-09T15:54:40.053037+00:00"
+updated_at: "2026-03-09T16:19:16.420871+00:00"
 created_at: "2026-03-09T15:43:47.073539+00:00"
 ---
 Note: a list can have both books and games
