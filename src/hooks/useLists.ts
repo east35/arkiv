@@ -1,5 +1,5 @@
 /**
- * ShelfLog — List Data Hooks
+ * Arkiv — List Data Hooks
  *
  * Supabase CRUD operations for user-created lists and list membership.
  * All queries are automatically user-scoped via RLS.
@@ -19,13 +19,24 @@ export function useLists() {
   const fetchLists = useCallback(async () => {
     const { data, error } = await supabase
       .from("lists")
-      .select("*")
+      .select("*, list_items(item_id, added_at)")
       .order("created_at", { ascending: false })
 
     if (error) throw error
 
-    setLists(data as List[])
-    return data as List[]
+    // Derive count and first item ID from the list_items relation
+    const lists = (data as any[]).map(({ list_items, ...row }) => {
+      const members: { item_id: string; added_at: string }[] = Array.isArray(list_items) ? list_items : []
+      const sorted = [...members].sort((a, b) => a.added_at.localeCompare(b.added_at))
+      return {
+        ...row,
+        item_count: members.length,
+        first_item_id: sorted[0]?.item_id ?? null,
+      }
+    }) as List[]
+
+    setLists(lists)
+    return lists
   }, [setLists])
 
   /**

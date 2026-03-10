@@ -1,43 +1,32 @@
-"use client"
-
-import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
-
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 
 interface DatePickerProps {
   date?: Date | null
   setDate: (date: Date | undefined) => void
+  className?: string
 }
 
-export function DatePicker({ date, setDate }: DatePickerProps) {
+export function DatePicker({ date, setDate, className }: DatePickerProps) {
+  const value = date ? date.toISOString().split("T")[0] : ""
+
   return (
-    <Popover>
-      <PopoverTrigger
+    <div className="w-full min-w-0 overflow-hidden">
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => {
+          if (e.target.value) {
+            setDate(new Date(e.target.value + "T00:00:00"))
+          } else {
+            setDate(undefined)
+          }
+        }}
         className={cn(
-          buttonVariants({ variant: "outline" }),
-          "w-full justify-start text-left font-normal",
-          !date && "text-muted-foreground"
+          "h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [color-scheme:light] dark:[color-scheme:dark]",
+          className
         )}
-      >
-        <CalendarIcon className="mr-2 h-4 w-4" />
-        {date ? format(date, "PPP") : <span>Pick a date</span>}
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date || undefined}
-          onSelect={setDate}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
+        style={{ WebkitAppearance: "none", boxSizing: "border-box", display: "block" }}
+      />
+    </div>
   )
 }

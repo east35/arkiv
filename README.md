@@ -1,6 +1,6 @@
-# ShelfLog
+# Arkiv
  
-ShelfLog is a personal library tracker for **games** and **books**. It replaces Yamtrack with better UX (including **fuzzy search**) and a clean workflow for statuses, progress, ratings, and notes.
+Arkiv is a personal library tracker for **games** and **books**. It replaces Yamtrack with better UX (including **fuzzy search**) and a clean workflow for statuses, progress, ratings, and notes.
  
 ## What’s in scope (MVP)
  

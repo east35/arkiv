@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Yamtrack Import Page
+ * Arkiv — Yamtrack Import Page
  *
  * CSV upload UI with preview table, progress indicator,
  * and final import report. Supports drag-and-drop or
@@ -8,15 +8,15 @@
 
 import { useState, useRef, useCallback } from "react"
 import {
-  Upload,
-  FileText,
-  Loader2,
-  CheckCircle2,
-  AlertTriangle,
-  X,
-  Gamepad2,
-  BookOpen,
-} from "lucide-react"
+  IconUpload,
+  IconFileText,
+  IconLoader2,
+  IconCircleCheck,
+  IconAlertTriangle,
+  IconX,
+  IconDeviceGamepad2,
+  IconBook,
+} from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import { useYamtrackImport, type ImportReport } from "@/hooks/useYamtrackImport"
@@ -116,7 +116,7 @@ export default function Import() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Import</h1>
             <p className="text-muted-foreground mt-1">
-              Import your library from a Yamtrack CSV export.
+              Import your shelf from a Yamtrack CSV export.
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export default function Import() {
                     : "border-muted-foreground/25 hover:border-primary/50"
                 )}
               >
-                <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                <IconUpload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg font-medium">
                   Drop your Yamtrack CSV here
                 </p>
@@ -167,7 +167,7 @@ export default function Import() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
+                      <IconFileText className="h-5 w-5" />
                       {fileName}
                     </CardTitle>
                     <CardDescription className="mt-1">
@@ -175,7 +175,7 @@ export default function Import() {
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="icon" onClick={handleReset}>
-                    <X className="h-4 w-4" />
+                    <IconX className="h-4 w-4" />
                   </Button>
                 </div>
               </CardHeader>
@@ -213,8 +213,8 @@ export default function Import() {
                   {parseResult.rows.map((row, i) => (
                     <div key={i} className="flex items-center gap-3 py-1.5 border-b last:border-0">
                       {row.item.media_type === "game"
-                        ? <Gamepad2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        : <BookOpen className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        ? <IconDeviceGamepad2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        : <IconBook className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       }
                       <span className="truncate flex-1 text-sm">{row.item.title}</span>
                       <Badge variant="outline" className="text-xs capitalize flex-shrink-0">
@@ -236,7 +236,7 @@ export default function Import() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    <IconAlertTriangle className="h-4 w-4 text-yellow-500" />
                     Skipped ({parseResult.skipped.length})
                   </CardTitle>
                   <CardDescription>
@@ -264,7 +264,7 @@ export default function Import() {
                 {progress.phase === "inserting" ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <IconLoader2 className="h-4 w-4 animate-spin" />
                       <span className="text-sm">
                         Importing… {progress.current} / {progress.total}
                       </span>
@@ -285,7 +285,7 @@ export default function Import() {
                   </div>
                 ) : (
                   <Button onClick={handleImport} className="w-full" size="lg">
-                    <Upload className="mr-2 h-4 w-4" />
+                    <IconUpload className="mr-2 h-4 w-4" />
                     Import {parseResult.rows.length} Items
                   </Button>
                 )}
@@ -299,7 +299,7 @@ export default function Import() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                <IconCircleCheck className="h-5 w-5 text-green-500" />
                 Import Complete
               </CardTitle>
             </CardHeader>

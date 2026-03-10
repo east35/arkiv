@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Activity Log Hook
+ * Arkiv — Activity Log Hook
  *
  * Fetches activity log entries for timeline feed and statistics.
  * All queries are automatically user-scoped via RLS.

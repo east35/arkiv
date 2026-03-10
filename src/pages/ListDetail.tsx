@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
-import { useParams, useNavigate, Link } from "react-router-dom"
-import { ArrowLeft, Trash2, MoreHorizontal, LayoutGrid, Table as TableIcon, Loader2, FileQuestion } from "lucide-react"
-import { format } from "date-fns"
+import { useParams, useNavigate } from "react-router-dom"
+import { IconArrowLeft, IconTrash, IconDots, IconLoader2, IconQuestionMark } from "@tabler/icons-react"
 
 import { useShelfStore } from "@/store/useShelfStore"
 import { useLists } from "@/hooks/useLists"
 import { useItems } from "@/hooks/useItems"
+import { LibraryControls } from "@/components/library/LibraryControls"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -23,7 +23,7 @@ export default function ListDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   
-  const { lists, items: allItems, viewMode, setViewMode } = useShelfStore()
+  const { lists, items: allItems, viewMode } = useShelfStore()
   const { fetchLists, fetchListItems, deleteList, removeItemFromList } = useLists()
   const { fetchItems } = useItems() // To ensure we have items loaded
 
@@ -107,7 +107,7 @@ export default function ListDetail() {
   if (loading && !list) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -115,84 +115,65 @@ export default function ListDetail() {
   if (!list) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
-        <FileQuestion className="h-12 w-12" />
+        <IconQuestionMark className="h-12 w-12" />
         <div className="text-center">
           <p className="text-lg font-medium">List not found</p>
           <p className="text-sm">It may have been deleted or the link is invalid.</p>
         </div>
-        <Button variant="outline" onClick={() => navigate("/lists")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Lists
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          <IconArrowLeft className="h-4 w-4 mr-2" />
+          Back
         </Button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex items-center justify-between">
-          <Link to="/lists" className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Lists
-          </Link>
-          
+    <div className="flex flex-col min-h-full">
+      {/* Header — matches other page headers */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm"
+          >
+            <IconArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </button>
+
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
-              <MoreHorizontal className="h-4 w-4" />
+            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-9 w-9">
+              <IconDots className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {/* <DropdownMenuItem>
-                <Pencil className="h-4 w-4 mr-2" />
-                Rename...
-              </DropdownMenuItem> */}
               <DropdownMenuItem className="text-destructive" onClick={handleDeleteList}>
-                <Trash2 className="h-4 w-4 mr-2" />
+                <IconTrash className="h-4 w-4 mr-2" />
                 Delete List
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex items-end justify-between gap-4 mt-3">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{list.name}</h1>
             {list.description && (
-              <p className="text-muted-foreground mt-1">{list.description}</p>
+              <p className="text-muted-foreground text-sm mt-0.5">{list.description}</p>
             )}
-            <div className="text-xs text-muted-foreground mt-2">
-              {displayItems.length} items • Created {format(new Date(list.created_at), "MMM d, yyyy")}
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {displayItems.length} {displayItems.length === 1 ? "item" : "items"}
+            </p>
           </div>
 
-          {/* View Toggle */}
-          <div className="flex items-center border rounded-md shrink-0">
-            <Button
-              variant={viewMode === "poster" ? "secondary" : "ghost"}
-              size="icon"
-              className="rounded-r-none h-9 w-9"
-              onClick={() => setViewMode("poster")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "table" ? "secondary" : "ghost"}
-              size="icon"
-              className="rounded-l-none h-9 w-9"
-              onClick={() => setViewMode("table")}
-            >
-              <TableIcon className="h-4 w-4" />
-            </Button>
-          </div>
+          <LibraryControls hideSearch />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex-1 px-4 sm:px-6 pb-8">
         {displayItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10 mx-4 sm:mx-0">
             <p className="text-lg font-medium mb-2">Empty List</p>
-            <p className="text-sm">Add items from your library or search.</p>
+            <p className="text-sm">Add items from your shelf or search.</p>
           </div>
         ) : (
           <>
@@ -212,7 +193,7 @@ export default function ListDetail() {
                         handleRemoveFromList(item.id)
                       }}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <IconTrash className="h-3 w-3" />
                     </Button>
                   </div>
                 ))}
@@ -231,7 +212,7 @@ export default function ListDetail() {
                       title="Remove from list"
                       onClick={() => handleRemoveFromList(item.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <IconTrash className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}

@@ -1,12 +1,10 @@
 import * as React from "react"
+import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { format } from "date-fns"
-import {
-  Trash2,
-  Save,
-} from "lucide-react"
+import { IconTrash, IconDeviceFloppy, IconX } from "@tabler/icons-react"
 
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { useItems } from "@/hooks/useItems"
@@ -242,7 +240,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
               <FormLabel>Status</FormLabel>
               <Select onValueChange={(val) => handleStatusChange(val as Status)} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select status">
                       {field.value ? field.value.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase()) : "Select status"}
                     </SelectValue>
@@ -440,10 +438,10 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
         </div>
 
         {/* Footer Actions */}
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t flex justify-between items-center pt-4 pb-6 md:relative md:bg-transparent md:backdrop-blur-none md:border-t-0 md:pb-0">
+        <div className="sticky bottom-0 bg-background border-t flex justify-between items-center pt-4 pb-6 md:relative md:bg-transparent md:border-t-0 md:pb-0">
            <AlertDialog>
-            <AlertDialogTrigger className={cn(buttonVariants({ variant: "destructive", size: "sm" }))}>
-                <Trash2 className="h-4 w-4 mr-2" />
+            <AlertDialogTrigger className={cn(buttonVariants({ variant: "destructive" }))}>
+                <IconTrash className="h-4 w-4 mr-2" />
                 Delete
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -455,7 +453,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isDeleting}>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90" disabled={isDeleting}>
                   {isDeleting ? "Deleting..." : "Delete"}
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -467,7 +465,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
                 Cancel
              </Button>
              <Button type="submit" disabled={!form.formState.isDirty}>
-                <Save className="h-4 w-4 mr-2" />
+                <IconDeviceFloppy className="h-4 w-4 mr-2" />
                 Update
              </Button>
           </div>
@@ -498,11 +496,25 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="!h-[90vh] flex flex-col rounded-t-xl px-4 overflow-hidden">
-        <SheetHeader className="text-left mb-4 flex-shrink-0">
-          <SheetTitle>{item.title}</SheetTitle>
+      <SheetContent side="bottom" className="!h-[90vh] flex flex-col rounded-t-xl px-4 overflow-hidden" showCloseButton={false}>
+        <SheetHeader className="text-left mb-4 flex-shrink-0 px-0 pt-4">
+          <div className="flex items-center justify-between gap-2">
+            <SheetTitle className="truncate">{item.title}</SheetTitle>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                to={`/item/${item.id}`}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                onClick={() => onOpenChange(false)}
+              >
+                View Details
+              </Link>
+              <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
+                <IconX className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
           <SheetDescription>
-             {item.media_type === "game" ? "Game" : "Book"} details and progress
+            {item.media_type === "game" ? "Game" : "Book"} details and progress
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">

@@ -1,10 +1,10 @@
 /**
- * ShelfLog — Commit Hook
+ * Arkiv — Commit Hook
  *
  * Handles the "Add to Library" flow:
  * 1. Fetch full details from external API (via Edge Function)
  * 2. Validate the response contains required fields
- * 3. Map external data to ShelfLog schema
+ * 3. Map external data to Arkiv schema
  * 4. Create item in Supabase
  *
  * API response shapes are defined in types/index.ts and match the
@@ -14,6 +14,7 @@
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { useItems } from "@/hooks/useItems"
+import { useShelfStore } from "@/store/useShelfStore"
 import type {
   MediaType,
   FullItem,
@@ -139,17 +140,28 @@ export function useCommitItem() {
 
       // 5. Persist to Supabase
       const newItem = await createItem(coreItem, extension)
-      toast.success(`Added "${newItem.title}" to library`)
+      toast.success(`Added "${newItem.title}" to shelf`)
       return newItem
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error"
+      const message = err instanceof Error
+        ? err.message
+        : typeof err === "object" && err !== null && "message" in err
+          ? String((err as Record<string, unknown>).message)
+          : String(err)
+      const code = typeof err === "object" && err !== null && "code" in err
+        ? String((err as Record<string, unknown>).code)
+        : ""
 
-      // Provide a specific toast for unique-constraint violations
-      if (message.includes("duplicate") || message.includes("unique")) {
-        toast.error("This item is already in your library.")
-      } else {
-        toast.error(`Failed to add item: ${message}`)
+      // Duplicate constraint — item already exists, return it so callers can navigate
+      if (code === "23505" || message.includes("duplicate") || message.includes("unique")) {
+        toast.info("Already in your shelf.")
+        const existing = useShelfStore.getState().items.find(
+          i => i.external_id === String(id) && i.media_type === mediaType
+        )
+        return existing ?? null
       }
+
+      toast.error(`Failed to add item: ${message}`)
       return null
     } finally {
       setCommittingId(null)

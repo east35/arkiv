@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Loader2, Download, Upload, RefreshCw, CheckCircle2, LogOut } from "lucide-react"
+import { IconLoader2, IconDownload, IconUpload, IconRefresh, IconCircleCheck, IconLogout } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import { useNavigate } from "react-router-dom"
@@ -123,12 +123,12 @@ export default function Settings() {
       ...rows.map(r => r.join(","))
     ].join("\n")
 
-    // Download
+    // IconDownload
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `shelflog_export_${new Date().toISOString().split("T")[0]}.csv`)
+    link.setAttribute("download", `arkiv_export_${new Date().toISOString().split("T")[0]}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -137,7 +137,7 @@ export default function Settings() {
   if (!preferences) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -157,7 +157,7 @@ export default function Settings() {
 
       <div className="flex-1 px-4 sm:px-6 pb-8">
         <Tabs defaultValue="account" className="max-w-3xl">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 h-auto">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="linked">Linked</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
@@ -193,7 +193,7 @@ export default function Settings() {
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Changes
                 </Button>
               </CardFooter>
@@ -237,7 +237,7 @@ export default function Settings() {
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Changes
                 </Button>
               </CardFooter>
@@ -321,7 +321,7 @@ export default function Settings() {
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Changes
                 </Button>
               </CardFooter>
@@ -334,7 +334,7 @@ export default function Settings() {
               <CardHeader>
                 <CardTitle>Data Management</CardTitle>
                 <CardDescription>
-                  Export your library or manage your data.
+                  Export your shelf or manage your data.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -342,7 +342,7 @@ export default function Settings() {
                 <div className="bg-muted/50 p-4 rounded-lg border space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Enrich Library</h4>
+                      <h4 className="font-medium">Enrich Shelf</h4>
                       <p className="text-sm text-muted-foreground">
                         Backfill missing metadata (genres, descriptions, etc.) from IGDB & Google Books.
                       </p>
@@ -355,7 +355,7 @@ export default function Settings() {
                           setSparseCount(sparse.length)
                         }}
                       >
-                        <RefreshCw className="mr-2 h-4 w-4" />
+                        <IconRefresh className="mr-2 h-4 w-4" />
                         Scan
                       </Button>
                     )}
@@ -387,7 +387,7 @@ export default function Settings() {
                   {enrichProgress.phase === "enriching" && (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <IconLoader2 className="h-4 w-4 animate-spin" />
                         <span className="text-sm">
                           Enriching… {enrichProgress.current} / {enrichProgress.total}
                         </span>
@@ -412,7 +412,7 @@ export default function Settings() {
                   {enrichReport && (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-green-600">
-                        <CheckCircle2 className="h-4 w-4" />
+                        <IconCircleCheck className="h-4 w-4" />
                         <span className="text-sm font-medium">Enrichment complete</span>
                       </div>
                       <div className="flex gap-4 text-xs text-muted-foreground">
@@ -447,26 +447,26 @@ export default function Settings() {
 
                 <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium">Import Library</h4>
+                    <h4 className="font-medium">Import Shelf</h4>
                     <p className="text-sm text-muted-foreground">
-                      Import your library from a Yamtrack CSV export.
+                      Import your shelf from a Yamtrack CSV export.
                     </p>
                   </div>
                   <Button variant="outline" onClick={() => navigate("/import")}>
-                    <Upload className="mr-2 h-4 w-4" />
+                    <IconUpload className="mr-2 h-4 w-4" />
                     Import CSV
                   </Button>
                 </div>
 
                 <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium">Export Library</h4>
+                    <h4 className="font-medium">Export Shelf</h4>
                     <p className="text-sm text-muted-foreground">
                       Download a CSV file of all your tracked items.
                     </p>
                   </div>
                   <Button variant="outline" onClick={handleExport}>
-                    <Download className="mr-2 h-4 w-4" />
+                    <IconDownload className="mr-2 h-4 w-4" />
                     Export CSV
                   </Button>
                 </div>
@@ -480,7 +480,7 @@ export default function Settings() {
           <AlertDialog>
             <AlertDialogTrigger className="w-full">
               <Button variant="destructive" className="w-full">
-                <LogOut className="mr-2 h-4 w-4" />
+                <IconLogout className="mr-2 h-4 w-4" />
                 Sign Out
               </Button>
             </AlertDialogTrigger>
@@ -488,12 +488,12 @@ export default function Settings() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Sign Out</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to sign out of ShelfLog?
+                  Are you sure you want to sign out of Arkiv?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => signOut()}>Sign Out</AlertDialogAction>
+                <AlertDialogAction onClick={() => signOut()} className="bg-destructive text-white hover:bg-destructive/90">Sign Out</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

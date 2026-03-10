@@ -55,8 +55,14 @@ export default function Login() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
-      <Card className="w-full max-w-sm">
+    <div className="relative flex items-center justify-center min-h-screen p-4 overflow-hidden">
+      <img src="/login-bg.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
+        <div className="flex justify-center">
+          <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-12 hidden dark:block" />
+          <img src="/logo/arkiv-logo-black.svg" alt="Arkiv" className="h-12 dark:hidden" />
+        </div>
+        <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
@@ -98,15 +104,16 @@ export default function Login() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline">
-              Sign up
-            </Link>
+            Don't have an account?
           </p>
+          <Link to="/register" className="w-full">
+            <Button variant="outline" className="w-full">Sign Up</Button>
+          </Link>
         </CardFooter>
       </Card>
+      </div>
     </div>
   )
 }

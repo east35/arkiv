@@ -1,6 +1,6 @@
 {
-  "name": "ShelfLog",
-  "short_name": "ShelfLog",
+  "name": "Arkiv",
+  "short_name": "Arkiv",
   "description": "Track your games and books",
   "start_url": "/",
   "display": "standalone",

@@ -1,8 +1,8 @@
 /**
- * ShelfLog — Yamtrack CSV Parser
+ * Arkiv — Yamtrack CSV Parser
  *
  * Pure functions to parse a Yamtrack export CSV and map rows
- * to ShelfLog's database schema. Only `game` and `book` rows
+ * to Arkiv's database schema. Only `game` and `book` rows
  * are imported; all other media types are skipped.
  *
  * ⚠️ Opus scope — data transformation logic.
@@ -148,7 +148,7 @@ export function parseBookProgress(progress: string): number | null {
 }
 
 /**
- * Map a Yamtrack status string to a ShelfLog Status enum value.
+ * Map a Yamtrack status string to a Arkiv Status enum value.
  * Falls back to "backlog" for unrecognised values.
  */
 export function mapStatus(yamtrackStatus: string): Status {
@@ -156,7 +156,7 @@ export function mapStatus(yamtrackStatus: string): Status {
 }
 
 /**
- * Map a Yamtrack source string to a ShelfLog Source enum value.
+ * Map a Yamtrack source string to a Arkiv Source enum value.
  * Falls back to "manual" for unrecognised sources.
  */
 export function mapSource(yamtrackSource: string): Source {
@@ -265,7 +265,7 @@ function parseCsvLine(line: string): string[] {
 // ---------------------------------------------------------------------------
 
 /**
- * Map a single YamtrackRow to ShelfLog schema.
+ * Map a single YamtrackRow to Arkiv schema.
  * Returns null if the row should be skipped (unsupported media_type).
  */
 export function mapRow(row: YamtrackRow): MappedRow | null {

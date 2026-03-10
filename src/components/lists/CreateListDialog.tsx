@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Loader2 } from "lucide-react"
+import { IconPlus, IconLoader2 } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -60,7 +60,7 @@ export function CreateListDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger className={cn(buttonVariants({ variant: "default" }))}>
-        <Plus className="mr-2 h-4 w-4" />
+        <IconPlus className="mr-2 h-4 w-4" />
         New List
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -105,7 +105,7 @@ export function CreateListDialog() {
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Create
               </Button>

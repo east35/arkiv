@@ -5,34 +5,21 @@ import { useItems } from "@/hooks/useItems"
 import { useLists } from "@/hooks/useLists"
 import { PosterItem } from "@/components/library/PosterItem"
 import { TableItem } from "@/components/library/TableItem"
+import { LibraryControls } from "@/components/library/LibraryControls"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import { ListCard } from "@/components/lists/ListCard"
 import { CreateListDialog } from "@/components/lists/CreateListDialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { LayoutGrid, Table as TableIcon, ArrowUpDown, Search, Loader2 } from "lucide-react"
+import { IconLayoutGrid, IconLoader2, IconPlus } from "@tabler/icons-react"
 import type { FullItem } from "@/types"
 
-import { Plus } from "lucide-react"
-
-type SortOption = "recent" | "title" | "progress"
-
 export default function Home() {
-  const { items, lists, viewMode, setViewMode } = useShelfStore()
+  const { items, lists, viewMode, sort } = useShelfStore()
   const { fetchItems } = useItems()
   const { fetchLists } = useLists()
   const navigate = useNavigate()
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
-  const [sortBy, setSortBy] = useState<SortOption>("recent")
-  const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(!items.length)
 
   // Fetch on mount
@@ -40,39 +27,32 @@ export default function Home() {
     Promise.all([fetchItems(), fetchLists()]).finally(() => setLoading(false))
   }, [fetchItems, fetchLists])
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      // Navigate to external search with the query? 
-      // Actually /search page doesn't take query params yet, but I can make it store state or just navigate
-      // For now, let's just navigate. The search UI state is local to SearchUI.
-      // I should probably make SearchUI read from URL query param if I want this to work seamlessly.
-      // But for MVP, let's just navigate to /search and let user type. 
-      // Wait, that's annoying. Let's assume the user wants to filter OR search new.
-      // "Global search" usually means "Find stuff".
-      // If I navigate to /search, they have to type again? No.
-      // I'll make SearchUI read from URL search params.
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
-    }
-  }
-
   // Filter for In Progress items
   const inProgressItems = items.filter(item => item.status === "in_progress")
-  
-  // Sort logic function
+
+  // Sort using the shared store sort state
   const sortItems = (itemsToSort: FullItem[]) => {
+    const dir = sort.direction === "asc" ? 1 : -1
     return [...itemsToSort].sort((a, b) => {
-      if (sortBy === "title") {
-        return a.title.localeCompare(b.title)
+      switch (sort.field) {
+        case "title": return a.title.localeCompare(b.title) * dir
+        case "rating": return ((a.user_score ?? -1) - (b.user_score ?? -1)) * dir
+        case "progress": {
+          const pA = a.media_type === "book" ? (a.book.progress ?? 0) : (a.game.progress_hours ?? 0)
+          const pB = b.media_type === "book" ? (b.book.progress ?? 0) : (b.game.progress_hours ?? 0)
+          return (pA - pB) * dir
+        }
+        case "started_at": {
+          const dA = new Date(a.started_at || 0).getTime()
+          const dB = new Date(b.started_at || 0).getTime()
+          return (dA - dB) * dir
+        }
+        default: {
+          const dA = new Date(a.updated_at || a.created_at || 0).getTime()
+          const dB = new Date(b.updated_at || b.created_at || 0).getTime()
+          return (dB - dA) * dir
+        }
       }
-      if (sortBy === "progress") {
-        const progA = a.media_type === "book" ? (a.book.progress ?? 0) : (a.game.progress_hours ?? 0)
-        const progB = b.media_type === "book" ? (b.book.progress ?? 0) : (b.game.progress_hours ?? 0)
-        return progB - progA
-      }
-      const dateA = new Date(a.updated_at || a.created_at || 0).getTime()
-      const dateB = new Date(b.updated_at || b.created_at || 0).getTime()
-      return dateB - dateA
     })
   }
 
@@ -94,64 +74,17 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-full">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight shrink-0">Home</h1>
-
-          <form onSubmit={handleSearch} className="hidden sm:block relative w-full sm:w-72">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search for new games & books..."
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
-
-          <div className="flex items-center gap-2">
-            {/* Sort Control */}
-            <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortOption)}>
-              <SelectTrigger className="w-[140px]">
-                <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">Recent</SelectItem>
-                <SelectItem value="title">Title</SelectItem>
-                <SelectItem value="progress">Progress</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* View Toggle */}
-            <div className="flex items-center border rounded-md">
-              <Button
-                variant={viewMode === "poster" ? "secondary" : "ghost"}
-                size="icon"
-                className="rounded-r-none h-9 w-9"
-                onClick={() => setViewMode("poster")}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "table" ? "secondary" : "ghost"}
-                size="icon"
-                className="rounded-l-none h-9 w-9"
-                onClick={() => setViewMode("table")}
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
+        <LibraryControls title="Home" hideSearch />
       </div>
 
       <div className="flex-1 px-4 sm:px-6 pb-8 space-y-8">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : inProgressItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
-            <LayoutGrid className="h-10 w-10 mb-4 opacity-20" />
+            <IconLayoutGrid className="h-10 w-10 mb-4 opacity-20" />
             <p className="text-lg font-medium mb-1">Nothing in progress</p>
             <p className="text-sm">Start a new adventure from your backlog!</p>
           </div>
@@ -230,7 +163,7 @@ export default function Home() {
           className="h-14 w-14 rounded-full shadow-lg"
           onClick={() => navigate("/search")}
         >
-          <Plus className="h-6 w-6" />
+          <IconPlus className="h-6 w-6" />
         </Button>
       </div>
     </div>

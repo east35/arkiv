@@ -7,8 +7,8 @@ import { TableItem } from "./TableItem"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import type { FullItem, MediaType } from "@/types"
 import { Button } from "@/components/ui/button"
-import { Plus, Loader2 } from "lucide-react"
-import { Link, useNavigate } from "react-router-dom"
+import { IconPlus, IconLoader2 } from "@tabler/icons-react"
+import { useNavigate } from "react-router-dom"
 
 interface LibraryViewProps {
   mediaType?: MediaType
@@ -46,25 +46,18 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
   return (
     <div className="flex flex-col min-h-full">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold tracking-tight capitalize">
-            {mediaType ? mediaType + "s" : "Library"}
-          </h1>
-          <Link to="/search">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
-          </Link>
-        </div>
-
-        <LibraryControls mediaType={mediaType} hideSearch={hideSearch} />
+        <LibraryControls
+          mediaType={mediaType}
+          hideSearch={hideSearch}
+          title={mediaType ? mediaType + "s" : "Shelf"}
+          addHref={`/search${mediaType ? `?type=${mediaType}` : ""}`}
+        />
       </div>
 
       <div className="flex-1 px-4 sm:px-6 pb-8">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
@@ -101,9 +94,9 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
         <Button 
           size="icon" 
           className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => navigate("/search")}
+          onClick={() => navigate(mediaType ? `/search?type=${mediaType}` : "/search")}
         >
-          <Plus className="h-6 w-6" />
+          <IconPlus className="h-6 w-6" />
         </Button>
       </div>
     </div>

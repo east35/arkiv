@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { Star, Gamepad2, BookOpen } from "lucide-react"
+import { IconStar, IconDeviceGamepad2, IconBook } from "@tabler/icons-react"
 import type { TopRatedItem } from "@/hooks/useStatistics"
 
 interface TopRatedListProps {
@@ -37,14 +37,14 @@ export function TopRatedList({ items }: TopRatedListProps) {
               {item.title}
             </h4>
             <div className="flex items-center text-xs text-muted-foreground">
-              {item.media_type === "game" ? <Gamepad2 className="h-3 w-3 mr-1" /> : <BookOpen className="h-3 w-3 mr-1" />}
+              {item.media_type === "game" ? <IconDeviceGamepad2 className="h-3 w-3 mr-1" /> : <IconBook className="h-3 w-3 mr-1" />}
               <span className="capitalize">{item.media_type}</span>
             </div>
           </div>
           
           <div className="flex items-center gap-1 font-bold text-lg">
-            <span className="text-primary">{item.user_score}</span>
-            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            <span className="font-medium">{item.user_score}</span>
+            <IconStar className="h-4 w-4 text-yellow-500 fill-yellow-500" />
           </div>
         </Link>
       ))}

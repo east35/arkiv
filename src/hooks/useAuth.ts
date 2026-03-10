@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Auth Hook
+ * Arkiv — Auth Hook
  *
  * Wraps Supabase Auth for sign-up, sign-in, sign-out, and session listening.
  * Auth state is kept in a simple Zustand slice alongside the main store.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { subDays, subYears, format } from "date-fns"
-import { Calendar, Trophy, Star, Zap, Loader2 } from "lucide-react"
+import { IconCalendar, IconTrophy, IconStar, IconBolt, IconLoader2 } from "@tabler/icons-react"
 
 import { useStatistics } from "@/hooks/useStatistics"
 import { useShelfStore } from "@/store/useShelfStore"
@@ -61,7 +61,7 @@ export default function Statistics() {
   if (!stats) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -71,9 +71,9 @@ export default function Statistics() {
       <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
         <h1 className="text-3xl font-bold tracking-tight mb-6">Statistics</h1>
         <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
-          <Trophy className="h-10 w-10 mb-4 opacity-20" />
+          <IconTrophy className="h-10 w-10 mb-4 opacity-20" />
           <p className="text-lg font-medium mb-1">No stats available</p>
-          <p className="text-sm">Add items to your library to see your statistics.</p>
+          <p className="text-sm">Add items to your shelf to see your statistics.</p>
         </div>
       </div>
     )
@@ -91,7 +91,7 @@ export default function Statistics() {
         
         <Select value={range} onValueChange={(v) => setRange(v as DateRangeOption)}>
           <SelectTrigger className="w-[180px]">
-            <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+            <IconCalendar className="mr-2 h-4 w-4 text-muted-foreground" />
             <SelectValue placeholder="Date Range" />
           </SelectTrigger>
           <SelectContent>
@@ -110,25 +110,25 @@ export default function Statistics() {
           <StatCard
             title="Completed"
             value={stats.completedCount}
-            icon={Trophy}
+            icon={IconTrophy}
             description="Total items finished"
           />
           <StatCard
             title="Avg Score"
             value={stats.averageScore ?? "-"}
-            icon={Star}
+            icon={IconStar}
             description="Across all rated items"
           />
           <StatCard
             title="Current Streak"
             value={stats.currentStreak}
-            icon={Zap}
+            icon={IconBolt}
             description="Consecutive days active"
           />
           <StatCard
             title="Most Active"
             value={stats.mostActiveDate?.count ?? "-"}
-            icon={Calendar}
+            icon={IconCalendar}
             description={stats.mostActiveDate 
               ? format(new Date(stats.mostActiveDate.date), "MMM d, yyyy")
               : "No activity yet"

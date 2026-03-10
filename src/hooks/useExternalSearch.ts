@@ -1,5 +1,5 @@
 /**
- * ShelfLog — External Search Hook
+ * Arkiv — External Search Hook
  *
  * Handles searching IGDB and Google Books via Supabase Edge Functions.
  * Returns unified search results for the UI.

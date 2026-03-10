@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Metadata Enrichment Hook
+ * Arkiv — Metadata Enrichment Hook
  *
  * One-time bulk backfill for imported items missing metadata.
  * Parses external_id to determine the source API, fetches full

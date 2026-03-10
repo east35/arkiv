@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Yamtrack Import Hook
+ * Arkiv — Yamtrack Import Hook
  *
  * Orchestrates CSV parsing, deduplication, and batch insertion
  * of Yamtrack export data into Supabase. Inserts are done in

@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Core Type Definitions
+ * Arkiv — Core Type Definitions
  *
  * These types mirror the Supabase schema and are used throughout
  * the frontend for type-safe data handling.
@@ -117,6 +117,8 @@ export interface List {
   cover_item_id: string | null
   created_at: string
   updated_at: string
+  item_count?: number
+  first_item_id?: string | null
 }
 
 /** Junction row: item membership in a list */

@@ -1,11 +1,12 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { format } from "date-fns"
-import { MoreHorizontal, PlayCircle, CheckCircle2, PauseCircle, XCircle, Clock, ListPlus, Star } from "lucide-react"
+import { IconDots, IconPlaylistAdd, IconStar } from "@tabler/icons-react"
 import type { FullItem, Status } from "@/types"
 import { getStatusDate } from "@/store/useShelfStore"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { statusIcons } from "@/components/status-icons"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,13 +22,6 @@ interface TableItemProps {
   onEdit: (item: FullItem) => void
 }
 
-const statusIcons: Record<Status, React.ReactNode> = {
-  backlog: <Clock className="h-3 w-3" />,
-  in_progress: <PlayCircle className="h-3 w-3" />,
-  completed: <CheckCircle2 className="h-3 w-3" />,
-  paused: <PauseCircle className="h-3 w-3" />,
-  dropped: <XCircle className="h-3 w-3" />,
-}
 
 const statusColors: Record<Status, string> = {
   backlog: "bg-slate-500/10 text-slate-500 hover:bg-slate-500/20 border-slate-500/20",
@@ -77,8 +71,8 @@ export function TableItem({ item, onEdit }: TableItemProps) {
           <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
             {item.user_score ? (
               <>
-                <span className="text-primary">{item.user_score}</span>
-                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                <span className="font-medium">{item.user_score}</span>
+                <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
               </>
             ) : (
               <span className="text-muted-foreground/50">-</span>
@@ -99,8 +93,13 @@ export function TableItem({ item, onEdit }: TableItemProps) {
           </div>
 
           {/* Date */}
-          <div className="w-24 text-right text-xs text-muted-foreground hidden lg:block">
-            {statusDate ? format(new Date(statusDate), "MMM d, yyyy") : "-"}
+          <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
+            {statusDate ? (
+              <>
+                {statusIcons[item.status]}
+                {format(new Date(statusDate), "MMM d, yyyy")}
+              </>
+            ) : "-"}
           </div>
         </div>
 
@@ -129,8 +128,8 @@ export function TableItem({ item, onEdit }: TableItemProps) {
           <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
             {item.user_score ? (
               <>
-                <span className="text-primary">{item.user_score}</span>
-                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                <span className="font-medium">{item.user_score}</span>
+                <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
               </>
             ) : (
               <span className="text-muted-foreground/50">-</span>
@@ -151,8 +150,13 @@ export function TableItem({ item, onEdit }: TableItemProps) {
           </div>
 
           {/* Date */}
-          <div className="w-24 text-right text-xs text-muted-foreground hidden lg:block">
-            {statusDate ? format(new Date(statusDate), "MMM d, yyyy") : "-"}
+          <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
+            {statusDate ? (
+              <>
+                {statusIcons[item.status]}
+                {format(new Date(statusDate), "MMM d, yyyy")}
+              </>
+            ) : "-"}
           </div>
         </Link>
 
@@ -160,14 +164,14 @@ export function TableItem({ item, onEdit }: TableItemProps) {
         <div className="w-8 flex justify-end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8")} aria-label="Item actions">
-              <MoreHorizontal className="h-4 w-4" />
+              <IconDots className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(item)}>
                 Edit Status
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
-                <ListPlus className="h-4 w-4 mr-2" />
+                <IconPlaylistAdd className="h-4 w-4 mr-2" />
                 Add to List...
               </DropdownMenuItem>
               <DropdownMenuSeparator />

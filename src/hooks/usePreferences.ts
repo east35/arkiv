@@ -1,5 +1,5 @@
 /**
- * ShelfLog — User Preferences Hook
+ * Arkiv — User Preferences Hook
  *
  * Fetches and updates the current user's preference row.
  * The row is auto-created on sign-up via database trigger.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Check, Loader2 } from "lucide-react"
+import { IconCheck, IconLoader2 } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import {
@@ -87,7 +87,7 @@ export function ManageListsDialog({ itemId, open, onOpenChange }: ManageListsDia
         <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto py-2">
           {loading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : lists.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-4">
@@ -110,9 +110,9 @@ export function ManageListsDialog({ itemId, open, onOpenChange }: ManageListsDia
                 >
                   <span className="font-medium truncate">{list.name}</span>
                   {isToggling ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   ) : isMember && (
-                    <Check className="h-4 w-4 text-primary" />
+                    <IconCheck className="h-4 w-4 text-primary" />
                   )}
                 </button>
               )

@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import type { LucideIcon } from "lucide-react"
+import type { Icon } from "@tabler/icons-react"
 
 interface StatCardProps {
   title: string
   value: string | number
-  icon: LucideIcon
+  icon: Icon
   description?: string
 }
 

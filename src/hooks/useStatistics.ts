@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Statistics Hook
+ * Arkiv — Statistics Hook
  *
  * Computes aggregated statistics from the user's library and activity log.
  * All computation is client-side over data already in the Zustand store

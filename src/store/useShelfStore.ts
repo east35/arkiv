@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Global Store (Zustand)
+ * Arkiv — Global Store (Zustand)
  *
  * Central state management for items, filters, sort, view mode,
  * and local fuzzy search via Fuse.js.

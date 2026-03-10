@@ -1,5 +1,5 @@
 /**
- * ShelfLog — Item Data Hooks
+ * Arkiv — Item Data Hooks
  *
  * Supabase CRUD operations for items (with book/game extensions).
  * All queries are automatically user-scoped via RLS.

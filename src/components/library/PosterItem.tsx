@@ -1,11 +1,12 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { format } from "date-fns"
-import { MoreHorizontal, PlayCircle, CheckCircle2, PauseCircle, XCircle, Clock, BookOpen, Gamepad2, ListPlus, Star } from "lucide-react"
+import { IconDots, IconBook, IconDeviceGamepad2, IconPlaylistAdd, IconStar } from "@tabler/icons-react"
 import type { FullItem, Status } from "@/types"
 import { getStatusDate } from "@/store/useShelfStore"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { statusIcons } from "@/components/status-icons"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,13 +23,6 @@ interface PosterItemProps {
   onDelete?: (item: FullItem) => void
 }
 
-const statusIcons: Record<Status, React.ReactNode> = {
-  backlog: <Clock className="h-3 w-3" />,
-  in_progress: <PlayCircle className="h-3 w-3" />,
-  completed: <CheckCircle2 className="h-3 w-3" />,
-  paused: <PauseCircle className="h-3 w-3" />,
-  dropped: <XCircle className="h-3 w-3" />,
-}
 
 const statusColors: Record<Status, string> = {
   backlog: "bg-slate-500 text-white border-slate-600",
@@ -42,6 +36,12 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
   const [isManageListsOpen, setIsManageListsOpen] = useState(false)
   const statusDate = getStatusDate(item)
   const isGame = item.media_type === "game"
+
+  const progressLabel = item.status === "completed"
+    ? isGame
+      ? item.game.progress_hours > 0 ? `${item.game.progress_hours} Hours` : null
+      : item.book.progress ? `${item.book.progress} Pages` : null
+    : null
   const coverUrl = item.cover_url || (isGame 
     ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" 
     : "https://books.google.com/googlebooks/images/no_cover_thumb.gif")
@@ -69,6 +69,15 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
                 {statusIcons[item.status]}
               </Badge>
             </div>
+
+            {/* Completed Progress (Top Left) */}
+            {progressLabel && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="outline" className="bg-black/70 text-white border-0 text-[10px] h-5 px-1.5">
+                  {progressLabel}
+                </Badge>
+              </div>
+            )}
           </div>
 
           {/* Content */}
@@ -76,11 +85,11 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
             <h3 className="font-semibold leading-tight line-clamp-1" title={item.title}>
               {item.title}
             </h3>
-            
+
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                {isGame ? <Gamepad2 className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
-                {isGame 
+                {isGame ? <IconDeviceGamepad2 className="h-3 w-3" /> : <IconBook className="h-3 w-3" />}
+                {isGame
                   ? (item.game.developer || "Unknown Dev")
                   : (item.book.author || "Unknown Author")
                 }
@@ -89,24 +98,27 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
 
             {/* Progress Bar / Score */}
             <div className="mt-auto pt-2 flex items-center justify-between gap-2 text-xs">
-               <div className="flex items-center gap-1 font-medium">
-                  {item.user_score ? (
-                    <>
-                      <span className="text-primary">{item.user_score}</span>
-                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                    </>
-                  ) : (
-                    <span className="text-muted-foreground/50">-</span>
-                  )}
+               <div className="text-muted-foreground truncate flex items-center gap-1.5">
+                 {statusDate ? (
+                   <>
+                     {statusIcons[item.status]}
+                     {format(new Date(statusDate), "MMM d, yyyy")}
+                   </>
+                 ) : ""}
                </div>
-               
-               <div className="text-muted-foreground truncate">
-                 {statusDate ? format(new Date(statusDate), "MMM d, yyyy") : ""}
+
+               <div className="flex items-center gap-1 font-medium">
+                  {item.user_score && (
+                    <>
+                      <span className="font-medium">{item.user_score}</span>
+                      <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                    </>
+                  )}
                </div>
             </div>
           </div>
         </div>
-        
+
         <Link to={`/item/${item.id}`} className="hidden md:block h-full">
           {/* Cover Image */}
           <div className="aspect-[2/3] w-full overflow-hidden bg-muted relative">
@@ -116,13 +128,22 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
-            
+
             {/* Status Badge (Top Right) */}
             <div className="absolute top-2 right-2">
               <Badge variant="outline" className={cn(statusColors[item.status])}>
                 {statusIcons[item.status]}
               </Badge>
             </div>
+
+            {/* Completed Progress (Top Left) */}
+            {progressLabel && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="outline" className="bg-black/70 text-white border-0 text-[10px] h-5 px-1.5">
+                  {progressLabel}
+                </Badge>
+              </div>
+            )}
           </div>
 
           {/* Content */}
@@ -130,11 +151,11 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
             <h3 className="font-semibold leading-tight line-clamp-1" title={item.title}>
               {item.title}
             </h3>
-            
+
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                {isGame ? <Gamepad2 className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
-                {isGame 
+                {isGame ? <IconDeviceGamepad2 className="h-3 w-3" /> : <IconBook className="h-3 w-3" />}
+                {isGame
                   ? (item.game.developer || "Unknown Dev")
                   : (item.book.author || "Unknown Author")
                 }
@@ -143,36 +164,38 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
 
             {/* Progress Bar / Score */}
             <div className="mt-auto pt-2 flex items-center justify-between gap-2 text-xs">
-               <div className="flex items-center gap-1 font-medium">
-                  {item.user_score ? (
-                    <>
-                      <span className="text-primary">{item.user_score}</span>
-                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                    </>
-                  ) : (
-                    <span className="text-muted-foreground/50">-</span>
-                  )}
+               <div className="text-muted-foreground truncate flex items-center gap-1.5">
+                 {statusDate ? (
+                   <>
+                     {statusIcons[item.status]}
+                     {format(new Date(statusDate), "MMM d, yyyy")}
+                   </>
+                 ) : ""}
                </div>
-               
-               <div className="text-muted-foreground truncate">
-                 {statusDate ? format(new Date(statusDate), "MMM d, yyyy") : ""}
+               <div className="flex items-center gap-1 font-medium">
+                  {item.user_score && (
+                    <>
+                      <span className="font-medium">{item.user_score}</span>
+                      <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                    </>
+                  )}
                </div>
             </div>
           </div>
         </Link>
 
-        {/* Quick Actions Menu (Top Left - visible on hover, focus, or touch) */}
+        {/* Quick Actions IconMenu2 (Top Left - visible on hover, focus, or touch) */}
         <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8 text-white hover:text-white hover:bg-black/20")} aria-label="Item actions">
-              <MoreHorizontal className="h-4 w-4" />
+              <IconDots className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(item)}>
                 Edit Status
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
-                <ListPlus className="h-4 w-4 mr-2" />
+                <IconPlaylistAdd className="h-4 w-4 mr-2" />
                 Add to List...
               </DropdownMenuItem>
               <DropdownMenuSeparator />

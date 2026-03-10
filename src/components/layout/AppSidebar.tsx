@@ -14,94 +14,163 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
-  LayoutGrid,
-  Gamepad2,
-  BookOpen,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-} from "lucide-react"
+  IconLayoutGrid, IconLayoutGridFilled,
+  IconDeviceGamepad2, IconDeviceGamepad2Filled,
+  IconBook, IconBookFilled,
+  IconChartPie2, IconChartPie2Filled,
+  IconSettings, IconSettingsFilled,
+  IconLogout,
+  IconMenu2,
+  IconChevronLeft,
+  IconChevronRight,
+} from "@tabler/icons-react"
 import { useAuth } from "@/hooks/useAuth"
 
 interface NavItemProps {
   to: string
   icon: React.ComponentType<{ className?: string }>
+  iconFilled: React.ComponentType<{ className?: string }>
   label: string
   active?: boolean
+  collapsed?: boolean
   onClick?: () => void
 }
 
-function NavItem({ to, icon: Icon, label, active, onClick }: NavItemProps) {
+function NavItem({ to, icon: Icon, iconFilled: IconFilled, label, active, collapsed, onClick }: NavItemProps) {
+  const IconComponent = active ? IconFilled : Icon
   return (
-    <Link to={to} onClick={onClick}>
+    <Link to={to} onClick={onClick} title={collapsed ? label : undefined}>
       <Button
         variant={active ? "secondary" : "ghost"}
-        className={cn("w-full justify-start", active && "bg-secondary")}
+        className={cn(
+          "w-full",
+          collapsed ? "justify-center px-0" : "justify-start",
+          active && "bg-secondary"
+        )}
       >
-        <Icon className="mr-2 h-4 w-4" />
-        {label}
+        <IconComponent className={cn("h-4 w-4", !collapsed && "mr-2")} />
+        {!collapsed && label}
       </Button>
     </Link>
   )
 }
 
-export function AppSidebar({ className, onNavClick }: { className?: string, onNavClick?: () => void }) {
+interface AppSidebarProps {
+  className?: string
+  onNavClick?: () => void
+  collapsed?: boolean
+  onCollapse?: () => void
+}
+
+export function AppSidebar({ className, onNavClick, collapsed = false, onCollapse }: AppSidebarProps) {
   const location = useLocation()
   const { signOut } = useAuth()
 
   const mainItems = [
-    { to: "/", icon: LayoutGrid, label: "Home" },
-    { to: "/books", icon: BookOpen, label: "Books" },
-    { to: "/games", icon: Gamepad2, label: "Games" },
-    { to: "/statistics", icon: BarChart3, label: "Statistics" },
+    { to: "/",           icon: IconLayoutGrid,     iconFilled: IconLayoutGridFilled,     label: "Home" },
+    { to: "/books",      icon: IconBook,            iconFilled: IconBookFilled,            label: "Books" },
+    { to: "/games",      icon: IconDeviceGamepad2,  iconFilled: IconDeviceGamepad2Filled,  label: "Games" },
+    { to: "/statistics", icon: IconChartPie2,       iconFilled: IconChartPie2Filled,       label: "Statistics" },
   ]
 
   return (
     <div className={cn("h-full border-r bg-background", className)}>
-      <div className="space-y-4 py-4 h-full flex flex-col">
-        <div className="px-3 py-2">
-          <div className="mb-2 px-4">
-            <img src="/logo/shelf-log_white.svg" alt="ShelfLog" className="h-8 hidden dark:block" />
-            <img src="/logo/shelf-log_black.svg" alt="ShelfLog" className="h-8 dark:hidden" />
-          </div>
-          <div className="space-y-1">
-            {mainItems.map((item) => (
-              <NavItem
-                key={item.to}
-                to={item.to}
-                icon={item.icon}
-                label={item.label}
-                active={location.pathname === item.to}
-                onClick={onNavClick}
-              />
-            ))}
-          </div>
+      <div className="py-4 h-full flex flex-col">
+
+        {/* Logo area */}
+        <div className={cn("mb-4", collapsed ? "px-1 flex justify-center" : "px-7")}>
+          {collapsed ? (
+            <>
+              <img src="/logo/arkiv-icon-white.svg" alt="Arkiv" className="h-7 hidden dark:block" />
+              <img src="/logo/arkiv-icon-black.svg" alt="Arkiv" className="h-7 dark:hidden" />
+            </>
+          ) : (
+            <>
+              <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-8 hidden dark:block" />
+              <img src="/logo/arkiv-logo-black.svg" alt="Arkiv" className="h-8 dark:hidden" />
+            </>
+          )}
         </div>
-        <div className="mt-auto px-3 py-2 space-y-1">
+
+        {/* Main nav */}
+        <div className={cn("space-y-1", collapsed ? "px-1" : "px-3")}>
+          {mainItems.map((item) => (
+            <NavItem
+              key={item.to}
+              to={item.to}
+              icon={item.icon}
+              iconFilled={item.iconFilled}
+              label={item.label}
+              active={location.pathname === item.to}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            />
+          ))}
+        </div>
+
+        {/* Bottom: collapse + settings + sign out */}
+        <div className={cn("mt-auto space-y-1", collapsed ? "px-1" : "px-3")}>
+
+          {/* Collapse toggle — above Settings */}
+          {onCollapse && (
+            <div className="hidden md:block">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full text-muted-foreground hover:text-foreground",
+                  collapsed ? "justify-center px-0" : "justify-start"
+                )}
+                onClick={onCollapse}
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {collapsed ? (
+                  <IconChevronRight className="h-4 w-4" />
+                ) : (
+                  <>
+                    <IconChevronLeft className="h-4 w-4 mr-2" />
+                    Collapse
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
           <NavItem
             to="/settings"
-            icon={Settings}
+            icon={IconSettings}
+            iconFilled={IconSettingsFilled}
             label="Settings"
             active={location.pathname === "/settings"}
+            collapsed={collapsed}
             onClick={onNavClick}
           />
+
+          {/* Border between Settings and Sign Out */}
+          <div className="border-t my-1" />
+
           <div className="hidden md:block">
             <AlertDialog>
-              <AlertDialogTrigger className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-muted-foreground hover:text-foreground")}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
+              <AlertDialogTrigger
+                className={cn(
+                  buttonVariants({ variant: "ghost" }),
+                  "w-full text-muted-foreground hover:text-foreground",
+                  collapsed ? "justify-center px-0" : "justify-start"
+                )}
+                title={collapsed ? "Sign Out" : undefined}
+              >
+                <IconLogout className={cn("h-4 w-4", !collapsed && "mr-2")} />
+                {!collapsed && "Sign Out"}
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Sign Out</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to sign out of ShelfLog?
+                    Are you sure you want to sign out of Arkiv?
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => signOut()}>Sign Out</AlertDialogAction>
+                  <AlertDialogAction onClick={() => signOut()} className="bg-destructive text-white hover:bg-destructive/90">Sign Out</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -116,7 +185,7 @@ export function MobileNav() {
   return (
     <Sheet>
       <SheetTrigger className="md:hidden inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 focus-visible:ring-4 focus-visible:outline-1 aria-invalid:focus-visible:ring-0 hover:bg-accent hover:text-accent-foreground h-9 w-9">
-        <Menu className="h-5 w-5" />
+        <IconMenu2 className="h-5 w-5" />
         <span className="sr-only">Toggle menu</span>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-64">
