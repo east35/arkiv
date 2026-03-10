@@ -9,16 +9,11 @@ import type { FullItem, MediaType } from "@/types"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/ui/empty-state"
 import { LoadingState } from "@/components/ui/loading-state"
-import { IconPlus, IconDeviceGamepad2, IconBook, IconSearch } from "@tabler/icons-react"
+import { IconPlus, IconSearch } from "@tabler/icons-react"
 import { useNavigate, useOutletContext } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { SegmentedControl } from "@/components/ui/segmented-control"
 import { MobileFab } from "@/components/ui/mobile-fab"
-
-const collectionTabs: { type: MediaType; label: string; icon: React.ComponentType<{ className?: string }>; href: string }[] = [
-  { type: "game", label: "Games", icon: IconDeviceGamepad2, href: "/games" },
-  { type: "book", label: "Books", icon: IconBook,           href: "/books" },
-]
+import { CollectionTypeSwitcher } from "./CollectionTypeSwitcher"
 
 interface LibraryViewProps {
   mediaType?: MediaType
@@ -129,23 +124,7 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
           )}
           style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
-          <SegmentedControl
-            value={mediaType}
-            onValueChange={(value) => {
-              const next = collectionTabs.find((tab) => tab.type === value)
-              if (next) navigate(next.href)
-            }}
-            items={collectionTabs.map((tab) => ({
-              value: tab.type,
-              label: tab.label,
-              icon: tab.icon,
-              ariaLabel: tab.label,
-            }))}
-            fullWidth
-            className="w-full"
-            listClassName="rounded-full bg-card shadow-lg"
-            triggerClassName="py-2.5"
-          />
+          <CollectionTypeSwitcher value={mediaType} className="w-full" />
         </div>
       )}
     </div>
