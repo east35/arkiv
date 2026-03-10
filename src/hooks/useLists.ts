@@ -32,6 +32,7 @@ export function useLists() {
         ...row,
         item_count: members.length,
         first_item_id: sorted[0]?.item_id ?? null,
+        preview_item_ids: sorted.slice(0, 4).map(m => m.item_id),
       }
     }) as List[]
 

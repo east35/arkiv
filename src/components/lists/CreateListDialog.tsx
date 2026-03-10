@@ -33,8 +33,16 @@ const formSchema = z.object({
   description: z.string().max(200, "Description is too long").optional(),
 })
 
-export function CreateListDialog() {
-  const [open, setOpen] = useState(false)
+interface CreateListDialogProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  onCreated?: (listId: string) => void
+}
+
+export function CreateListDialog({ open: controlledOpen, onOpenChange, onCreated }: CreateListDialogProps = {}) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = controlledOpen ?? internalOpen
+  const setOpen = onOpenChange ?? setInternalOpen
   const { createList } = useLists()
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,10 +55,11 @@ export function CreateListDialog() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await createList(values.name, values.description)
+      const list = await createList(values.name, values.description)
       toast.success("List created")
       setOpen(false)
       form.reset()
+      onCreated?.(list.id)
     } catch (error) {
       console.error(error)
       toast.error("Failed to create list")
@@ -59,10 +68,12 @@ export function CreateListDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className={cn(buttonVariants({ variant: "default" }))}>
-        <IconPlus className="mr-2 h-4 w-4" />
-        New List
-      </DialogTrigger>
+      {controlledOpen === undefined && (
+        <DialogTrigger className={cn(buttonVariants({ variant: "default" }))}>
+          <IconPlus className="mr-2 h-4 w-4" />
+          New List
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create List</DialogTitle>

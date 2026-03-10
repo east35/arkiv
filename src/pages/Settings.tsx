@@ -157,7 +157,7 @@ export default function Settings() {
 
       <div className="flex-1 px-4 sm:px-6 pb-8">
         <Tabs defaultValue="account" className="max-w-3xl">
-          <TabsList className="grid w-full grid-cols-4 mb-4">
+          <TabsList className="w-full mb-4">
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="linked">Linked</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
@@ -271,21 +271,7 @@ export default function Settings() {
                   </Select>
                 </div>
 
-                <div className="flex items-center justify-between space-x-2">
-                  <Label htmlFor="hover-overlay" className="flex flex-col space-y-1">
-                    <span>Hide Hover Overlay</span>
-                    <span className="font-normal text-xs text-muted-foreground">
-                      Don't show quick actions on hover in grid view.
-                    </span>
-                  </Label>
-                  <Switch 
-                    id="hover-overlay" 
-                    checked={formData.hide_hover_overlay || false}
-                    onCheckedChange={(checked) => setFormData({ ...formData, hide_hover_overlay: checked })}
-                  />
-                </div>
-                
-                <div className="space-y-2">
+<div className="space-y-2">
                   <Label htmlFor="date-format">Date Format</Label>
                   <Select 
                     value={formData.date_format || "iso"} 

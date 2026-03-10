@@ -1,11 +1,17 @@
 import { useState } from "react"
-import { Outlet } from "react-router-dom"
+import { Outlet, useLocation } from "react-router-dom"
 import { AppSidebar } from "./AppSidebar"
 import { BottomNav } from "./BottomNav"
 import { ScrollToTop } from "./ScrollToTop"
 import { cn } from "@/lib/utils"
 
+// Routes where the mobile bottom nav should be hidden
+const hideNavPattern = /^\/(lists\/|item\/)/
+
 export default function AppLayout() {
+  const location = useLocation()
+  const hideNav = hideNavPattern.test(location.pathname)
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem("sidebar-collapsed") === "true"
   })
@@ -31,13 +37,11 @@ export default function AppLayout() {
 
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 overflow-hidden">
-{/* Content */}
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0 pt-safe">
+        <main className={cn("flex-1 overflow-y-auto pt-safe md:pb-0", hideNav ? "pb-0" : "pb-16")}>
           <Outlet />
         </main>
 
-        {/* Mobile Bottom Nav */}
-        <BottomNav />
+        {!hideNav && <BottomNav />}
       </div>
     </div>
   )

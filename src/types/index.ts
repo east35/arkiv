@@ -119,6 +119,7 @@ export interface List {
   updated_at: string
   item_count?: number
   first_item_id?: string | null
+  preview_item_ids?: string[]
 }
 
 /** Junction row: item membership in a list */

@@ -160,7 +160,7 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
             value={sort.field}
             onValueChange={(value) => setSort({ field: value as SortField })}
           >
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-[150px] h-9">
               <IconArrowsUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
               <span className="flex flex-1 text-left text-sm">{sortLabels[sort.field] ?? "Title"}</span>
             </SelectTrigger>
@@ -182,7 +182,7 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
             <IconArrowsUpDown className={`h-4 w-4 transition-transform ${sort.direction === "desc" ? "rotate-180" : ""}`} />
           </Button>
 
-          <div className="w-px h-8 bg-border mx-1" />
+          <div className="w-px h-9 bg-border mx-1" />
 
           {addHref && (
             <Link to={addHref}>
@@ -195,12 +195,12 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
         </div>
 
         {/* View Toggle — always visible, rounded-[7px] active/hover states */}
-        <div className="flex items-center border rounded-[10px] p-0.5 gap-0.5">
+        <div className="flex items-center border rounded-[10px] p-0.5 gap-0.5 h-11">
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              "rounded-[7px] h-8 w-8",
+              "rounded-[7px] h-9 w-9",
               viewMode === "poster"
                 ? "bg-foreground text-background hover:bg-foreground hover:text-background"
                 : "hover:bg-muted hover:rounded-[7px]"
@@ -215,7 +215,7 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
             variant="ghost"
             size="icon"
             className={cn(
-              "rounded-[7px] h-8 w-8",
+              "rounded-[7px] h-9 w-9",
               viewMode === "table"
                 ? "bg-foreground text-background hover:bg-foreground hover:text-background"
                 : "hover:bg-muted hover:rounded-[7px]"

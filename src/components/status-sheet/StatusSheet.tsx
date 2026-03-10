@@ -500,22 +500,20 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
         <SheetHeader className="text-left mb-4 flex-shrink-0 px-0 pt-4">
           <div className="flex items-center justify-between gap-2">
             <SheetTitle className="truncate">{item.title}</SheetTitle>
-            <div className="flex items-center gap-2 shrink-0">
-              <Link
-                to={`/item/${item.id}`}
-                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-                onClick={() => onOpenChange(false)}
-              >
-                View Details
-              </Link>
-              <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
-                <IconX className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
+              <IconX className="h-4 w-4" />
+            </Button>
           </div>
           <SheetDescription>
             {item.media_type === "game" ? "Game" : "Book"} details and progress
           </SheetDescription>
+          <Link
+            to={`/item/${item.id}`}
+            className={cn(buttonVariants({ variant: "outline" }), "w-full mt-1")}
+            onClick={() => onOpenChange(false)}
+          >
+            View Details
+          </Link>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
           {Content}

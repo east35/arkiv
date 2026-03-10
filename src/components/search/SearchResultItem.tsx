@@ -1,11 +1,7 @@
 import { useState } from "react"
-import { IconLoader2, IconPlus, IconCalendar, IconUser, IconDeviceGamepad2, IconX } from "@tabler/icons-react"
+import { IconLoader2, IconPlus, IconCalendar, IconUser, IconDeviceGamepad2, IconArrowLeft } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet"
-import { useMediaQuery } from "@/hooks/useMediaQuery"
+import { Badge } from "@/components/ui/badge"
 import type { SearchResult } from "@/hooks/useExternalSearch"
 
 interface SearchResultItemProps {
@@ -16,7 +12,6 @@ interface SearchResultItemProps {
 
 export function SearchResultItem({ result, onAdd, isAdding }: SearchResultItemProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const isDesktop = useMediaQuery("(min-width: 768px)")
   const isGame = result.mediaType === "game"
 
   const coverUrl = result.cover || (isGame
@@ -25,7 +20,7 @@ export function SearchResultItem({ result, onAdd, isAdding }: SearchResultItemPr
 
   const largeCoverUrl = result.cover && isGame
     ? result.cover.replace("t_cover_small", "t_cover_big")
-    : coverUrl
+    : result.cover || coverUrl
 
   const SubtitleIcon = isGame ? IconDeviceGamepad2 : IconUser
 
@@ -33,24 +28,15 @@ export function SearchResultItem({ result, onAdd, isAdding }: SearchResultItemPr
     <>
       {/* Result row */}
       <div
-        className={`flex items-center gap-4 p-3 rounded-lg border bg-card text-card-foreground shadow-sm transition-colors hover:bg-accent/50 ${!isDesktop ? "cursor-pointer" : ""}`}
-        onClick={() => !isDesktop && setIsDetailOpen(true)}
+        className="flex items-center gap-4 p-3 rounded-lg border bg-card text-card-foreground shadow-sm transition-colors hover:bg-accent/50 cursor-pointer"
+        onClick={() => setIsDetailOpen(true)}
       >
-        {/* Cover */}
         <div className="h-16 w-12 shrink-0 overflow-hidden rounded bg-muted">
-          <img
-            src={coverUrl}
-            alt={result.title}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
+          <img src={coverUrl} alt={result.title} className="h-full w-full object-cover" loading="lazy" />
         </div>
 
-        {/* Details */}
         <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <h3 className="font-semibold leading-tight line-clamp-1" title={result.title}>
-            {result.title}
-          </h3>
+          <h3 className="font-semibold leading-tight line-clamp-1">{result.title}</h3>
           <div className="flex items-center text-xs text-muted-foreground gap-3">
             <span className="flex items-center gap-1 truncate max-w-[150px]">
               <SubtitleIcon className="h-3 w-3" />
@@ -65,92 +51,75 @@ export function SearchResultItem({ result, onAdd, isAdding }: SearchResultItemPr
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-          <Button
-            size="sm"
-            variant="outline"
-            className="hidden md:flex"
-            onClick={() => setIsDetailOpen(true)}
-          >
-            Details
-          </Button>
-
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={isAdding}
-            onClick={() => onAdd(result)}
-          >
-            {isAdding ? (
-              <IconLoader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <IconPlus className="h-4 w-4 mr-1" />
-                Add
-              </>
-            )}
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" variant="secondary" disabled={isAdding} onClick={() => onAdd(result)}>
+            {isAdding ? <IconLoader2 className="h-4 w-4 animate-spin" /> : <><IconPlus className="h-4 w-4 mr-1" />Add</>}
           </Button>
         </div>
       </div>
 
-      {/* Detail Sheet */}
-      <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <SheetContent side="bottom" className="rounded-t-xl p-4 pb-8" showCloseButton={false}>
-          <div className="flex gap-4 items-start">
-            {/* Cover */}
-            <div className="w-28 shrink-0 rounded overflow-hidden bg-muted aspect-[2/3]">
-              <img
-                src={largeCoverUrl}
-                alt={result.title}
-                className="h-full w-full object-cover"
-              />
-            </div>
+      {/* Full-screen detail overlay */}
+      {isDetailOpen && (
+        <div className="fixed inset-0 z-[70] bg-background flex flex-col">
+          {/* Header */}
+          <div className="flex items-center px-4 py-4 border-b bg-background/95 backdrop-blur shrink-0">
+            <button
+              onClick={() => setIsDetailOpen(false)}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <IconArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+          </div>
 
-            {/* Details — pr-8 keeps text clear of the IconX we place at top-right */}
-            <div className="flex-1 min-w-0 flex flex-col gap-3 pr-8">
-              <h2 className="font-bold text-lg leading-tight">{result.title}</h2>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-6">
+              {/* Cover + meta */}
+              <div className="flex gap-6 items-start">
+                <div className="w-32 sm:w-44 shrink-0 rounded-lg overflow-hidden border shadow-sm aspect-[2/3] bg-muted">
+                  <img src={largeCoverUrl} alt={result.title} className="h-full w-full object-cover" />
+                </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <SubtitleIcon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{result.subtitle}</span>
+                <div className="flex-1 min-w-0 flex flex-col gap-3 pt-1">
+                  <h1 className="text-2xl font-bold leading-tight">{result.title}</h1>
+
+                  <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-2">
+                      <SubtitleIcon className="h-4 w-4 shrink-0" />
+                      {result.subtitle}
+                    </span>
+                    {result.year && (
+                      <span className="flex items-center gap-2">
+                        <IconCalendar className="h-4 w-4 shrink-0" />
+                        {result.year}
+                      </span>
+                    )}
+                  </div>
+
+                  <Badge variant="secondary" className="w-fit capitalize">
+                    {result.mediaType}
+                  </Badge>
+                </div>
               </div>
 
-              {result.year && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <IconCalendar className="h-4 w-4 shrink-0" />
-                  <span>{result.year}</span>
-                </div>
-              )}
-
+              {/* Add CTA */}
               <Button
-                className="w-full mt-2"
+                size="lg"
+                className="w-full"
                 disabled={isAdding}
                 onClick={() => { onAdd(result); setIsDetailOpen(false) }}
               >
-                {isAdding ? (
-                  <IconLoader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <IconPlus className="h-4 w-4 mr-2" />
-                )}
+                {isAdding
+                  ? <IconLoader2 className="h-4 w-4 animate-spin mr-2" />
+                  : <IconPlus className="h-4 w-4 mr-2" />
+                }
                 Add to Collection
               </Button>
-
-
             </div>
           </div>
-
-          {/* Manual close button — avoids SheetContent's default absolute IconX colliding with title */}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="absolute top-3 right-3"
-            onClick={() => setIsDetailOpen(false)}
-          >
-            <IconX className="h-4 w-4" />
-          </Button>
-        </SheetContent>
-      </Sheet>
+        </div>
+      )}
     </>
   )
 }

@@ -114,15 +114,6 @@ export default function ItemDetail() {
 
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
-              size="sm"
-              className="hidden md:flex"
-              onClick={() => setIsManageListsOpen(true)}
-            >
-              <IconPlaylistAdd className="h-4 w-4 mr-2" />
-              Add to List
-            </Button>
-            <Button
               variant="destructive"
               size="sm"
               className="hidden md:flex"
@@ -140,7 +131,7 @@ export default function ItemDetail() {
       <h1 className="md:hidden text-3xl font-bold tracking-tight px-4 mb-4 text-center">{item.title}</h1>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8 px-4 sm:px-6 pb-32 md:pb-20">
+      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8 px-4 sm:px-6 pb-24 md:pb-20">
 
         {/* Left: Cover & Quick Stats */}
         <div className="space-y-6">
@@ -159,15 +150,25 @@ export default function ItemDetail() {
             </div>
           </div>
 
-          {/* Status CTA — desktop only; mobile uses floating bar */}
-          <Button
-            className="hidden md:flex w-full font-semibold gap-2"
-            size="lg"
-            onClick={() => setIsSheetOpen(true)}
-          >
-            {statusIcons[item.status]}
-            {item.status.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
-          </Button>
+          {/* Status + Add to List CTAs — desktop only */}
+          <div className="hidden md:flex flex-col gap-2">
+            <Button
+              className="w-full font-semibold gap-2"
+              size="lg"
+              onClick={() => setIsSheetOpen(true)}
+            >
+              {statusIcons[item.status]}
+              {item.status.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => setIsManageListsOpen(true)}
+            >
+              <IconPlaylistAdd className="h-4 w-4" />
+              Add to List
+            </Button>
+          </div>
 
           <div className="space-y-4">
             {/* Score */}
@@ -336,8 +337,8 @@ export default function ItemDetail() {
 
       {/* Mobile floating action bar — above bottom nav */}
       <div
-        className="md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-white/10 backdrop-blur-md supports-[backdrop-filter]:bg-white/5 rounded-2xl mx-4"
-        style={{ bottom: "calc(4rem + env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
+        className="md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 px-4"
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
       >
         <Button
           className="flex-1 h-12 font-semibold text-base gap-2 rounded-full"

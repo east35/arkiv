@@ -22,13 +22,14 @@ export function ListCard({ list }: ListCardProps) {
   const { deleteList } = useLists()
   const items = useShelfStore(s => s.items)
 
-  const coverItemId = list.cover_item_id ?? list.first_item_id ?? null
-  const coverUrl = coverItemId
-    ? (items.find(i => i.id === coverItemId)?.cover_url ?? null)
-    : null
-
   const itemCount = list.item_count ?? 0
   const countLabel = `${itemCount} ${itemCount === 1 ? "item" : "items"}`
+
+  // Resolve up to 4 cover URLs for the preview grid
+  const previewIds = list.preview_item_ids ?? (list.first_item_id ? [list.first_item_id] : [])
+  const covers = previewIds
+    .map(id => items.find(i => i.id === id)?.cover_url ?? null)
+    .filter(Boolean) as string[]
 
   const handleDelete = async () => {
     if (confirm(`Are you sure you want to delete "${list.name}"?`)) {
@@ -45,11 +46,28 @@ export function ListCard({ list }: ListCardProps) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md">
       <Link to={`/lists/${list.id}`} className="block h-full">
-        {/* Cover */}
-        <div className="aspect-[3/2] w-full bg-muted overflow-hidden">
-          {coverUrl ? (
+        {/* Cover — 2x2 grid or single or empty */}
+        <div className="aspect-[2/3] w-full bg-muted overflow-hidden">
+          {covers.length >= 2 ? (
+            <div className="grid grid-cols-2 grid-rows-2 h-full w-full gap-px bg-border">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="overflow-hidden bg-muted">
+                  {covers[i] ? (
+                    <img
+                      src={covers[i]}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-muted" />
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : covers.length === 1 ? (
             <img
-              src={coverUrl}
+              src={covers[0]}
               alt={list.name}
               className="h-full w-full object-cover"
             />

@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react"
-import { useSearchParams } from "react-router-dom"
-import { IconSearch, IconLoader2, IconDeviceGamepad2, IconBook } from "@tabler/icons-react"
+import { useSearchParams, useNavigate } from "react-router-dom"
+import { IconSearch, IconLoader2, IconDeviceGamepad2, IconBook, IconX } from "@tabler/icons-react"
 import { Input } from "@/components/ui/input"
-import { MediaTypePicker } from "./MediaTypePicker"
 import { cn } from "@/lib/utils"
 import { SearchResultItem } from "./SearchResultItem"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -12,6 +11,7 @@ import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import type { MediaType, FullItem } from "@/types"
 
 export function SearchUI() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [mediaType, setMediaType] = useState<MediaType>(
     (searchParams.get("type") as MediaType) || "game"
@@ -65,38 +65,66 @@ export function SearchUI() {
     }
   }
 
-  return (
-    <div className="max-w-3xl mx-auto min-h-full flex flex-col">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold tracking-tight">Add to Collection</h1>
-            <div className="hidden md:block">
-              <MediaTypePicker value={mediaType} onChange={setMediaType} />
-            </div>
-          </div>
+  const typeItems = [
+    { value: "game" as MediaType, label: "Games", icon: IconDeviceGamepad2 },
+    { value: "book" as MediaType, label: "Books", icon: IconBook },
+  ]
 
-          <div className="relative">
-            <IconSearch className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              ref={inputRef}
-              autoFocus
-              inputMode="search"
-              placeholder={`Search for ${mediaType}s...`}
-              className="pl-9 h-10 text-base"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            {loading && (
-              <div className="absolute right-3 top-3">
-                <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            )}
+  return (
+    <div className="flex flex-col fixed md:relative inset-0 md:inset-auto z-[60] md:z-auto bg-background">
+      {/* Full-width header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 py-4 border-b mb-6">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <h1 className="text-3xl font-bold tracking-tight">Add to Collection</h1>
+          <div className="flex items-center gap-2">
+            {/* Desktop type toggle */}
+            <div className="hidden md:flex items-center border rounded-[10px] p-0.5 gap-0.5">
+              {typeItems.map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  onClick={() => setMediaType(value)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 h-7 rounded-[7px] text-sm font-medium transition-colors",
+                    mediaType === value
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+            {/* Mobile close */}
+            <button
+              className="md:hidden flex items-center justify-center h-9 w-9 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => navigate(-1)}
+            >
+              <IconX className="h-5 w-5" />
+            </button>
           </div>
+        </div>
+
+        <div className="relative">
+          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            ref={inputRef}
+            autoFocus
+            inputMode="search"
+            placeholder={`Search for ${mediaType}s...`}
+            className="pl-9 text-base"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {loading && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="space-y-2 px-4 sm:px-6 pb-8">
+      <div className="space-y-2 px-4 sm:px-6 pb-8 overflow-y-auto flex-1 max-w-3xl w-full mx-auto">
         {results.map((result) => (
           <SearchResultItem
             key={result.id}
@@ -119,11 +147,8 @@ export function SearchUI() {
         onOpenChange={handleSheetOpenChange}
       />
 
-      {/* Mobile floating type picker — full width, above bottom nav */}
-      <div
-        className="md:hidden fixed z-20 left-0 right-0 px-4"
-        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
-      >
+      {/* Mobile type picker — pinned to bottom of full-screen overlay */}
+      <div className="md:hidden fixed z-20 left-0 right-0 px-4 pb-safe" style={{ bottom: '1rem' }}>
         <div className="flex items-center bg-card border rounded-full p-1 shadow-lg">
           <button
             className={cn(
