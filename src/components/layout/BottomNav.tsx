@@ -12,7 +12,11 @@ import { cn } from "@/lib/utils"
 const collectionRoutes = ["/books", "/games"]
 const LAST_COLLECTION_KEY = "arkiv:lastCollection"
 
-export function BottomNav() {
+interface BottomNavProps {
+  visible?: boolean
+}
+
+export function BottomNav({ visible = true }: BottomNavProps) {
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -38,7 +42,12 @@ export function BottomNav() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden pb-safe">
+    <div
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden pb-safe transition-transform duration-200 ease-out",
+        visible ? "translate-y-0" : "translate-y-full pointer-events-none"
+      )}
+    >
       <div className="flex items-center justify-around h-16">
 
         {/* Home */}

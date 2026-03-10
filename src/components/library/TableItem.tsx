@@ -20,6 +20,7 @@ import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
 interface TableItemProps {
   item: FullItem
   onEdit: (item: FullItem) => void
+  mobileTapAction?: "edit" | "details"
 }
 
 
@@ -31,7 +32,7 @@ const statusColors: Record<Status, string> = {
   dropped: "bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20",
 }
 
-export function TableItem({ item, onEdit }: TableItemProps) {
+export function TableItem({ item, onEdit, mobileTapAction = "edit" }: TableItemProps) {
   const [isManageListsOpen, setIsManageListsOpen] = useState(false)
   const statusDate = getStatusDate(item)
   const isGame = item.media_type === "game"
@@ -46,62 +47,121 @@ export function TableItem({ item, onEdit }: TableItemProps) {
   return (
     <>
       <div className="group flex items-center gap-4 p-2 rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:bg-accent/50">
-        <div onClick={() => onEdit(item)} className="flex flex-1 items-center gap-4 min-w-0 cursor-pointer md:hidden">
-          {/* Cover (Small) */}
-          <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
-            <img
-              src={coverUrl}
-              alt={item.title}
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          </div>
+        {mobileTapAction === "edit" ? (
+          <div onClick={() => onEdit(item)} className="flex flex-1 items-center gap-4 min-w-0 cursor-pointer md:hidden">
+            {/* Cover (Small) */}
+            <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
+              <img
+                src={coverUrl}
+                alt={item.title}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
 
-          {/* Title & Author/Dev */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium leading-none truncate" title={item.title}>
-              {item.title}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              {isGame ? item.game.developer : item.book.author}
-            </p>
-          </div>
+            {/* Title & Author/Dev */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium leading-none truncate" title={item.title}>
+                {item.title}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 truncate">
+                {isGame ? item.game.developer : item.book.author}
+              </p>
+            </div>
 
-          {/* Score */}
-          <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
-            {item.user_score ? (
-              <>
-                <span className="font-medium">{item.user_score}</span>
-                <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-              </>
-            ) : (
-              <span className="text-muted-foreground/50">-</span>
-            )}
-          </div>
+            {/* Score */}
+            <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
+              {item.user_score ? (
+                <>
+                  <span className="font-medium">{item.user_score}</span>
+                  <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                </>
+              ) : (
+                <span className="text-muted-foreground/50">-</span>
+              )}
+            </div>
 
-          {/* Progress */}
-          <div className="w-24 text-right text-xs text-muted-foreground hidden md:block">
-            {progressDisplay}
-          </div>
+            {/* Progress */}
+            <div className="w-24 text-right text-xs text-muted-foreground hidden md:block">
+              {progressDisplay}
+            </div>
 
-          {/* Status */}
-          <div className="w-28 flex justify-end">
-            <Badge variant="outline" className={cn("gap-1.5", statusColors[item.status])}>
-              {statusIcons[item.status]}
-              <span className="capitalize">{item.status.replace("_", " ")}</span>
-            </Badge>
-          </div>
-
-          {/* Date */}
-          <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
-            {statusDate ? (
-              <>
+            {/* Status */}
+            <div className="w-28 flex justify-end">
+              <Badge variant="outline" className={cn("gap-1.5", statusColors[item.status])}>
                 {statusIcons[item.status]}
-                {format(new Date(statusDate), "MMM d, yyyy")}
-              </>
-            ) : "-"}
+                <span className="capitalize">{item.status.replace("_", " ")}</span>
+              </Badge>
+            </div>
+
+            {/* Date */}
+            <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
+              {statusDate ? (
+                <>
+                  {statusIcons[item.status]}
+                  {format(new Date(statusDate), "MMM d, yyyy")}
+                </>
+              ) : "-"}
+            </div>
           </div>
-        </div>
+        ) : (
+          <Link to={`/item/${item.id}`} className="flex flex-1 items-center gap-4 min-w-0 cursor-pointer md:hidden">
+            {/* Cover (Small) */}
+            <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
+              <img
+                src={coverUrl}
+                alt={item.title}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+
+            {/* Title & Author/Dev */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium leading-none truncate" title={item.title}>
+                {item.title}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 truncate">
+                {isGame ? item.game.developer : item.book.author}
+              </p>
+            </div>
+
+            {/* Score */}
+            <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
+              {item.user_score ? (
+                <>
+                  <span className="font-medium">{item.user_score}</span>
+                  <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                </>
+              ) : (
+                <span className="text-muted-foreground/50">-</span>
+              )}
+            </div>
+
+            {/* Progress */}
+            <div className="w-24 text-right text-xs text-muted-foreground hidden md:block">
+              {progressDisplay}
+            </div>
+
+            {/* Status */}
+            <div className="w-28 flex justify-end">
+              <Badge variant="outline" className={cn("gap-1.5", statusColors[item.status])}>
+                {statusIcons[item.status]}
+                <span className="capitalize">{item.status.replace("_", " ")}</span>
+              </Badge>
+            </div>
+
+            {/* Date */}
+            <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
+              {statusDate ? (
+                <>
+                  {statusIcons[item.status]}
+                  {format(new Date(statusDate), "MMM d, yyyy")}
+                </>
+              ) : "-"}
+            </div>
+          </Link>
+        )}
 
         <Link to={`/item/${item.id}`} className="hidden md:flex flex-1 items-center gap-4 min-w-0">
           {/* Cover (Small) */}

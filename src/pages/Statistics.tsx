@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react"
-import { subDays, subYears, format } from "date-fns"
+import {
+  subDays,
+  subYears,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+  format,
+} from "date-fns"
 import { IconCalendar, IconTrophy, IconStar, IconBolt, IconLoader2 } from "@tabler/icons-react"
 
 import { useStatistics } from "@/hooks/useStatistics"
@@ -10,54 +19,133 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { DatePicker } from "@/components/ui/date-picker"
 import { StatCard } from "@/components/statistics/StatCard"
 import { ActivityHeatmap } from "@/components/statistics/ActivityHeatmap"
 import { StatusDistributionChart } from "@/components/statistics/StatusDistributionChart"
+import { MediaTypeDistributionChart } from "@/components/statistics/MediaTypeDistributionChart"
+import { StatusByMediaTypeChart } from "@/components/statistics/StatusByMediaTypeChart"
 import { ScoreDistributionChart } from "@/components/statistics/ScoreDistributionChart"
-import { TopRatedList } from "@/components/statistics/TopRatedList"
+import { ActivityTimeline } from "@/components/statistics/ActivityTimeline"
 
-type DateRangeOption = "all" | "year" | "90days" | "30days"
+// ---------------------------------------------------------------------------
+// Date range helpers
+// ---------------------------------------------------------------------------
+
+type PresetRange =
+  | "all"
+  | "today"
+  | "yesterday"
+  | "this_week"
+  | "last_week"
+  | "this_month"
+  | "last_month"
+  | "7days"
+  | "30days"
+  | "90days"
+  | "year"
+
+const PRESET_LABELS: Record<PresetRange, string> = {
+  all: "All Time",
+  today: "Today",
+  yesterday: "Yesterday",
+  this_week: "This Week",
+  last_week: "Last Week",
+  this_month: "This Month",
+  last_month: "Last Month",
+  "7days": "Last 7 Days",
+  "30days": "Last 30 Days",
+  "90days": "Last 90 Days",
+  year: "Last Year",
+}
+
+function presetToDateRange(preset: PresetRange): { start: string; end: string } | undefined {
+  const today = new Date()
+  const fmt = (d: Date) => format(d, "yyyy-MM-dd")
+
+  switch (preset) {
+    case "all":
+      return undefined
+    case "today":
+      return { start: fmt(today), end: fmt(today) }
+    case "yesterday": {
+      const y = subDays(today, 1)
+      return { start: fmt(y), end: fmt(y) }
+    }
+    case "this_week":
+      return { start: fmt(startOfWeek(today, { weekStartsOn: 1 })), end: fmt(today) }
+    case "last_week": {
+      const lastMon = startOfWeek(subDays(today, 7), { weekStartsOn: 1 })
+      return { start: fmt(lastMon), end: fmt(endOfWeek(lastMon, { weekStartsOn: 1 })) }
+    }
+    case "this_month":
+      return { start: fmt(startOfMonth(today)), end: fmt(today) }
+    case "last_month": {
+      const lm = subMonths(today, 1)
+      return { start: fmt(startOfMonth(lm)), end: fmt(endOfMonth(lm)) }
+    }
+    case "7days":
+      return { start: fmt(subDays(today, 7)), end: fmt(today) }
+    case "30days":
+      return { start: fmt(subDays(today, 30)), end: fmt(today) }
+    case "90days":
+      return { start: fmt(subDays(today, 90)), end: fmt(today) }
+    case "year":
+      return { start: fmt(subYears(today, 1)), end: fmt(today) }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function Statistics() {
   const { computeStatistics, stats } = useStatistics()
   const { items } = useShelfStore()
   const { fetchItems } = useItems()
-  const [range, setRange] = useState<DateRangeOption>("all")
+
+  // Date range state
+  const [rangeTab, setRangeTab] = useState<"preset" | "custom">("preset")
+  const [preset, setPreset] = useState<PresetRange>("all")
+  const [customStart, setCustomStart] = useState<Date | undefined>(undefined)
+  const [customEnd, setCustomEnd] = useState<Date | undefined>(undefined)
+  // The active range actually applied to stats
+  const [appliedRange, setAppliedRange] = useState<{ start: string; end: string } | undefined>(
+    undefined,
+  )
 
   // Ensure items are loaded
   useEffect(() => {
     fetchItems()
   }, [fetchItems])
 
-  // Recompute stats when items or range changes
+  // Recompute when items or preset changes
   useEffect(() => {
-    let dateRange = undefined
-    const today = new Date()
-    const todayStr = format(today, "yyyy-MM-dd")
-
-    if (range === "year") {
-      dateRange = { 
-        start: format(subYears(today, 1), "yyyy-MM-dd"), 
-        end: todayStr 
-      }
-    } else if (range === "90days") {
-      dateRange = { 
-        start: format(subDays(today, 90), "yyyy-MM-dd"), 
-        end: todayStr 
-      }
-    } else if (range === "30days") {
-      dateRange = { 
-        start: format(subDays(today, 30), "yyyy-MM-dd"), 
-        end: todayStr 
-      }
+    if (rangeTab === "preset") {
+      computeStatistics(presetToDateRange(preset))
     }
+  }, [computeStatistics, items, preset, rangeTab])
 
-    computeStatistics(dateRange)
-  }, [computeStatistics, items, range])
+  // Recompute when custom range is applied
+  useEffect(() => {
+    if (rangeTab === "custom" && appliedRange) {
+      computeStatistics(appliedRange)
+    }
+  }, [computeStatistics, appliedRange, rangeTab])
 
+  function handleApplyCustom() {
+    if (!customStart || !customEnd) return
+    setAppliedRange({
+      start: format(customStart, "yyyy-MM-dd"),
+      end: format(customEnd, "yyyy-MM-dd"),
+    })
+  }
+
+  // Loading skeleton
   if (!stats) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -66,11 +154,14 @@ export default function Statistics() {
     )
   }
 
+  // Empty state
   if (stats.statusCounts.total === 0) {
     return (
-      <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Statistics</h1>
-        <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
+      <div className="flex flex-col h-full overflow-hidden">
+        <div className="border-b px-4 sm:px-6 py-4">
+          <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground px-4">
           <IconTrophy className="h-10 w-10 mb-4 opacity-20" />
           <p className="text-lg font-medium mb-1">No stats available</p>
           <p className="text-sm">Add items to your shelf to see your statistics.</p>
@@ -80,63 +171,100 @@ export default function Statistics() {
   }
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 overflow-hidden">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Sticky header */}
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 py-4 flex-shrink-0">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
-          <p className="text-muted-foreground mt-1">
-            Insights into your reading and gaming habits.
-          </p>
+
+          {/* Date range control */}
+          <Tabs
+            value={rangeTab}
+            onValueChange={(v) => setRangeTab(v as "preset" | "custom")}
+            className="w-full sm:w-auto"
+          >
+            <TabsList>
+              <TabsTrigger value="preset">Preset</TabsTrigger>
+              <TabsTrigger value="custom">Custom</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="preset" className="mt-2">
+              <Select value={preset} onValueChange={(v) => setPreset(v as PresetRange)}>
+                <SelectTrigger className="w-[180px] h-11">
+                  <IconCalendar className="mr-2 h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="flex flex-1 text-left text-sm">{PRESET_LABELS[preset]}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="this_week">This Week</SelectItem>
+                  <SelectItem value="last_week">Last Week</SelectItem>
+                  <SelectItem value="this_month">This Month</SelectItem>
+                  <SelectItem value="last_month">Last Month</SelectItem>
+                  <SelectItem value="7days">Last 7 Days</SelectItem>
+                  <SelectItem value="30days">Last 30 Days</SelectItem>
+                  <SelectItem value="90days">Last 90 Days</SelectItem>
+                  <SelectItem value="year">Last Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </TabsContent>
+
+            <TabsContent value="custom" className="mt-2">
+              <div className="flex items-center gap-2">
+                <DatePicker date={customStart} setDate={setCustomStart} className="w-36 h-11" />
+                <span className="text-muted-foreground text-sm">to</span>
+                <DatePicker date={customEnd} setDate={setCustomEnd} className="w-36 h-11" />
+                <Button
+                  size="default"
+                  className="h-11"
+                  onClick={handleApplyCustom}
+                  disabled={!customStart || !customEnd}
+                >
+                  Apply
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-        
-        <Select value={range} onValueChange={(v) => setRange(v as DateRangeOption)}>
-          <SelectTrigger className="w-[180px]">
-            <IconCalendar className="mr-2 h-4 w-4 text-muted-foreground" />
-            <SelectValue placeholder="Date Range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Time</SelectItem>
-            <SelectItem value="year">Last Year</SelectItem>
-            <SelectItem value="90days">Last 90 Days</SelectItem>
-            <SelectItem value="30days">Last 30 Days</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4 sm:mx-0 sm:px-0 space-y-6 pb-8">
-        
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 space-y-6 py-6 pb-8">
+
         {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Completed"
             value={stats.completedCount}
             icon={IconTrophy}
-            description="Total items finished"
+            description={`of ${stats.statusCounts.total} total`}
           />
           <StatCard
             title="Avg Score"
-            value={stats.averageScore ?? "-"}
+            value={stats.averageScore != null ? `${stats.averageScore} / 10` : "–"}
             icon={IconStar}
             description="Across all rated items"
           />
           <StatCard
-            title="Current Streak"
-            value={stats.currentStreak}
-            icon={IconBolt}
-            description="Consecutive days active"
+            title="Most Active"
+            value={stats.mostActiveDayOfWeek?.day ?? "–"}
+            icon={IconCalendar}
+            description={
+              stats.mostActiveDayOfWeek
+                ? `${stats.mostActiveDayOfWeek.percent}% of activity`
+                : "No activity yet"
+            }
           />
           <StatCard
-            title="Most Active"
-            value={stats.mostActiveDate?.count ?? "-"}
-            icon={IconCalendar}
-            description={stats.mostActiveDate 
-              ? format(new Date(stats.mostActiveDate.date), "MMM d, yyyy")
-              : "No activity yet"
-            }
+            title="Current Streak"
+            value={`${stats.currentStreak} days`}
+            icon={IconBolt}
+            description={`Longest: ${stats.longestStreak} days`}
           />
         </div>
 
-        {/* Heatmap */}
+        {/* Activity Heatmap */}
         <Card>
           <CardHeader>
             <CardTitle>Activity Heatmap</CardTitle>
@@ -149,10 +277,18 @@ export default function Statistics() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          
-          {/* Status Distribution */}
-          <Card className="lg:col-span-3">
+        {/* Media Type + Status Distribution */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Media Type Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MediaTypeDistributionChart data={stats.mediaTypeCounts} />
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader>
               <CardTitle>Status Distribution</CardTitle>
             </CardHeader>
@@ -160,30 +296,39 @@ export default function Statistics() {
               <StatusDistributionChart counts={stats.statusCounts} />
             </CardContent>
           </Card>
-
-          {/* Score Distribution */}
-          <Card className="lg:col-span-4">
-            <CardHeader>
-              <CardTitle>Score Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScoreDistributionChart data={stats.scoreDistribution} />
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Top Rated */}
-        <div className="grid gap-4 md:grid-cols-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Rated</CardTitle>
-              <CardDescription>Your highest scored favorites</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TopRatedList items={stats.topRated} />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Status by Media Type */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Status by Media Type</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StatusByMediaTypeChart data={stats.statusByMediaType} />
+          </CardContent>
+        </Card>
+
+        {/* Score Distribution by Media Type */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Score Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScoreDistributionChart data={stats.scoreDistributionByMediaType} />
+          </CardContent>
+        </Card>
+
+
+        {/* Activity Timeline */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Activity Timeline</CardTitle>
+            <CardDescription>Your status changes over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ActivityTimeline activity={stats.rawActivity} items={items} />
+          </CardContent>
+        </Card>
 
       </div>
     </div>

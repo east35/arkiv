@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { IconArrowLeft, IconTrash, IconDots, IconLoader2, IconQuestionMark } from "@tabler/icons-react"
+import { IconArrowLeft, IconTrash, IconDots, IconLoader2, IconQuestionMark, IconSearch } from "@tabler/icons-react"
 
 import { useShelfStore } from "@/store/useShelfStore"
 import { useLists } from "@/hooks/useLists"
 import { useItems } from "@/hooks/useItems"
 import { LibraryControls } from "@/components/library/LibraryControls"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,7 @@ export default function ListDetail() {
   
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [search, setSearch] = useState("")
 
   // Get list metadata from store
   const list = lists.find(l => l.id === id)
@@ -61,10 +63,15 @@ export default function ListDetail() {
     loadData()
   }, [id, lists.length, allItems.length, fetchLists, fetchItems, fetchListItems])
 
-  // Hydrate items
-  const displayItems = listItems
-    .map(li => allItems.find(i => i.id === li.item_id))
-    .filter((i): i is FullItem => !!i)
+  // Hydrate + filter items
+  const displayItems = useMemo(() => {
+    const hydrated = listItems
+      .map(li => allItems.find(i => i.id === li.item_id))
+      .filter((i): i is FullItem => !!i)
+    if (!search.trim()) return hydrated
+    const q = search.toLowerCase()
+    return hydrated.filter(i => i.title.toLowerCase().includes(q))
+  }, [listItems, allItems, search])
 
   const handleDeleteList = async () => {
     if (!list) return
@@ -165,7 +172,18 @@ export default function ListDetail() {
             </p>
           </div>
 
-          <LibraryControls hideSearch />
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search..."
+                className="pl-9 h-9 w-40 sm:w-48"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <LibraryControls hideSearch />
+          </div>
         </div>
       </div>
 

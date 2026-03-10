@@ -28,7 +28,7 @@ export type TimeFormat = "12hr" | "24hr"
 export type ViewMode = "poster" | "table"
 
 /** Sort options for library views */
-export type SortField = "rating" | "title" | "progress" | "started_at" | "completed_at"
+export type SortField = "rating" | "title" | "progress" | "started_at" | "completed_at" | "created_at"
 
 /** Sort direction */
 export type SortDirection = "asc" | "desc"

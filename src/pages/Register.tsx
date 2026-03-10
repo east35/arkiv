@@ -17,9 +17,16 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 
+const passwordSchema = z.string()
+  .min(12, { message: "Password must be at least 12 characters" })
+  .regex(/[a-z]/, { message: "Password must include a lowercase letter" })
+  .regex(/[A-Z]/, { message: "Password must include an uppercase letter" })
+  .regex(/\d/, { message: "Password must include a number" })
+  .regex(/[^A-Za-z0-9]/, { message: "Password must include a symbol" })
+
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",

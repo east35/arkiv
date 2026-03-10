@@ -24,6 +24,11 @@ export const statusLabels: Record<string, string> = {
   dropped: "Dropped",
 }
 
+export const mediaTypeColors = {
+  game: "#0044FF",
+  book: "#FFB700",
+} as const
+
 export const statusColors: Record<Status, string> = {
   backlog: "bg-slate-500 text-white border-slate-600",
   in_progress: "bg-blue-600 text-white border-blue-700",

@@ -12,6 +12,7 @@
  */
 
 import { useState, useCallback } from "react"
+import { format } from "date-fns"
 import { useShelfStore } from "@/store/useShelfStore"
 import { useActivity } from "@/hooks/useActivity"
 import type { FullItem, Status, MediaType, ActivityLogEntry } from "@/types"
@@ -36,6 +37,13 @@ export interface DistributionBucket {
   count: number
 }
 
+/** A score bucket split by media type */
+export interface ScoreByMediaTypeBucket {
+  label: string
+  games: number
+  books: number
+}
+
 /** Day-level activity count for the heatmap (YYYY-MM-DD → count) */
 export type HeatmapData = Record<string, number>
 
@@ -54,13 +62,16 @@ export interface Statistics {
   mediaTypeCounts: DistributionBucket[]
   averageScore: number | null
   scoreDistribution: DistributionBucket[]
+  scoreDistributionByMediaType: ScoreByMediaTypeBucket[]
   statusByMediaType: { status: Status; games: number; books: number }[]
   topRated: TopRatedItem[]
   completedCount: number
   currentStreak: number
-  mostActiveDate: { date: string; count: number } | null
+  longestStreak: number
+  mostActiveDayOfWeek: { day: string; percent: number } | null
   heatmapData: HeatmapData
   totalActivity: number
+  rawActivity: ActivityLogEntry[]
 }
 
 // ---------------------------------------------------------------------------
@@ -117,9 +128,28 @@ function computeScoreDistribution(items: FullItem[]): DistributionBucket[] {
 
   for (const item of items) {
     if (item.user_score == null) continue
-    // Clamp to 0–9 bucket index (score of exactly 10 goes into 9–10 bucket)
     const idx = Math.min(Math.floor(item.user_score), 9)
     buckets[idx].count++
+  }
+
+  return buckets
+}
+
+/**
+ * Build a score histogram split by media type (games vs books).
+ */
+function computeScoreDistributionByMediaType(items: FullItem[]): ScoreByMediaTypeBucket[] {
+  const buckets = Array.from({ length: 10 }, (_, i) => ({
+    label: `${i}–${i + 1}`,
+    games: 0,
+    books: 0,
+  }))
+
+  for (const item of items) {
+    if (item.user_score == null) continue
+    const idx = Math.min(Math.floor(item.user_score), 9)
+    if (item.media_type === "game") buckets[idx].games++
+    else buckets[idx].books++
   }
 
   return buckets
@@ -160,23 +190,18 @@ function computeTopRated(items: FullItem[], limit = 10): TopRatedItem[] {
  * (ending today or yesterday) where at least one item was marked "completed".
  */
 function computeStreak(activity: ActivityLogEntry[]): number {
-  // Filter to completion events only
   const completions = activity
     .filter((a) => a.to_status === "completed")
-    .map((a) => a.occurred_at.split("T")[0]) // extract YYYY-MM-DD
+    .map((a) => format(new Date(a.occurred_at), "yyyy-MM-dd"))
 
   if (completions.length === 0) return 0
 
-  // Unique days, sorted descending (most recent first)
   const uniqueDays = [...new Set(completions)].sort().reverse()
 
   const today = new Date()
-  const todayStr = today.toISOString().split("T")[0]
-  const yesterdayStr = new Date(today.getTime() - 86_400_000)
-    .toISOString()
-    .split("T")[0]
+  const todayStr = format(today, "yyyy-MM-dd")
+  const yesterdayStr = format(new Date(today.getTime() - 86_400_000), "yyyy-MM-dd")
 
-  // Streak must start from today or yesterday
   if (uniqueDays[0] !== todayStr && uniqueDays[0] !== yesterdayStr) return 0
 
   let streak = 1
@@ -185,7 +210,6 @@ function computeStreak(activity: ActivityLogEntry[]): number {
     const curr = new Date(uniqueDays[i])
     const diffMs = prev.getTime() - curr.getTime()
 
-    // If exactly 1 day apart, extend streak; otherwise stop
     if (diffMs === 86_400_000) {
       streak++
     } else {
@@ -196,26 +220,63 @@ function computeStreak(activity: ActivityLogEntry[]): number {
   return streak
 }
 
-/** Find the single date with the most activity entries */
-function computeMostActiveDate(
-  activity: ActivityLogEntry[],
-): { date: string; count: number } | null {
-  if (activity.length === 0) return null
+/**
+ * Compute the longest-ever completion streak across all activity.
+ */
+function computeLongestStreak(activity: ActivityLogEntry[]): number {
+  const completions = activity
+    .filter((a) => a.to_status === "completed")
+    .map((a) => format(new Date(a.occurred_at), "yyyy-MM-dd"))
 
-  const dayCounts = new Map<string, number>()
-  for (const entry of activity) {
-    const day = entry.occurred_at.split("T")[0]
-    dayCounts.set(day, (dayCounts.get(day) ?? 0) + 1)
-  }
+  if (completions.length === 0) return 0
 
-  let best: { date: string; count: number } | null = null
-  for (const [date, count] of dayCounts) {
-    if (!best || count > best.count) {
-      best = { date, count }
+  const uniqueDays = [...new Set(completions)].sort() // ascending
+
+  let longest = 1
+  let current = 1
+
+  for (let i = 1; i < uniqueDays.length; i++) {
+    const prev = new Date(uniqueDays[i - 1])
+    const curr = new Date(uniqueDays[i])
+    const diffMs = curr.getTime() - prev.getTime()
+
+    if (diffMs === 86_400_000) {
+      current++
+      if (current > longest) longest = current
+    } else {
+      current = 1
     }
   }
 
-  return best
+  return longest
+}
+
+/**
+ * Find the day of week with the highest share of activity.
+ * Returns the day name and its percentage of total activity.
+ */
+function computeMostActiveDayOfWeek(
+  activity: ActivityLogEntry[],
+): { day: string; percent: number } | null {
+  if (activity.length === 0) return null
+
+  const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  const dayCounts = new Array(7).fill(0)
+
+  for (const entry of activity) {
+    const d = new Date(entry.occurred_at)
+    dayCounts[d.getDay()]++
+  }
+
+  let bestIdx = 0
+  for (let i = 1; i < 7; i++) {
+    if (dayCounts[i] > dayCounts[bestIdx]) bestIdx = i
+  }
+
+  if (dayCounts[bestIdx] === 0) return null
+
+  const percent = Math.round((dayCounts[bestIdx] / activity.length) * 100)
+  return { day: DAY_NAMES[bestIdx], percent }
 }
 
 /**
@@ -227,15 +288,13 @@ function computeHeatmapData(activity: ActivityLogEntry[]): HeatmapData {
   const data: HeatmapData = {}
   const today = new Date()
 
-  // Pre-fill the last 365 days with 0
   for (let i = 0; i < 365; i++) {
     const d = new Date(today.getTime() - i * 86_400_000)
-    data[d.toISOString().split("T")[0]] = 0
+    data[format(d, "yyyy-MM-dd")] = 0
   }
 
-  // Count activity per day
   for (const entry of activity) {
-    const day = entry.occurred_at.split("T")[0]
+    const day = format(new Date(entry.occurred_at), "yyyy-MM-dd")
     if (day in data) {
       data[day]++
     }
@@ -256,10 +315,6 @@ export function useStatistics() {
 
   /**
    * Compute all statistics. Optionally filter activity to a date range.
-   *
-   * Items are always taken from the full store (status counts reflect
-   * current state). Activity-dependent stats (streak, heatmap, most active)
-   * respect the date range if provided.
    */
   const computeStatistics = useCallback(
     async (dateRange?: { start: string; end: string }) => {
@@ -267,7 +322,6 @@ export function useStatistics() {
       try {
         const items = useShelfStore.getState().items
 
-        // Fetch activity — optionally within a date range
         const activity = dateRange
           ? await fetchActivityInRange(dateRange.start, dateRange.end)
           : await fetchActivity()
@@ -277,13 +331,16 @@ export function useStatistics() {
           mediaTypeCounts: computeMediaTypeCounts(items),
           averageScore: computeAverageScore(items),
           scoreDistribution: computeScoreDistribution(items),
+          scoreDistributionByMediaType: computeScoreDistributionByMediaType(items),
           statusByMediaType: computeStatusByMediaType(items),
           topRated: computeTopRated(items),
           completedCount: items.filter((i) => i.status === "completed").length,
           currentStreak: computeStreak(activity),
-          mostActiveDate: computeMostActiveDate(activity),
+          longestStreak: computeLongestStreak(activity),
+          mostActiveDayOfWeek: computeMostActiveDayOfWeek(activity),
           heatmapData: computeHeatmapData(activity),
           totalActivity: activity.length,
+          rawActivity: activity,
         }
 
         setStats(result)

@@ -133,7 +133,10 @@ export default function Lists() {
 
               <div className="w-px h-8 bg-border mx-1" />
 
-              <CreateListDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+              <Button onClick={() => setDialogOpen(true)}>
+                <IconPlus className="h-4 w-4 mr-2" />
+                New List
+              </Button>
             </div>
 
             {/* View toggle */}

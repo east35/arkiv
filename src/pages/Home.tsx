@@ -74,7 +74,18 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-full">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
-        <LibraryControls title="Home" hideSearch />
+        <LibraryControls
+          title={
+            <>
+              <span className="hidden md:inline">Home</span>
+              <span className="md:hidden inline-flex items-center">
+                <img src="/logo/arkiv-logo-black.svg" alt="Arkiv" className="h-9 dark:hidden" />
+                <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-9 hidden dark:block" />
+              </span>
+            </>
+          }
+          hideSearch
+        />
       </div>
 
       <div className="flex-1 px-4 sm:px-6 pb-8 space-y-8">

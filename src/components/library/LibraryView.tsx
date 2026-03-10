@@ -6,9 +6,10 @@ import { PosterItem } from "./PosterItem"
 import { TableItem } from "./TableItem"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import type { FullItem, MediaType } from "@/types"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { IconPlus, IconLoader2, IconDeviceGamepad2, IconBook } from "@tabler/icons-react"
-import { useNavigate } from "react-router-dom"
+import { IconPlus, IconLoader2, IconDeviceGamepad2, IconBook, IconSearch } from "@tabler/icons-react"
+import { useNavigate, useOutletContext } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
 const collectionTabs: { type: MediaType; label: string; icon: React.ComponentType<{ className?: string }>; href: string }[] = [
@@ -22,9 +23,10 @@ interface LibraryViewProps {
 }
 
 export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps) {
-  const { viewMode, getFilteredItems } = useShelfStore()
+  const { viewMode, getFilteredItems, filters, setFilters } = useShelfStore()
   const { fetchItems } = useItems()
   const navigate = useNavigate()
+  const { navVisible = true } = useOutletContext<{ navVisible?: boolean }>()
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [loading, setLoading] = useState(!useShelfStore.getState().items.length)
@@ -61,6 +63,18 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
       </div>
 
       <div className="flex-1 px-4 sm:px-6 pb-8">
+        {!hideSearch && (
+          <div className="relative mb-4 md:hidden">
+            <IconSearch className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder={`Search ${mediaType ? mediaType + "s" : "shelf"}...`}
+              className="pl-9 h-10"
+              value={filters.search}
+              onChange={(e) => setFilters({ search: e.target.value })}
+            />
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -75,13 +89,13 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
             {viewMode === "poster" ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-8">
                 {items.map((item) => (
-                  <PosterItem key={item.id} item={item} onEdit={handleEdit} />
+                  <PosterItem key={item.id} item={item} onEdit={handleEdit} mobileTapAction="details" />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col gap-2 pb-8">
                 {items.map((item) => (
-                  <TableItem key={item.id} item={item} onEdit={handleEdit} />
+                  <TableItem key={item.id} item={item} onEdit={handleEdit} mobileTapAction="details" />
                 ))}
               </div>
             )}
@@ -96,7 +110,13 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
       />
 
       {/* Mobile FAB for adding items */}
-      <div className="sm:hidden fixed right-4 z-50" style={{ bottom: 'calc(8rem + env(safe-area-inset-bottom, 0px))' }}>
+      <div
+        className={cn(
+          "md:hidden fixed right-4 z-50 transition-transform duration-200 ease-out",
+          navVisible ? "translate-y-0" : "translate-y-16"
+        )}
+        style={{ bottom: "calc(8rem + env(safe-area-inset-bottom, 0px))" }}
+      >
         <Button
           size="icon"
           className="h-14 w-14 rounded-full shadow-lg"
@@ -109,8 +129,11 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
       {/* Mobile collection tab switcher */}
       {mediaType && (
         <div
-          className="md:hidden fixed z-20 left-0 right-0 px-4"
-          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+          className={cn(
+            "md:hidden fixed z-20 left-0 right-0 px-4 transition-transform duration-200 ease-out",
+            navVisible ? "translate-y-0" : "translate-y-16"
+          )}
+          style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
           <div className="flex items-center bg-card border rounded-full p-1 shadow-lg">
             {collectionTabs.map((tab) => {

@@ -66,12 +66,21 @@ npm run dev
 Vite will print the local URL (typically `http://localhost:5173`).
  
 ## Supabase
- 
+
 ### Option A: Hosted Supabase (recommended)
  
 - Create a Supabase project
 - Copy the project URL and anon key into `.env.local`
 - Run the app with `npm run dev`
+
+### Edge Function security secrets
+
+Set the following Supabase Edge Function secrets before deploying function calls:
+
+- `TWITCH_CLIENT_ID`
+- `TWITCH_CLIENT_SECRET`
+- `GOOGLE_BOOKS_API_KEY`
+- `CORS_ALLOWED_ORIGINS` (comma-separated allowlist, e.g. `https://app.example.com`)
  
 ### Option B: Local Supabase (CLI)
  

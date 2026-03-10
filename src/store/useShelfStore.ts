@@ -121,6 +121,8 @@ function compareItems(a: FullItem, b: FullItem, field: LibrarySort["field"]): nu
       const bDate = b.completed_at ?? ""
       return aDate.localeCompare(bDate)
     }
+    case "created_at":
+      return a.created_at.localeCompare(b.created_at)
     default:
       return 0
   }

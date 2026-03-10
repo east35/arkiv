@@ -43,8 +43,30 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
     return "bg-primary"
   }
 
+  // Compute month label for each week column (show label when month changes)
+  const monthLabels = calendarData.map((week, idx) => {
+    if (week.length === 0) return null
+    const monthStr = format(week[0].date, "MMM")
+    if (idx === 0) return monthStr
+    const prevWeek = calendarData[idx - 1]
+    if (prevWeek.length === 0) return null
+    return format(prevWeek[0].date, "MMM") !== monthStr ? monthStr : null
+  })
+
   return (
     <div className="w-full overflow-x-auto pb-2">
+      {/* Month labels row */}
+      <div className="flex gap-1 min-w-max mb-1">
+        {calendarData.map((_, wIndex) => (
+          <div
+            key={wIndex}
+            className="w-3 text-[9px] text-muted-foreground leading-none"
+            style={{ minWidth: "12px" }}
+          >
+            {monthLabels[wIndex] ?? ""}
+          </div>
+        ))}
+      </div>
       <div className="flex gap-1 min-w-max">
         {calendarData.map((week, wIndex) => (
           <div key={wIndex} className="flex flex-col gap-1">

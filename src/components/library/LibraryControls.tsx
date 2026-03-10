@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { IconSearch, IconFilter, IconArrowsUpDown, IconLayoutGrid, IconTable, IconAdjustmentsHorizontal, IconPlus } from "@tabler/icons-react"
 import { Link } from "react-router-dom"
 import { Input } from "@/components/ui/input"
@@ -27,12 +28,13 @@ const sortLabels: Record<string, string> = {
   progress: "Progress",
   started_at: "Date Started",
   completed_at: "Date Completed",
+  created_at: "Date Added",
 }
 
 interface LibraryControlsProps {
   mediaType?: "game" | "book"
   hideSearch?: boolean
-  title?: string
+  title?: ReactNode
   addHref?: string
 }
 
@@ -87,6 +89,7 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
         <SelectItem value="progress">Progress</SelectItem>
         <SelectItem value="started_at">Date Started</SelectItem>
         <SelectItem value="completed_at">Date Completed</SelectItem>
+        <SelectItem value="created_at">Date Added</SelectItem>
       </SelectContent>
     </Select>
   )
@@ -195,7 +198,7 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
         </div>
 
         {/* View Toggle — always visible, rounded-[7px] active/hover states */}
-        <div className="flex items-center border rounded-[10px] p-0.5 gap-0.5 h-11">
+        <div className="flex items-center border rounded-[10px] p-0.5 gap-0.5 h-11 bg-background shadow-sm">
           <Button
             variant="ghost"
             size="icon"
@@ -230,9 +233,9 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
         </div>{/* end controls */}
       </div>{/* end title+controls row */}
 
-      {/* Search — shown below title row when enabled */}
+      {/* Search in header is desktop-only; mobile search lives in scrolling content */}
       {!hideSearch && (
-        <div className="relative w-full sm:w-72">
+        <div className="relative hidden md:block w-full sm:w-72">
           <IconSearch className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={`Search ${mediaType ? mediaType + "s" : "shelf"}...`}

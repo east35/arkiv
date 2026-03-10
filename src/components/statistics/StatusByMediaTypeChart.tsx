@@ -8,31 +8,38 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
-import type { ScoreByMediaTypeBucket } from "@/hooks/useStatistics"
-import { mediaTypeColors } from "@/components/status-icons"
+import type { Status } from "@/types"
+import { statusLabels, mediaTypeColors } from "@/components/status-icons"
 
-interface ScoreDistributionChartProps {
-  data: ScoreByMediaTypeBucket[]
+interface StatusByMediaTypeChartProps {
+  data: { status: Status; games: number; books: number }[]
 }
 
-export function ScoreDistributionChart({ data }: ScoreDistributionChartProps) {
-  if (data.every((d) => d.games === 0 && d.books === 0)) {
+export function StatusByMediaTypeChart({ data }: StatusByMediaTypeChartProps) {
+  const filtered = data.filter((d) => d.games + d.books > 0)
+
+  if (filtered.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-        No scores yet
+        No data
       </div>
     )
   }
+
+  const chartData = filtered.map((d) => ({
+    ...d,
+    name: statusLabels[d.status] ?? d.status,
+  }))
 
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
-          data={data}
+          data={chartData}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
           <YAxis allowDecimals={false} />
           <Tooltip
             cursor={{ fill: "transparent" }}

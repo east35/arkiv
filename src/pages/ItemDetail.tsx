@@ -21,9 +21,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
-import { cn } from "@/lib/utils"
-import type { FullItem } from "@/types"
-import { statusIcons, statusColors } from "@/components/status-icons"
+import type { FullItem, Status } from "@/types"
+import { statusIcons } from "@/components/status-icons"
 
 export default function ItemDetail() {
   const { id } = useParams<{ id: string }>()
@@ -94,6 +93,13 @@ export default function ItemDetail() {
   const coverUrl = item.cover_url || (isGame 
     ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" 
     : "https://books.google.com/googlebooks/images/no_cover_thumb.gif")
+  const statusButtonClass: Record<Status, string> = {
+    backlog: "bg-slate-600 hover:bg-slate-700 text-white",
+    in_progress: "bg-blue-600 hover:bg-blue-700 text-white",
+    completed: "bg-green-600 hover:bg-green-700 text-white",
+    paused: "bg-orange-500 hover:bg-orange-600 text-white",
+    dropped: "bg-red-600 hover:bg-red-700 text-white",
+  }
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this item?")) {
@@ -142,12 +148,6 @@ export default function ItemDetail() {
               alt={item.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-3 right-3">
-              <Badge className={cn("shadow-sm gap-1.5", statusColors[item.status])} variant="outline">
-                {statusIcons[item.status]}
-                <span className="capitalize font-semibold">{item.status.replace("_", " ")}</span>
-              </Badge>
-            </div>
           </div>
 
           {/* Status + Add to List CTAs — desktop only */}
@@ -244,7 +244,7 @@ export default function ItemDetail() {
             <TabsContent value="overview" className="space-y-6 mt-6">
               {item.description && (
                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <p className="whitespace-pre-line font-serif">{item.description}</p>
+                  <p className="whitespace-pre-line">{item.description}</p>
                 </div>
               )}
 
@@ -321,7 +321,7 @@ export default function ItemDetail() {
 
             <TabsContent value="notes" className="mt-6">
               {item.notes ? (
-                <div className="bg-muted/30 p-4 rounded-lg border whitespace-pre-wrap font-serif">
+                <div className="bg-muted/30 p-4 rounded-lg border whitespace-pre-wrap">
                   {item.notes}
                 </div>
               ) : (
@@ -341,7 +341,7 @@ export default function ItemDetail() {
         style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
       >
         <Button
-          className="flex-1 h-12 font-semibold text-base gap-2 rounded-full"
+          className={`flex-1 h-12 font-semibold text-base gap-2 rounded-full ${statusButtonClass[item.status]}`}
           onClick={() => setIsSheetOpen(true)}
         >
           {statusIcons[item.status]}
