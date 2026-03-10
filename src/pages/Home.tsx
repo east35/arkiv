@@ -17,6 +17,8 @@ import {
 import { LayoutGrid, Table as TableIcon, ArrowUpDown, Search, Loader2 } from "lucide-react"
 import type { FullItem } from "@/types"
 
+import { Plus } from "lucide-react"
+
 type SortOption = "recent" | "title" | "progress"
 
 export default function Home() {
@@ -53,23 +55,25 @@ export default function Home() {
   // Filter for In Progress items
   const inProgressItems = items.filter(item => item.status === "in_progress")
   
-  // Sort logic
-  const sortedItems = [...inProgressItems].sort((a, b) => {
-    if (sortBy === "title") {
-      return a.title.localeCompare(b.title)
-    }
-    if (sortBy === "progress") {
-      // Normalize progress to percentage if possible, otherwise simple value comparison
-      // For MVP, just comparing raw extension values or 0
-      const progA = a.media_type === "book" ? (a.book.progress ?? 0) : (a.game.progress_hours ?? 0)
-      const progB = b.media_type === "book" ? (b.book.progress ?? 0) : (b.game.progress_hours ?? 0)
-      return progB - progA // Descending progress
-    }
-    // Default: recent
-    const dateA = new Date(a.updated_at || a.created_at || 0).getTime()
-    const dateB = new Date(b.updated_at || b.created_at || 0).getTime()
-    return dateB - dateA
-  })
+  // Sort logic function
+  const sortItems = (itemsToSort: FullItem[]) => {
+    return [...itemsToSort].sort((a, b) => {
+      if (sortBy === "title") {
+        return a.title.localeCompare(b.title)
+      }
+      if (sortBy === "progress") {
+        const progA = a.media_type === "book" ? (a.book.progress ?? 0) : (a.game.progress_hours ?? 0)
+        const progB = b.media_type === "book" ? (b.book.progress ?? 0) : (b.game.progress_hours ?? 0)
+        return progB - progA
+      }
+      const dateA = new Date(a.updated_at || a.created_at || 0).getTime()
+      const dateB = new Date(b.updated_at || b.created_at || 0).getTime()
+      return dateB - dateA
+    })
+  }
+
+  const inProgressGames = sortItems(inProgressItems.filter(i => i.media_type === "game"))
+  const inProgressBooks = sortItems(inProgressItems.filter(i => i.media_type === "book"))
 
   const handleEdit = (item: FullItem) => {
     setSelectedItem(item)
@@ -86,15 +90,10 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-full">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Home</h1>
-            <p className="text-muted-foreground mt-1">
-              You are currently playing or reading {sortedItems.length} items.
-            </p>
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight shrink-0">Home</h1>
 
-          <form onSubmit={handleSearch} className="relative w-full sm:w-72">
+          <form onSubmit={handleSearch} className="hidden sm:block relative w-full sm:w-72">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search for new games & books..."
@@ -141,12 +140,12 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 sm:px-6 pb-8">
+      <div className="flex-1 px-4 sm:px-6 pb-8 space-y-8">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : sortedItems.length === 0 ? (
+        ) : inProgressItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
             <LayoutGrid className="h-10 w-10 mb-4 opacity-20" />
             <p className="text-lg font-medium mb-1">Nothing in progress</p>
@@ -154,18 +153,42 @@ export default function Home() {
           </div>
         ) : (
           <>
-            {viewMode === "poster" ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-8">
-                {sortedItems.map((item) => (
-                  <PosterItem key={item.id} item={item} onEdit={handleEdit} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2 pb-8">
-                {sortedItems.map((item) => (
-                  <TableItem key={item.id} item={item} onEdit={handleEdit} />
-                ))}
-              </div>
+            {inProgressGames.length > 0 && (
+              <section>
+                <h2 className="text-xl font-semibold mb-4">Video Games</h2>
+                {viewMode === "poster" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {inProgressGames.map((item) => (
+                      <PosterItem key={item.id} item={item} onEdit={handleEdit} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {inProgressGames.map((item) => (
+                      <TableItem key={item.id} item={item} onEdit={handleEdit} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {inProgressBooks.length > 0 && (
+              <section>
+                <h2 className="text-xl font-semibold mb-4">Books</h2>
+                {viewMode === "poster" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {inProgressBooks.map((item) => (
+                      <PosterItem key={item.id} item={item} onEdit={handleEdit} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {inProgressBooks.map((item) => (
+                      <TableItem key={item.id} item={item} onEdit={handleEdit} />
+                    ))}
+                  </div>
+                )}
+              </section>
             )}
           </>
         )}
@@ -176,6 +199,17 @@ export default function Home() {
         open={isSheetOpen} 
         onOpenChange={handleSheetOpenChange} 
       />
+
+      {/* Mobile FAB for adding items */}
+      <div className="sm:hidden fixed bottom-20 right-4 z-50">
+        <Button 
+          size="icon" 
+          className="h-14 w-14 rounded-full shadow-lg"
+          onClick={() => navigate("/search")}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   )
 }

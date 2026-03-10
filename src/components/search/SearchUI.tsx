@@ -70,6 +70,7 @@ export function SearchUI() {
           <div className="relative">
             <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input 
+              autoFocus
               placeholder={`Search for ${mediaType}s...`}
               className="pl-9 h-10 text-base"
               value={query}

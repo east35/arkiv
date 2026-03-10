@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { format } from "date-fns"
-import { MoreHorizontal, PlayCircle, CheckCircle2, PauseCircle, XCircle, Clock, BookOpen, Gamepad2, ListPlus } from "lucide-react"
+import { MoreHorizontal, PlayCircle, CheckCircle2, PauseCircle, XCircle, Clock, BookOpen, Gamepad2, ListPlus, Star } from "lucide-react"
 import type { FullItem, Status } from "@/types"
 import { getStatusDate } from "@/store/useShelfStore"
 import { cn } from "@/lib/utils"
@@ -49,7 +49,11 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
   return (
     <>
       <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md">
-        <Link to={`/item/${item.id}`} className="block h-full">
+        {/* Desktop links to item, mobile opens status sheet */}
+        <div 
+          className="block h-full cursor-pointer md:hidden"
+          onClick={() => onEdit(item)}
+        >
           {/* Cover Image */}
           <div className="aspect-[2/3] w-full overflow-hidden bg-muted relative">
             <img
@@ -87,11 +91,67 @@ export function PosterItem({ item, onEdit }: PosterItemProps) {
             <div className="mt-auto pt-2 flex items-center justify-between gap-2 text-xs">
                <div className="flex items-center gap-1 font-medium">
                   {item.user_score ? (
-                    <span className="text-primary">{item.user_score}</span>
+                    <>
+                      <span className="text-primary">{item.user_score}</span>
+                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                    </>
                   ) : (
                     <span className="text-muted-foreground/50">-</span>
                   )}
-                  <span className="text-muted-foreground text-[10px]">/ 10</span>
+               </div>
+               
+               <div className="text-muted-foreground truncate">
+                 {statusDate ? format(new Date(statusDate), "MMM d, yyyy") : ""}
+               </div>
+            </div>
+          </div>
+        </div>
+        
+        <Link to={`/item/${item.id}`} className="hidden md:block h-full">
+          {/* Cover Image */}
+          <div className="aspect-[2/3] w-full overflow-hidden bg-muted relative">
+            <img
+              src={coverUrl}
+              alt={item.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+            
+            {/* Status Badge (Top Right) */}
+            <div className="absolute top-2 right-2">
+              <Badge variant="outline" className={cn(statusColors[item.status])}>
+                {statusIcons[item.status]}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex flex-1 flex-col p-3 space-y-1.5">
+            <h3 className="font-semibold leading-tight line-clamp-1" title={item.title}>
+              {item.title}
+            </h3>
+            
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                {isGame ? <Gamepad2 className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
+                {isGame 
+                  ? (item.game.developer || "Unknown Dev")
+                  : (item.book.author || "Unknown Author")
+                }
+              </span>
+            </div>
+
+            {/* Progress Bar / Score */}
+            <div className="mt-auto pt-2 flex items-center justify-between gap-2 text-xs">
+               <div className="flex items-center gap-1 font-medium">
+                  {item.user_score ? (
+                    <>
+                      <span className="text-primary">{item.user_score}</span>
+                      <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground/50">-</span>
+                  )}
                </div>
                
                <div className="text-muted-foreground truncate">

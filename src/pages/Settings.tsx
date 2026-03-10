@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Loader2, Download, Upload, RefreshCw, CheckCircle2 } from "lucide-react"
+import { Loader2, Download, Upload, RefreshCw, CheckCircle2, LogOut } from "lucide-react"
 import { toast } from "sonner"
 
 import { useNavigate } from "react-router-dom"
@@ -13,6 +13,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   Select,
   SelectContent,
@@ -32,7 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { DateFormat, TimeFormat, UserPreferences } from "@/types"
 
 export default function Settings() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const { preferences } = useShelfStore()
   const { fetchPreferences, updatePreferences } = usePreferences()
   const { items } = useShelfStore()
@@ -463,6 +474,30 @@ export default function Settings() {
             </Card>
           </TabsContent>
         </Tabs>
+        
+        {/* Mobile Sign Out */}
+        <div className="md:hidden mt-8">
+          <AlertDialog>
+            <AlertDialogTrigger className="w-full">
+              <Button variant="destructive" className="w-full">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Sign Out</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to sign out of ShelfLog?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => signOut()}>Sign Out</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </div>
   )

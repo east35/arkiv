@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useShelfStore } from "@/store/useShelfStore"
-import type { Status, Source, SortField } from "@/types"
+import type { Status, SortField } from "@/types"
 
 interface LibraryControlsProps {
   mediaType?: "game" | "book"
@@ -58,23 +58,6 @@ export function LibraryControls({ mediaType, hideSearch }: LibraryControlsProps)
             <SelectItem value="paused">Paused</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="dropped">Dropped</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Source Filter */}
-        <Select
-          value={filters.source}
-          onValueChange={(value) => setFilters({ source: value as Source | "all" })}
-        >
-          <SelectTrigger className="w-[130px]">
-            <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
-            <SelectValue placeholder="Source" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Sources</SelectItem>
-            <SelectItem value="manual">Manual</SelectItem>
-            <SelectItem value="igdb">IGDB</SelectItem>
-            <SelectItem value="google_books">Google Books</SelectItem>
           </SelectContent>
         </Select>
 

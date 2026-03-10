@@ -227,6 +227,8 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
 
   if (!item) return null
 
+  const watchedStatus = form.watch("status")
+
   const Content = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -241,7 +243,9 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
               <Select onValueChange={(val) => handleStatusChange(val as Status)} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder="Select status">
+                      {field.value ? field.value.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase()) : "Select status"}
+                    </SelectValue>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -351,7 +355,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
           )}
         </div>
 
-        {/* Row 3: Dates */}
+        {/* Row 3: Dates — always show Started, plus the status-specific date */}
         <div className="space-y-4 rounded-md border p-4 bg-muted/20">
             <h4 className="text-sm font-medium leading-none mb-4">Dates</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -366,39 +370,45 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="completed_at"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Completed</FormLabel>
-                    <DatePicker date={field.value} setDate={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="paused_at"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Paused</FormLabel>
-                    <DatePicker date={field.value} setDate={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="dropped_at"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Dropped</FormLabel>
-                    <DatePicker date={field.value} setDate={field.onChange} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {watchedStatus === "completed" && (
+                <FormField
+                  control={form.control}
+                  name="completed_at"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Completed</FormLabel>
+                      <DatePicker date={field.value} setDate={field.onChange} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {watchedStatus === "paused" && (
+                <FormField
+                  control={form.control}
+                  name="paused_at"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Paused</FormLabel>
+                      <DatePicker date={field.value} setDate={field.onChange} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {watchedStatus === "dropped" && (
+                <FormField
+                  control={form.control}
+                  name="dropped_at"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Dropped</FormLabel>
+                      <DatePicker date={field.value} setDate={field.onChange} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
         </div>
 
@@ -430,7 +440,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center pt-4">
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t -mx-1 px-1 flex justify-between items-center pt-4 pb-6 md:relative md:bg-transparent md:backdrop-blur-none md:border-t-0 md:mx-0 md:px-0 md:pb-0">
            <AlertDialog>
             <AlertDialogTrigger className={cn(buttonVariants({ variant: "destructive", size: "sm" }))}>
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -488,14 +498,16 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] overflow-y-auto rounded-t-xl px-4">
-        <SheetHeader className="text-left mb-4">
+      <SheetContent side="bottom" className="!h-[90vh] flex flex-col rounded-t-xl px-4 overflow-hidden">
+        <SheetHeader className="text-left mb-4 flex-shrink-0">
           <SheetTitle>{item.title}</SheetTitle>
           <SheetDescription>
              {item.media_type === "game" ? "Game" : "Book"} details and progress
           </SheetDescription>
         </SheetHeader>
-        {Content}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {Content}
+        </div>
       </SheetContent>
     </Sheet>
   )

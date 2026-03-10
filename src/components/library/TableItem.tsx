@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { format } from "date-fns"
-import { MoreHorizontal, PlayCircle, CheckCircle2, PauseCircle, XCircle, Clock, ListPlus } from "lucide-react"
+import { MoreHorizontal, PlayCircle, CheckCircle2, PauseCircle, XCircle, Clock, ListPlus, Star } from "lucide-react"
 import type { FullItem, Status } from "@/types"
 import { getStatusDate } from "@/store/useShelfStore"
 import { cn } from "@/lib/utils"
@@ -52,7 +52,7 @@ export function TableItem({ item, onEdit }: TableItemProps) {
   return (
     <>
       <div className="group flex items-center gap-4 p-2 rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:bg-accent/50">
-        <Link to={`/item/${item.id}`} className="flex flex-1 items-center gap-4 min-w-0">
+        <div onClick={() => onEdit(item)} className="flex flex-1 items-center gap-4 min-w-0 cursor-pointer md:hidden">
           {/* Cover (Small) */}
           <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
             <img
@@ -74,9 +74,64 @@ export function TableItem({ item, onEdit }: TableItemProps) {
           </div>
 
           {/* Score */}
-          <div className="w-16 text-right text-sm font-medium hidden sm:block">
+          <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
             {item.user_score ? (
-              <span className="text-primary">{item.user_score}</span>
+              <>
+                <span className="text-primary">{item.user_score}</span>
+                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+              </>
+            ) : (
+              <span className="text-muted-foreground/50">-</span>
+            )}
+          </div>
+
+          {/* Progress */}
+          <div className="w-24 text-right text-xs text-muted-foreground hidden md:block">
+            {progressDisplay}
+          </div>
+
+          {/* Status */}
+          <div className="w-28 flex justify-end">
+            <Badge variant="outline" className={cn("gap-1.5", statusColors[item.status])}>
+              {statusIcons[item.status]}
+              <span className="capitalize">{item.status.replace("_", " ")}</span>
+            </Badge>
+          </div>
+
+          {/* Date */}
+          <div className="w-24 text-right text-xs text-muted-foreground hidden lg:block">
+            {statusDate ? format(new Date(statusDate), "MMM d, yyyy") : "-"}
+          </div>
+        </div>
+
+        <Link to={`/item/${item.id}`} className="hidden md:flex flex-1 items-center gap-4 min-w-0">
+          {/* Cover (Small) */}
+          <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
+            <img
+              src={coverUrl}
+              alt={item.title}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+
+          {/* Title & Author/Dev */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium leading-none truncate" title={item.title}>
+              {item.title}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 truncate">
+              {isGame ? item.game.developer : item.book.author}
+            </p>
+          </div>
+
+          {/* Score */}
+          <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
+            {item.user_score ? (
+              <>
+                <span className="text-primary">{item.user_score}</span>
+                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+              </>
             ) : (
               <span className="text-muted-foreground/50">-</span>
             )}

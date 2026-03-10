@@ -6,8 +6,6 @@ import {
   Calendar, 
   BookOpen, 
   Gamepad2, 
-  MoreHorizontal, 
-  Edit,
   Trash2,
   Loader2,
   SearchX,
@@ -21,13 +19,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
 import { cn } from "@/lib/utils"
 import type { FullItem, Status } from "@/types"
@@ -115,26 +106,24 @@ export default function ItemDetail() {
           </Link>
           
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9">
-                <MoreHorizontal className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsSheetOpen(true)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Status
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
-                  <ListPlus className="h-4 w-4 mr-2" />
-                  Add to List...
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden md:flex"
+              onClick={() => setIsManageListsOpen(true)}
+            >
+              <ListPlus className="h-4 w-4 mr-2" />
+              Add to List
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="hidden md:flex"
+              onClick={handleDelete}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
           </div>
         </div>
       </div>
