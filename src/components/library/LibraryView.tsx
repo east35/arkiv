@@ -8,7 +8,7 @@ import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import type { FullItem, MediaType } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 interface LibraryViewProps {
   mediaType?: MediaType
@@ -18,6 +18,7 @@ interface LibraryViewProps {
 export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps) {
   const { viewMode, getFilteredItems } = useShelfStore()
   const { fetchItems } = useItems()
+  const navigate = useNavigate()
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [loading, setLoading] = useState(!useShelfStore.getState().items.length)
@@ -94,6 +95,17 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
         open={isSheetOpen} 
         onOpenChange={handleSheetOpenChange} 
       />
+
+      {/* Mobile FAB for adding items */}
+      <div className="sm:hidden fixed right-4 z-50" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+        <Button 
+          size="icon" 
+          className="h-14 w-14 rounded-full shadow-lg"
+          onClick={() => navigate("/search")}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   )
 }

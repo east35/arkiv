@@ -440,7 +440,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
         </div>
 
         {/* Footer Actions */}
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t -mx-1 px-1 flex justify-between items-center pt-4 pb-6 md:relative md:bg-transparent md:backdrop-blur-none md:border-t-0 md:mx-0 md:px-0 md:pb-0">
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t flex justify-between items-center pt-4 pb-6 md:relative md:bg-transparent md:backdrop-blur-none md:border-t-0 md:pb-0">
            <AlertDialog>
             <AlertDialogTrigger className={cn(buttonVariants({ variant: "destructive", size: "sm" }))}>
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -505,7 +505,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
              {item.media_type === "game" ? "Game" : "Book"} details and progress
           </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
           {Content}
         </div>
       </SheetContent>

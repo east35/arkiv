@@ -17,7 +17,6 @@ import {
   LayoutGrid,
   Gamepad2,
   BookOpen,
-  List,
   BarChart3,
   Settings,
   LogOut,
@@ -55,7 +54,6 @@ export function AppSidebar({ className, onNavClick }: { className?: string, onNa
     { to: "/", icon: LayoutGrid, label: "Home" },
     { to: "/books", icon: BookOpen, label: "Books" },
     { to: "/games", icon: Gamepad2, label: "Games" },
-    { to: "/lists", icon: List, label: "Lists" },
     { to: "/statistics", icon: BarChart3, label: "Statistics" },
   ]
 

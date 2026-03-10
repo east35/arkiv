@@ -6,7 +6,6 @@ import Search from "@/pages/Search"
 import Games from "@/pages/Games"
 import Books from "@/pages/Books"
 import Statistics from "@/pages/Statistics"
-import Lists from "@/pages/Lists"
 import ListDetail from "@/pages/ListDetail"
 import Settings from "@/pages/Settings"
 import Import from "@/pages/Import"
@@ -36,7 +35,6 @@ function App() {
           <Route path="/books" element={<Books />} />
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/lists/:id" element={<ListDetail />} />
-          <Route path="/lists" element={<Lists />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/import" element={<Import />} />
         </Route>

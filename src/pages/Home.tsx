@@ -2,9 +2,12 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useShelfStore } from "@/store/useShelfStore"
 import { useItems } from "@/hooks/useItems"
+import { useLists } from "@/hooks/useLists"
 import { PosterItem } from "@/components/library/PosterItem"
 import { TableItem } from "@/components/library/TableItem"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
+import { ListCard } from "@/components/lists/ListCard"
+import { CreateListDialog } from "@/components/lists/CreateListDialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -22,8 +25,9 @@ import { Plus } from "lucide-react"
 type SortOption = "recent" | "title" | "progress"
 
 export default function Home() {
-  const { items, viewMode, setViewMode } = useShelfStore()
+  const { items, lists, viewMode, setViewMode } = useShelfStore()
   const { fetchItems } = useItems()
+  const { fetchLists } = useLists()
   const navigate = useNavigate()
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -33,8 +37,8 @@ export default function Home() {
 
   // Fetch on mount
   useEffect(() => {
-    fetchItems().finally(() => setLoading(false))
-  }, [fetchItems])
+    Promise.all([fetchItems(), fetchLists()]).finally(() => setLoading(false))
+  }, [fetchItems, fetchLists])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -192,6 +196,25 @@ export default function Home() {
             )}
           </>
         )}
+
+        {/* Lists Section */}
+        <section className="pt-4 border-t">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Lists</h2>
+            <CreateListDialog />
+          </div>
+          {lists.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
+              <p className="text-sm">Create lists to organize your collection.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {lists.map((list) => (
+                <ListCard key={list.id} list={list} />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
       <StatusSheet 
@@ -201,7 +224,7 @@ export default function Home() {
       />
 
       {/* Mobile FAB for adding items */}
-      <div className="sm:hidden fixed bottom-20 right-4 z-50">
+      <div className="sm:hidden fixed right-4 z-50" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
         <Button 
           size="icon" 
           className="h-14 w-14 rounded-full shadow-lg"
