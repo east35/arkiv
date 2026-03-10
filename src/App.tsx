@@ -13,6 +13,7 @@ import Import from "@/pages/Import"
 import ItemDetail from "@/pages/ItemDetail"
 import Login from "@/pages/Login"
 import Register from "@/pages/Register"
+import Marketing from "@/pages/Marketing"
 
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
@@ -21,6 +22,7 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <Routes>
+        <Route path="/marketing" element={<Marketing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         

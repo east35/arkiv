@@ -12,6 +12,9 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }
 
   if (!session) {
+    if (location.pathname === "/") {
+      return <Navigate to="/marketing" replace />
+    }
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

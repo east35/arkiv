@@ -111,6 +111,9 @@ export default function Login() {
           <Link to="/register" className="w-full">
             <Button variant="outline" className="w-full">Sign Up</Button>
           </Link>
+          <Link to="/marketing" className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
+            View product page
+          </Link>
         </CardFooter>
       </Card>
       </div>
