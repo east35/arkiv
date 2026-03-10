@@ -63,13 +63,15 @@ export function SearchResultItem({ result, onAdd, isAdding }: SearchResultItemPr
         <div className="fixed inset-0 z-[70] bg-background flex flex-col">
           {/* Header */}
           <div className="flex items-center px-4 py-4 border-b bg-background/95 backdrop-blur shrink-0">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-muted-foreground hover:text-foreground"
               onClick={() => setIsDetailOpen(false)}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <IconArrowLeft className="h-4 w-4" />
               Back
-            </button>
+            </Button>
           </div>
 
           {/* Content */}

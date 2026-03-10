@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { IconSearch, IconLoader2, IconDeviceGamepad2, IconBook, IconX } from "@tabler/icons-react"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { SearchResultItem } from "./SearchResultItem"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useExternalSearch, SEARCH_DEBOUNCE_MS } from "@/hooks/useExternalSearch"
 import { useCommitItem, SHEET_CLOSE_DELAY_MS } from "@/hooks/useCommitItem"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import type { MediaType, FullItem } from "@/types"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 
 export function SearchUI() {
   const navigate = useNavigate()
@@ -77,31 +78,27 @@ export function SearchUI() {
         <div className="flex items-center justify-between gap-4 mb-4">
           <h1 className="text-3xl font-bold tracking-tight">Add to Collection</h1>
           <div className="flex items-center gap-2">
-            {/* Desktop type toggle */}
-            <div className="hidden md:flex items-center border rounded-[10px] p-0.5 gap-0.5">
-              {typeItems.map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  onClick={() => setMediaType(value)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 h-7 rounded-[7px] text-sm font-medium transition-colors",
-                    mediaType === value
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              value={mediaType}
+              onValueChange={(value) => setMediaType(value as MediaType)}
+              items={typeItems.map(({ value, label, icon }) => ({
+                value,
+                label,
+                icon,
+                ariaLabel: label,
+              }))}
+              size="sm"
+              className="hidden md:block"
+            />
             {/* Mobile close */}
-            <button
-              className="md:hidden flex items-center justify-center h-9 w-9 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden h-9 w-9 rounded-full text-muted-foreground hover:text-foreground"
               onClick={() => navigate(-1)}
             >
               <IconX className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -149,28 +146,20 @@ export function SearchUI() {
 
       {/* Mobile type picker — pinned to bottom of full-screen overlay */}
       <div className="md:hidden fixed z-20 left-0 right-0 px-4 pb-safe" style={{ bottom: '1rem' }}>
-        <div className="flex items-center bg-card border rounded-full p-1 shadow-lg">
-          <button
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 py-2.5 rounded-full text-sm font-medium transition-colors",
-              mediaType === "game" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={() => setMediaType("game")}
-          >
-            <IconDeviceGamepad2 className="h-4 w-4" />
-            Games
-          </button>
-          <button
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 py-2.5 rounded-full text-sm font-medium transition-colors",
-              mediaType === "book" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={() => setMediaType("book")}
-          >
-            <IconBook className="h-4 w-4" />
-            Books
-          </button>
-        </div>
+        <SegmentedControl
+          value={mediaType}
+          onValueChange={(value) => setMediaType(value as MediaType)}
+          items={typeItems.map(({ value, label, icon }) => ({
+            value,
+            label,
+            icon,
+            ariaLabel: label,
+          }))}
+          fullWidth
+          className="w-full"
+          listClassName="rounded-full bg-card shadow-lg"
+          triggerClassName="py-2.5"
+        />
       </div>
     </div>
   )

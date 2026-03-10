@@ -5,7 +5,6 @@ import { IconDots, IconPlaylistAdd, IconStar } from "@tabler/icons-react"
 import type { FullItem, Status } from "@/types"
 import { getStatusDate } from "@/store/useShelfStore"
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
 import { statusIcons } from "@/components/status-icons"
 import {
   DropdownMenu,
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
+import { iconActionButtonClassName } from "@/lib/icon-action-button"
 
 interface TableItemProps {
   item: FullItem
@@ -223,7 +223,7 @@ export function TableItem({ item, onEdit, mobileTapAction = "edit" }: TableItemP
         {/* Actions */}
         <div className="w-8 flex justify-end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
-            <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8")} aria-label="Item actions">
+            <DropdownMenuTrigger className={iconActionButtonClassName()} aria-label="Item actions">
               <IconDots className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

@@ -7,10 +7,13 @@ import { TableItem } from "./TableItem"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import type { FullItem, MediaType } from "@/types"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { IconPlus, IconLoader2, IconDeviceGamepad2, IconBook, IconSearch } from "@tabler/icons-react"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/loading-state"
+import { IconPlus, IconDeviceGamepad2, IconBook, IconSearch } from "@tabler/icons-react"
 import { useNavigate, useOutletContext } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { MobileFab } from "@/components/ui/mobile-fab"
 
 const collectionTabs: { type: MediaType; label: string; icon: React.ComponentType<{ className?: string }>; href: string }[] = [
   { type: "game", label: "Games", icon: IconDeviceGamepad2, href: "/games" },
@@ -76,14 +79,14 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
+          <LoadingState />
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
-            <p className="text-lg font-medium mb-2">No items found</p>
-            <p className="text-sm">Try adjusting your filters or add some new items.</p>
-          </div>
+          <EmptyState
+            title="No items found"
+            description="Try adjusting your filters or add some new items."
+            className="h-64"
+            titleClassName="mb-2"
+          />
         ) : (
           <>
             {viewMode === "poster" ? (
@@ -109,22 +112,13 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
         onOpenChange={handleSheetOpenChange} 
       />
 
-      {/* Mobile FAB for adding items */}
-      <div
-        className={cn(
-          "md:hidden fixed right-4 z-50 transition-transform duration-200 ease-out",
-          navVisible ? "translate-y-0" : "translate-y-16"
-        )}
-        style={{ bottom: "calc(8rem + env(safe-area-inset-bottom, 0px))" }}
-      >
-        <Button
-          size="icon"
-          className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => navigate(mediaType ? `/search?type=${mediaType}` : "/search")}
-        >
-          <IconPlus className="h-6 w-6" />
-        </Button>
-      </div>
+      <MobileFab
+        onClick={() => navigate(mediaType ? `/search?type=${mediaType}` : "/search")}
+        label={`Add ${mediaType ?? "item"}`}
+        icon={<IconPlus className="h-6 w-6" />}
+        navVisible={navVisible}
+        bottom="calc(8rem + env(safe-area-inset-bottom, 0px))"
+      />
 
       {/* Mobile collection tab switcher */}
       {mediaType && (
@@ -135,25 +129,23 @@ export default function LibraryView({ mediaType, hideSearch }: LibraryViewProps)
           )}
           style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
-          <div className="flex items-center bg-card border rounded-full p-1 shadow-lg">
-            {collectionTabs.map((tab) => {
-              const Icon = tab.icon
-              const isActive = mediaType === tab.type
-              return (
-                <button
-                  key={tab.type}
-                  className={cn(
-                    "flex flex-1 items-center justify-center gap-2 py-2.5 rounded-full text-sm font-medium transition-colors",
-                    isActive ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                  )}
-                  onClick={() => navigate(tab.href)}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
-                </button>
-              )
-            })}
-          </div>
+          <SegmentedControl
+            value={mediaType}
+            onValueChange={(value) => {
+              const next = collectionTabs.find((tab) => tab.type === value)
+              if (next) navigate(next.href)
+            }}
+            items={collectionTabs.map((tab) => ({
+              value: tab.type,
+              label: tab.label,
+              icon: tab.icon,
+              ariaLabel: tab.label,
+            }))}
+            fullWidth
+            className="w-full"
+            listClassName="rounded-full bg-card shadow-lg"
+            triggerClassName="py-2.5"
+          />
         </div>
       )}
     </div>

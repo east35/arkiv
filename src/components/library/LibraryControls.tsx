@@ -3,6 +3,7 @@ import { IconSearch, IconFilter, IconArrowsUpDown, IconLayoutGrid, IconTable, Ic
 import { Link } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
 import {
   Select,
   SelectContent,
@@ -197,39 +198,16 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
           )}
         </div>
 
-        {/* View Toggle — always visible, rounded-[7px] active/hover states */}
-        <div className="flex items-center border rounded-[10px] p-0.5 gap-0.5 h-11 bg-background shadow-sm">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "rounded-[7px] h-9 w-9",
-              viewMode === "poster"
-                ? "bg-foreground text-background hover:bg-foreground hover:text-background"
-                : "hover:bg-muted hover:rounded-[7px]"
-            )}
-            onClick={() => setViewMode("poster")}
-            aria-label="Poster View"
-            title="Poster View"
-          >
-            <IconLayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "rounded-[7px] h-9 w-9",
-              viewMode === "table"
-                ? "bg-foreground text-background hover:bg-foreground hover:text-background"
-                : "hover:bg-muted hover:rounded-[7px]"
-            )}
-            onClick={() => setViewMode("table")}
-            aria-label="Table View"
-            title="Table View"
-          >
-            <IconTable className="h-4 w-4" />
-          </Button>
-        </div>
+        <SegmentedControl
+          value={viewMode}
+          onValueChange={(value) => setViewMode(value as "poster" | "table")}
+          items={[
+            { value: "poster", icon: IconLayoutGrid, ariaLabel: "Poster View" },
+            { value: "table", icon: IconTable, ariaLabel: "Table View" },
+          ]}
+          className="bg-background shadow-sm"
+          triggerClassName="w-9 px-0"
+        />
         </div>{/* end controls */}
       </div>{/* end title+controls row */}
 

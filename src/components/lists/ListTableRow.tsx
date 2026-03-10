@@ -1,18 +1,28 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { format } from "date-fns"
 import { IconDots, IconTrash } from "@tabler/icons-react"
 import type { List } from "@/types"
 import { useShelfStore } from "@/store/useShelfStore"
 import { useLists } from "@/hooks/useLists"
-import { buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { iconActionButtonClassName } from "@/lib/icon-action-button"
 
 interface ListTableRowProps {
   list: List
@@ -21,19 +31,18 @@ interface ListTableRowProps {
 export function ListTableRow({ list }: ListTableRowProps) {
   const { deleteList } = useLists()
   const items = useShelfStore(s => s.items)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const coverItemId = list.cover_item_id ?? list.first_item_id ?? null
   const coverUrl = coverItemId ? (items.find(i => i.id === coverItemId)?.cover_url ?? null) : null
   const itemCount = list.item_count ?? 0
 
   const handleDelete = async () => {
-    if (confirm(`Are you sure you want to delete "${list.name}"?`)) {
-      try {
-        await deleteList(list.id)
-        toast.success("List deleted")
-      } catch {
-        toast.error("Failed to delete list")
-      }
+    try {
+      await deleteList(list.id)
+      toast.success("List deleted")
+    } catch {
+      toast.error("Failed to delete list")
     }
   }
 
@@ -75,17 +84,34 @@ export function ListTableRow({ list }: ListTableRowProps) {
       {/* Actions */}
       <div className="w-8 flex justify-end shrink-0" onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
-          <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8")} aria-label="List actions">
+          <DropdownMenuTrigger className={iconActionButtonClassName()} aria-label="List actions">
             <IconDots className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={handleDelete}>
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
               <IconTrash className="h-4 w-4 mr-2" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete list?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{list.name}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

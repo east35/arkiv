@@ -186,7 +186,7 @@ export function AppSidebar({ className, onNavClick, collapsed = false, onCollaps
 export function MobileNav() {
   return (
     <Sheet>
-      <SheetTrigger className="md:hidden inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 focus-visible:ring-4 focus-visible:outline-1 aria-invalid:focus-visible:ring-0 hover:bg-accent hover:text-accent-foreground h-9 w-9">
+      <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "md:hidden")}>
         <IconMenu2 className="h-5 w-5" />
         <span className="sr-only">Toggle menu</span>
       </SheetTrigger>

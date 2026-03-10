@@ -9,7 +9,7 @@ import {
   subMonths,
   format,
 } from "date-fns"
-import { IconCalendar, IconTrophy, IconStar, IconBolt, IconLoader2 } from "@tabler/icons-react"
+import { IconCalendar, IconTrophy, IconStar, IconBolt } from "@tabler/icons-react"
 
 import { useStatistics } from "@/hooks/useStatistics"
 import { useShelfStore } from "@/store/useShelfStore"
@@ -31,6 +31,8 @@ import { MediaTypeDistributionChart } from "@/components/statistics/MediaTypeDis
 import { StatusByMediaTypeChart } from "@/components/statistics/StatusByMediaTypeChart"
 import { ScoreDistributionChart } from "@/components/statistics/ScoreDistributionChart"
 import { ActivityTimeline } from "@/components/statistics/ActivityTimeline"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/loading-state"
 
 // ---------------------------------------------------------------------------
 // Date range helpers
@@ -147,11 +149,7 @@ export default function Statistics() {
 
   // Loading skeleton
   if (!stats) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <LoadingState className="h-full" />
   }
 
   // Empty state
@@ -161,11 +159,12 @@ export default function Statistics() {
         <div className="border-b px-4 sm:px-6 py-4">
           <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground px-4">
-          <IconTrophy className="h-10 w-10 mb-4 opacity-20" />
-          <p className="text-lg font-medium mb-1">No stats available</p>
-          <p className="text-sm">Add items to your shelf to see your statistics.</p>
-        </div>
+        <EmptyState
+          title="No stats available"
+          description="Add items to your shelf to see your statistics."
+          icon={<IconTrophy className="h-10 w-10" />}
+          className="flex-1 px-4"
+        />
       </div>
     )
   }

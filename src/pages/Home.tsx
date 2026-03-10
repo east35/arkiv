@@ -9,8 +9,10 @@ import { LibraryControls } from "@/components/library/LibraryControls"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import { ListCard } from "@/components/lists/ListCard"
 import { CreateListDialog } from "@/components/lists/CreateListDialog"
-import { Button } from "@/components/ui/button"
-import { IconLayoutGrid, IconLoader2, IconPlus } from "@tabler/icons-react"
+import { MobileFab } from "@/components/ui/mobile-fab"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/loading-state"
+import { IconLayoutGrid, IconPlus } from "@tabler/icons-react"
 import type { FullItem } from "@/types"
 
 export default function Home() {
@@ -90,15 +92,14 @@ export default function Home() {
 
       <div className="flex-1 px-4 sm:px-6 pb-8 space-y-8">
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
+          <LoadingState />
         ) : inProgressItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
-            <IconLayoutGrid className="h-10 w-10 mb-4 opacity-20" />
-            <p className="text-lg font-medium mb-1">Nothing in progress</p>
-            <p className="text-sm">Start a new adventure from your backlog!</p>
-          </div>
+          <EmptyState
+            title="Nothing in progress"
+            description="Start a new adventure from your backlog!"
+            icon={<IconLayoutGrid className="h-10 w-10" />}
+            className="h-64 border-2 border-dashed rounded-lg bg-muted/10"
+          />
         ) : (
           <>
             {inProgressGames.length > 0 && (
@@ -167,16 +168,12 @@ export default function Home() {
         onOpenChange={handleSheetOpenChange} 
       />
 
-      {/* Mobile FAB for adding items */}
-      <div className="sm:hidden fixed right-4 z-50" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
-        <Button 
-          size="icon" 
-          className="h-14 w-14 rounded-full shadow-lg"
-          onClick={() => navigate("/search")}
-        >
-          <IconPlus className="h-6 w-6" />
-        </Button>
-      </div>
+      <MobileFab
+        hiddenClassName="sm:hidden"
+        onClick={() => navigate("/search")}
+        label="Add item"
+        icon={<IconPlus className="h-6 w-6" />}
+      />
     </div>
   )
 }

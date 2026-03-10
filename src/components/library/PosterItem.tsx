@@ -5,7 +5,6 @@ import { IconDots, IconStar, IconPlaylistAdd } from "@tabler/icons-react"
 import type { FullItem, Status } from "@/types"
 import { getStatusDate } from "@/store/useShelfStore"
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
 import { statusIcons } from "@/components/status-icons"
 import {
   DropdownMenu,
@@ -15,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
+import { iconActionButtonClassName } from "@/lib/icon-action-button"
 
 interface PosterItemProps {
   item: FullItem
@@ -141,10 +141,7 @@ export function PosterItem({ item, onEdit, mobileTapAction = "edit" }: PosterIte
         >
           <DropdownMenu>
             <DropdownMenuTrigger
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
-                "h-7 w-7 rounded-full bg-black/60 text-white hover:bg-black/80 hover:text-white backdrop-blur-sm border-0",
-              )}
+              className={iconActionButtonClassName({ size: "sm", tone: "inverse", shape: "circle" })}
               aria-label="Item actions"
             >
               <IconDots className="h-3.5 w-3.5" />

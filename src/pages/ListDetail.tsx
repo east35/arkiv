@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { IconArrowLeft, IconTrash, IconDots, IconLoader2, IconQuestionMark, IconSearch } from "@tabler/icons-react"
+import { IconArrowLeft, IconTrash, IconDots, IconQuestionMark, IconSearch } from "@tabler/icons-react"
 
 import { useShelfStore } from "@/store/useShelfStore"
 import { useLists } from "@/hooks/useLists"
@@ -14,11 +14,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PosterItem } from "@/components/library/PosterItem"
 import { TableItem } from "@/components/library/TableItem"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/loading-state"
 import { toast } from "sonner"
 import type { FullItem, ListItem } from "@/types"
+import { iconActionButtonClassName } from "@/lib/icon-action-button"
 
 export default function ListDetail() {
   const { id } = useParams<{ id: string }>()
@@ -33,6 +46,7 @@ export default function ListDetail() {
   
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [search, setSearch] = useState("")
 
   // Get list metadata from store
@@ -75,15 +89,13 @@ export default function ListDetail() {
 
   const handleDeleteList = async () => {
     if (!list) return
-    if (confirm(`Are you sure you want to delete "${list.name}"?`)) {
-      try {
-        await deleteList(list.id)
-        toast.success("List deleted")
-        navigate("/lists")
-      } catch (error) {
-        console.error(error)
-        toast.error("Failed to delete list")
-      }
+    try {
+      await deleteList(list.id)
+      toast.success("List deleted")
+      navigate("/lists")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to delete list")
     }
   }
 
@@ -112,26 +124,23 @@ export default function ListDetail() {
   }
 
   if (loading && !list) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <LoadingState className="h-full" />
   }
 
   if (!list) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
-        <IconQuestionMark className="h-12 w-12" />
-        <div className="text-center">
-          <p className="text-lg font-medium">List not found</p>
-          <p className="text-sm">It may have been deleted or the link is invalid.</p>
-        </div>
-        <Button variant="outline" onClick={() => navigate(-1)}>
-          <IconArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-      </div>
+      <EmptyState
+        title="List not found"
+        description="It may have been deleted or the link is invalid."
+        icon={<IconQuestionMark className="h-12 w-12" />}
+        className="h-full"
+        action={
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            <IconArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        }
+      />
     )
   }
 
@@ -140,20 +149,17 @@ export default function ListDetail() {
       {/* Header — matches other page headers */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
         <div className="flex items-center justify-between gap-2">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center text-muted-foreground hover:text-foreground transition-colors text-sm"
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
             <IconArrowLeft className="h-4 w-4 mr-1" />
             Back
-          </button>
+          </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-9 w-9">
+            <DropdownMenuTrigger className={iconActionButtonClassName({ size: "lg" })}>
               <IconDots className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem className="text-destructive" onClick={handleDeleteList}>
+              <DropdownMenuItem className="text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
                 <IconTrash className="h-4 w-4 mr-2" />
                 Delete List
               </DropdownMenuItem>
@@ -189,10 +195,12 @@ export default function ListDetail() {
 
       <div className="flex-1 px-4 sm:px-6 pb-8">
         {displayItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10 mx-4 sm:mx-0">
-            <p className="text-lg font-medium mb-2">Empty List</p>
-            <p className="text-sm">Add items from your shelf or search.</p>
-          </div>
+          <EmptyState
+            title="Empty List"
+            description="Add items from your shelf or search."
+            className="h-64 border-2 border-dashed rounded-lg bg-muted/10 mx-4 sm:mx-0"
+            titleClassName="mb-2"
+          />
         ) : (
           <>
             {viewMode === "poster" ? (
@@ -245,6 +253,23 @@ export default function ListDetail() {
         open={isSheetOpen} 
         onOpenChange={handleSheetOpenChange} 
       />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete list?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{list.name}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteList} className="bg-destructive text-white hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react"
-import { IconPlus, IconLoader2, IconLayoutGrid, IconTable, IconArrowsUpDown, IconAdjustmentsHorizontal } from "@tabler/icons-react"
+import { IconPlus, IconLayoutGrid, IconTable, IconArrowsUpDown, IconAdjustmentsHorizontal } from "@tabler/icons-react"
 import { useShelfStore } from "@/store/useShelfStore"
 import { useLists } from "@/hooks/useLists"
 import { CreateListDialog } from "@/components/lists/CreateListDialog"
@@ -22,6 +22,10 @@ import {
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { List } from "@/types"
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { MobileFab } from "@/components/ui/mobile-fab"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/loading-state"
 
 type SortField = "name" | "item_count" | "created_at"
 type SortDir = "asc" | "desc"
@@ -139,27 +143,15 @@ export default function Lists() {
               </Button>
             </div>
 
-            {/* View toggle */}
-            <div className="flex items-center border rounded-[10px] p-0.5 gap-0.5 h-11">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn("rounded-[7px] h-9 w-9", viewMode === "poster" ? "bg-foreground text-background hover:bg-foreground hover:text-background" : "hover:bg-muted")}
-                onClick={() => setViewMode("poster")}
-                title="Grid View"
-              >
-                <IconLayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn("rounded-[7px] h-9 w-9", viewMode === "table" ? "bg-foreground text-background hover:bg-foreground hover:text-background" : "hover:bg-muted")}
-                onClick={() => setViewMode("table")}
-                title="Table View"
-              >
-                <IconTable className="h-4 w-4" />
-              </Button>
-            </div>
+            <SegmentedControl
+              value={viewMode}
+              onValueChange={(value) => setViewMode(value as ViewMode)}
+              items={[
+                { value: "poster", icon: IconLayoutGrid, ariaLabel: "Grid View" },
+                { value: "table", icon: IconTable, ariaLabel: "Table View" },
+              ]}
+              triggerClassName="w-9 px-0"
+            />
           </div>
         </div>
       </div>
@@ -167,15 +159,16 @@ export default function Lists() {
       {/* Content */}
       <div className="flex-1 px-4 sm:px-6 pb-8">
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
+          <LoadingState />
         ) : sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10">
-            <p className="text-lg font-medium mb-2">No lists yet</p>
-            <p className="text-sm mb-4 max-w-sm">Create lists to organize your collection by theme, genre, or reading challenge.</p>
-            <CreateListDialog />
-          </div>
+          <EmptyState
+            title="No lists yet"
+            description="Create lists to organize your collection by theme, genre, or reading challenge."
+            className="h-64 border-2 border-dashed rounded-lg bg-muted/10"
+            titleClassName="mb-2"
+            descriptionClassName="mb-4 max-w-sm"
+            action={<CreateListDialog />}
+          />
         ) : viewMode === "poster" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-8">
             {sorted.map((list) => <ListCard key={list.id} list={list} />)}
@@ -187,12 +180,12 @@ export default function Lists() {
         )}
       </div>
 
-      {/* Mobile FAB */}
-      <div className="sm:hidden fixed right-4 z-50" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
-        <Button size="icon" className="h-14 w-14 rounded-full shadow-lg" onClick={() => setDialogOpen(true)}>
-          <IconPlus className="h-6 w-6" />
-        </Button>
-      </div>
+      <MobileFab
+        hiddenClassName="sm:hidden"
+        onClick={() => setDialogOpen(true)}
+        label="Create list"
+        icon={<IconPlus className="h-6 w-6" />}
+      />
 
       <CreateListDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>

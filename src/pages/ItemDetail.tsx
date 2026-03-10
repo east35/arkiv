@@ -7,7 +7,6 @@ import {
   IconBook,
   IconDeviceGamepad2,
   IconTrash,
-  IconLoader2,
   IconSearchOff,
   IconPlaylistAdd,
 } from "@tabler/icons-react"
@@ -16,13 +15,27 @@ import { useShelfStore } from "@/store/useShelfStore"
 import { useItems } from "@/hooks/useItems"
 import { useLists } from "@/hooks/useLists"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
+import { EmptyState } from "@/components/ui/empty-state"
+import { LoadingState } from "@/components/ui/loading-state"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import type { FullItem, Status } from "@/types"
 import { statusIcons } from "@/components/status-icons"
+import { cn } from "@/lib/utils"
 
 export default function ItemDetail() {
   const { id } = useParams<{ id: string }>()
@@ -65,27 +78,24 @@ export default function ItemDetail() {
 
   // Loading state: show spinner while items are being fetched
   if (!item && !items.length) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <LoadingState className="h-full" />
   }
 
   // 404 state: items loaded but this ID doesn't exist
   if (!item) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
-        <IconSearchOff className="h-12 w-12" />
-        <div className="text-center">
-          <p className="text-lg font-medium">Item not found</p>
-          <p className="text-sm">It may have been deleted or the link is invalid.</p>
-        </div>
-        <Button variant="outline" onClick={() => navigate("/")}>
-          <IconArrowLeft className="h-4 w-4 mr-2" />
-          Back to Collection
-        </Button>
-      </div>
+      <EmptyState
+        title="Item not found"
+        description="It may have been deleted or the link is invalid."
+        icon={<IconSearchOff className="h-12 w-12" />}
+        className="h-full"
+        action={
+          <Button variant="outline" onClick={() => navigate("/")}>
+            <IconArrowLeft className="h-4 w-4 mr-2" />
+            Back to Collection
+          </Button>
+        }
+      />
     )
   }
 
@@ -102,10 +112,8 @@ export default function ItemDetail() {
   }
 
   const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this item?")) {
-      await deleteItem(item.id)
-      navigate("/")
-    }
+    await deleteItem(item.id)
+    navigate("/")
   }
 
   return (
@@ -119,15 +127,28 @@ export default function ItemDetail() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="destructive"
-              size="sm"
-              className="hidden md:flex"
-              onClick={handleDelete}
-            >
-              <IconTrash className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger
+                className={cn(buttonVariants({ variant: "destructive", size: "sm" }), "hidden md:inline-flex")}
+              >
+                <IconTrash className="h-4 w-4 mr-2" />
+                Delete
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete item?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete "{item.title}" and all its history. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>

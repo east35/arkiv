@@ -11,7 +11,8 @@ import { useTheme } from "@/components/theme-provider"
 import { useMetadataEnrich, type EnrichReport } from "@/hooks/useMetadataEnrich"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { FormFieldBlock } from "@/components/ui/form-field-block"
+import { LoadingState } from "@/components/ui/loading-state"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +54,7 @@ export default function Settings() {
 
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<Partial<UserPreferences>>({})
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({})
   const [sparseCount, setSparseCount] = useState<number | null>(null)
   const [enrichReport, setEnrichReport] = useState<EnrichReport | null>(null)
 
@@ -75,19 +77,22 @@ export default function Settings() {
     setFormData({ ...formData, theme: newTheme })
   }
 
+  const getUsernameError = (username?: string | null) => {
+    if (!username) return null
+    const value = username.trim()
+    if (value.length < 2 || value.length > 30) return "Username must be 2-30 characters"
+    if (!/^[a-zA-Z0-9_]+$/.test(value)) return "Username can only contain letters, numbers, and underscores"
+    return null
+  }
+
   const handleSave = async () => {
-    // Basic username validation
-    if (formData.username) {
-      const u = formData.username.trim()
-      if (u.length < 2 || u.length > 30) {
-        toast.error("Username must be 2–30 characters")
-        return
-      }
-      if (!/^[a-zA-Z0-9_]+$/.test(u)) {
-        toast.error("Username can only contain letters, numbers, and underscores")
-        return
-      }
+    const usernameError = getUsernameError(formData.username)
+    if (usernameError) {
+      setFieldErrors({ username: usernameError })
+      toast.error(usernameError)
+      return
     }
+    setFieldErrors({})
 
     setLoading(true)
     try {
@@ -134,11 +139,7 @@ export default function Settings() {
   }
 
   if (!preferences) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <LoadingState className="h-full" />
   }
 
   return (
@@ -173,22 +174,24 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                <FormFieldBlock id="email" label="Email" description="Managed via Supabase Auth.">
                   <Input id="email" value={user?.email || ""} disabled />
-                  <p className="text-xs text-muted-foreground">
-                    Managed via Supabase Auth.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input 
-                    id="username" 
-                    value={formData.username || ""} 
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                </FormFieldBlock>
+                <FormFieldBlock id="username" label="Username" error={fieldErrors.username}>
+                  <Input
+                    id="username"
+                    value={formData.username || ""}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setFormData({ ...formData, username: value })
+                      if (fieldErrors.username) {
+                        setFieldErrors((prev) => ({ ...prev, username: undefined }))
+                      }
+                    }}
+                    onBlur={() => setFieldErrors((prev) => ({ ...prev, username: getUsernameError(formData.username) || undefined }))}
                     placeholder="Set a username"
                   />
-                </div>
+                </FormFieldBlock>
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>
@@ -209,30 +212,22 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="steamId">Steam ID</Label>
-                  <Input 
-                    id="steamId" 
-                    value={formData.steam_id || ""} 
+                <FormFieldBlock id="steamId" label="Steam ID" description="Used to fetch game playtimes (coming soon).">
+                  <Input
+                    id="steamId"
+                    value={formData.steam_id || ""}
                     onChange={(e) => setFormData({ ...formData, steam_id: e.target.value })}
                     placeholder="76561198000000000"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Used to fetch game playtimes (coming soon).
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="calibre">Calibre Library Path</Label>
-                  <Input 
-                    id="calibre" 
-                    value={formData.calibre_path || ""} 
+                </FormFieldBlock>
+                <FormFieldBlock id="calibre" label="Calibre Library Path" description="Local path to your Calibre library (coming soon).">
+                  <Input
+                    id="calibre"
+                    value={formData.calibre_path || ""}
                     onChange={(e) => setFormData({ ...formData, calibre_path: e.target.value })}
                     placeholder="/Users/name/Calibre Library"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Local path to your Calibre library (coming soon).
-                  </p>
-                </div>
+                </FormFieldBlock>
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>
@@ -253,8 +248,7 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="theme">Theme</Label>
+                <FormFieldBlock id="theme" label="Theme">
                   <Select 
                     value={formData.theme || "system"} 
                     onValueChange={handleThemeChange}
@@ -268,10 +262,9 @@ export default function Settings() {
                       <SelectItem value="system">System</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FormFieldBlock>
 
-<div className="space-y-2">
-                  <Label htmlFor="date-format">Date Format</Label>
+                <FormFieldBlock id="date-format" label="Date Format">
                   <Select 
                     value={formData.date_format || "iso"} 
                     onValueChange={(val) => setFormData({ ...formData, date_format: val as DateFormat })}
@@ -286,10 +279,9 @@ export default function Settings() {
                       <SelectItem value="long">Long (Month D, YYYY)</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FormFieldBlock>
 
-                <div className="space-y-2">
-                  <Label htmlFor="time-format">Time Format</Label>
+                <FormFieldBlock id="time-format" label="Time Format">
                   <Select 
                     value={formData.time_format || "12hr"} 
                     onValueChange={(val) => setFormData({ ...formData, time_format: val as TimeFormat })}
@@ -302,7 +294,7 @@ export default function Settings() {
                       <SelectItem value="24hr">24-hour (13:00)</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FormFieldBlock>
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>

@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import { IconDots, IconTrash } from "@tabler/icons-react"
 
@@ -10,9 +11,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { buttonVariants } from "@/components/ui/button"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { iconActionButtonClassName } from "@/lib/icon-action-button"
 
 interface ListCardProps {
   list: List
@@ -21,6 +31,7 @@ interface ListCardProps {
 export function ListCard({ list }: ListCardProps) {
   const { deleteList } = useLists()
   const items = useShelfStore(s => s.items)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const itemCount = list.item_count ?? 0
   const countLabel = `${itemCount} ${itemCount === 1 ? "item" : "items"}`
@@ -32,14 +43,12 @@ export function ListCard({ list }: ListCardProps) {
     .filter(Boolean) as string[]
 
   const handleDelete = async () => {
-    if (confirm(`Are you sure you want to delete "${list.name}"?`)) {
-      try {
-        await deleteList(list.id)
-        toast.success("List deleted")
-      } catch (error) {
-        console.error(error)
-        toast.error("Failed to delete list")
-      }
+    try {
+      await deleteList(list.id)
+      toast.success("List deleted")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to delete list")
     }
   }
 
@@ -93,17 +102,34 @@ export function ListCard({ list }: ListCardProps) {
 
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
         <DropdownMenu>
-          <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8 bg-background/50 backdrop-blur-sm hover:bg-background/80")}>
+          <DropdownMenuTrigger className={iconActionButtonClassName({ tone: "subtle" })}>
             <IconDots className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+            <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
               <IconTrash className="h-4 w-4 mr-2" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete list?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{list.name}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
