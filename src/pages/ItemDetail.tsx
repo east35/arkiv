@@ -84,7 +84,7 @@ export default function ItemDetail() {
         </div>
         <Button variant="outline" onClick={() => navigate("/")}>
           <IconArrowLeft className="h-4 w-4 mr-2" />
-          Back to Shelf
+          Back to Collection
         </Button>
       </div>
     )
@@ -103,10 +103,10 @@ export default function ItemDetail() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto min-h-full flex flex-col">
-      {/* Header */}
+    <>
+      {/* Header — full width */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 px-4 sm:px-6 mb-6 border-b">
-        <div className="flex items-center justify-between max-w-5xl mx-auto">
+        <div className="flex items-center justify-between">
           <Link to={-1 as any} className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
             <IconArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -135,6 +135,7 @@ export default function ItemDetail() {
         </div>
       </div>
 
+      <div className="max-w-5xl mx-auto min-h-full flex flex-col w-full">
       {/* Mobile: title above cover */}
       <h1 className="md:hidden text-3xl font-bold tracking-tight px-4 mb-4 text-center">{item.title}</h1>
 
@@ -335,7 +336,7 @@ export default function ItemDetail() {
 
       {/* Mobile floating action bar — above bottom nav */}
       <div
-        className="md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 px-4"
+        className="md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-white/10 backdrop-blur-md supports-[backdrop-filter]:bg-white/5 rounded-2xl mx-4"
         style={{ bottom: "calc(4rem + env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
       >
         <Button
@@ -369,5 +370,6 @@ export default function ItemDetail() {
         />
       )}
     </div>
+    </>
   )
 }

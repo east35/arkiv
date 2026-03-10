@@ -19,6 +19,7 @@ import {
   IconBook, IconBookFilled,
   IconChartPie2, IconChartPie2Filled,
   IconSettings, IconSettingsFilled,
+  IconListDetails, IconListDetailsFilled,
   IconLogout,
   IconMenu2,
   IconChevronLeft,
@@ -70,6 +71,7 @@ export function AppSidebar({ className, onNavClick, collapsed = false, onCollaps
     { to: "/",           icon: IconLayoutGrid,     iconFilled: IconLayoutGridFilled,     label: "Home" },
     { to: "/books",      icon: IconBook,            iconFilled: IconBookFilled,            label: "Books" },
     { to: "/games",      icon: IconDeviceGamepad2,  iconFilled: IconDeviceGamepad2Filled,  label: "Games" },
+    { to: "/lists",      icon: IconListDetails,      iconFilled: IconListDetailsFilled,     label: "Lists" },
     { to: "/statistics", icon: IconChartPie2,       iconFilled: IconChartPie2Filled,       label: "Statistics" },
   ]
 

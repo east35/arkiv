@@ -342,7 +342,7 @@ export default function Settings() {
                 <div className="bg-muted/50 p-4 rounded-lg border space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Enrich Shelf</h4>
+                      <h4 className="font-medium">Enrich Collection</h4>
                       <p className="text-sm text-muted-foreground">
                         Backfill missing metadata (genres, descriptions, etc.) from IGDB & Google Books.
                       </p>
@@ -447,9 +447,9 @@ export default function Settings() {
 
                 <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium">Import Shelf</h4>
+                    <h4 className="font-medium">Import Collection</h4>
                     <p className="text-sm text-muted-foreground">
-                      Import your shelf from a Yamtrack CSV export.
+                      Import your collection from a Yamtrack CSV export.
                     </p>
                   </div>
                   <Button variant="outline" onClick={() => navigate("/import")}>
@@ -460,7 +460,7 @@ export default function Settings() {
 
                 <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium">Export Shelf</h4>
+                    <h4 className="font-medium">Export Collection</h4>
                     <p className="text-sm text-muted-foreground">
                       Download a CSV file of all your tracked items.
                     </p>

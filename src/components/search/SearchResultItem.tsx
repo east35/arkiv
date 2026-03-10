@@ -133,7 +133,7 @@ export function SearchResultItem({ result, onAdd, isAdding }: SearchResultItemPr
                 ) : (
                   <IconPlus className="h-4 w-4 mr-2" />
                 )}
-                Add to Shelf
+                Add to Collection
               </Button>
 
 

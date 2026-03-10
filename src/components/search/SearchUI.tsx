@@ -70,7 +70,7 @@ export function SearchUI() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-6">
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold tracking-tight">Add to Shelf</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Add to Collection</h1>
             <div className="hidden md:block">
               <MediaTypePicker value={mediaType} onChange={setMediaType} />
             </div>
