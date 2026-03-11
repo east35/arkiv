@@ -133,16 +133,15 @@ export function PosterItem({ item, onEdit, mobileTapAction = "edit", hideStatusD
           onClick={(e) => e.stopPropagation()}
         >
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-1 text-white text-xs font-semibold leading-none transition-opacity",
-                  hideStatusDate
-                    ? "opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    : "opacity-100",
-                )}
-                aria-label="Item actions"
-              >
+            <DropdownMenuTrigger
+              className={cn(
+                "flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-1 text-white text-xs font-semibold leading-none transition-opacity",
+                hideStatusDate
+                  ? "opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  : "opacity-100",
+              )}
+              aria-label="Item actions"
+            >
                 {/* Status icon: visible at rest, hidden on hover */}
                 {!hideStatusDate && (
                   <span className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5 group-hover:hidden">
@@ -161,7 +160,6 @@ export function PosterItem({ item, onEdit, mobileTapAction = "edit", hideStatusD
                     {formatDate(statusDate, preferences?.date_format)}
                   </span>
                 )}
-              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem onClick={() => onEdit(item)}>Edit Status</DropdownMenuItem>

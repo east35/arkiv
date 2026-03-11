@@ -46,19 +46,6 @@ type PresetRange =
   | "90days"
   | "year"
 
-const PRESET_LABELS: Record<PresetRange, string> = {
-  all: "All Time",
-  today: "Today",
-  yesterday: "Yesterday",
-  this_week: "This Week",
-  last_week: "Last Week",
-  this_month: "This Month",
-  last_month: "Last Month",
-  "7days": "Last 7 Days",
-  "30days": "Last 30 Days",
-  "90days": "Last 90 Days",
-  year: "Last Year",
-}
 
 function presetToDateRange(preset: PresetRange): { start: string; end: string } | undefined {
   const today = new Date()

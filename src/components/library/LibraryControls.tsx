@@ -16,16 +16,7 @@ import { useShelfStore } from "@/store/useShelfStore"
 import { cn } from "@/lib/utils"
 import type { Status, SortField } from "@/types"
 
-import { statusIcons, statusLabels } from "@/components/status-icons"
-
-const sortLabels: Record<string, string> = {
-  title: "Title",
-  rating: "My Rating",
-  progress: "Progress",
-  started_at: "Date Started",
-  completed_at: "Date Completed",
-  created_at: "Date Added",
-}
+import { statusLabels } from "@/components/status-icons"
 
 interface LibraryControlsProps {
   mediaType?: "game" | "book"
