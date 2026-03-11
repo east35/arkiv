@@ -1,10 +1,9 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { format } from "date-fns"
 import { IconDots, IconPlaylistAdd, IconStar } from "@tabler/icons-react"
 import type { FullItem, Status } from "@/types"
-import { getStatusDate } from "@/store/useShelfStore"
-import { cn } from "@/lib/utils"
+import { getStatusDate, useShelfStore } from "@/store/useShelfStore"
+import { cn, formatDate } from "@/lib/utils"
 import { statusIcons } from "@/components/status-icons"
 import {
   DropdownMenu,
@@ -21,6 +20,7 @@ interface TableItemProps {
   item: FullItem
   onEdit: (item: FullItem) => void
   mobileTapAction?: "edit" | "details"
+  hideStatusDate?: boolean
 }
 
 
@@ -32,9 +32,10 @@ const statusColors: Record<Status, string> = {
   dropped: "bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20",
 }
 
-export function TableItem({ item, onEdit, mobileTapAction = "edit" }: TableItemProps) {
+export function TableItem({ item, onEdit, mobileTapAction = "edit", hideStatusDate }: TableItemProps) {
   const [isManageListsOpen, setIsManageListsOpen] = useState(false)
   const statusDate = getStatusDate(item)
+  const preferences = useShelfStore((s) => s.preferences)
   const isGame = item.media_type === "game"
   const coverUrl = item.cover_url || (isGame 
     ? "https://images.igdb.com/igdb/image/upload/t_cover_small/nocover.png" 
@@ -95,14 +96,16 @@ export function TableItem({ item, onEdit, mobileTapAction = "edit" }: TableItemP
             </div>
 
             {/* Date */}
-            <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
-              {statusDate ? (
-                <>
-                  {statusIcons[item.status]}
-                  {format(new Date(statusDate), "MMM d, yyyy")}
-                </>
-              ) : "-"}
-            </div>
+            {!hideStatusDate && (
+              <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
+                {statusDate ? (
+                  <>
+                    {statusIcons[item.status]}
+                    {formatDate(statusDate, preferences?.date_format)}
+                  </>
+                ) : "-"}
+              </div>
+            )}
           </div>
         ) : (
           <Link to={`/item/${item.id}`} className="flex flex-1 items-center gap-4 min-w-0 cursor-pointer md:hidden">
@@ -152,14 +155,16 @@ export function TableItem({ item, onEdit, mobileTapAction = "edit" }: TableItemP
             </div>
 
             {/* Date */}
-            <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
-              {statusDate ? (
-                <>
-                  {statusIcons[item.status]}
-                  {format(new Date(statusDate), "MMM d, yyyy")}
-                </>
-              ) : "-"}
-            </div>
+            {!hideStatusDate && (
+              <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
+                {statusDate ? (
+                  <>
+                    {statusIcons[item.status]}
+                    {formatDate(statusDate, preferences?.date_format)}
+                  </>
+                ) : "-"}
+              </div>
+            )}
           </Link>
         )}
 
@@ -210,14 +215,16 @@ export function TableItem({ item, onEdit, mobileTapAction = "edit" }: TableItemP
           </div>
 
           {/* Date */}
-          <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
-            {statusDate ? (
-              <>
-                {statusIcons[item.status]}
-                {format(new Date(statusDate), "MMM d, yyyy")}
-              </>
-            ) : "-"}
-          </div>
+          {!hideStatusDate && (
+            <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
+              {statusDate ? (
+                <>
+                  {statusIcons[item.status]}
+                  {formatDate(statusDate, preferences?.date_format)}
+                </>
+              ) : "-"}
+            </div>
+          )}
         </Link>
 
         {/* Actions */}

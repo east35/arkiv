@@ -4,12 +4,7 @@ import { Link } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select"
+import { NativeSelect } from "@/components/ui/native-select"
 import {
   Sheet,
   SheetContent,
@@ -50,49 +45,33 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
   } = useShelfStore()
 
   const StatusFilter = (
-    <Select
+    <NativeSelect
       value={filters.status}
       onValueChange={(value) => setFilters({ status: value as Status | "all" })}
+      icon={<IconFilter />}
+      wrapperClassName="w-full"
     >
-      <SelectTrigger className="w-full">
-        <IconFilter className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="flex flex-1 items-center gap-2 text-left text-sm">
-          {filters.status !== "all" && statusIcons[filters.status]}
-          {statusLabels[filters.status] ?? "All Status"}
-        </span>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Status</SelectItem>
-        {Object.entries(statusIcons).map(([status, icon]) => (
-          <SelectItem key={status} value={status}>
-            <div className="flex items-center gap-2">
-              {icon}
-              <span>{statusLabels[status]}</span>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      <option value="all">All Status</option>
+      {Object.keys(statusLabels).filter(s => s !== "all").map((status) => (
+        <option key={status} value={status}>{statusLabels[status]}</option>
+      ))}
+    </NativeSelect>
   )
 
   const SortControl = (
-    <Select
+    <NativeSelect
       value={sort.field}
       onValueChange={(value) => setSort({ field: value as SortField })}
+      icon={<IconArrowsUpDown />}
+      wrapperClassName="w-full"
     >
-      <SelectTrigger className="w-full">
-        <IconArrowsUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="flex flex-1 text-left text-sm">{sortLabels[sort.field] ?? "Title"}</span>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="title">Title</SelectItem>
-        <SelectItem value="rating">My Rating</SelectItem>
-        <SelectItem value="progress">Progress</SelectItem>
-        <SelectItem value="started_at">Date Started</SelectItem>
-        <SelectItem value="completed_at">Date Completed</SelectItem>
-        <SelectItem value="created_at">Date Added</SelectItem>
-      </SelectContent>
-    </Select>
+      <option value="title">Title</option>
+      <option value="rating">My Rating</option>
+      <option value="progress">Progress</option>
+      <option value="started_at">Date Started</option>
+      <option value="completed_at">Date Completed</option>
+      <option value="created_at">Date Added</option>
+    </NativeSelect>
   )
 
   const SortDirection = (
@@ -136,46 +115,29 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
 
         {/* Desktop: inline controls */}
         <div className="hidden md:flex items-center gap-2">
-          <Select
+          <NativeSelect
             value={filters.status}
             onValueChange={(value) => setFilters({ status: value as Status | "all" })}
+            icon={<IconFilter />}
+            wrapperClassName="w-[160px]"
           >
-            <SelectTrigger className="w-[160px]">
-              <IconFilter className="mr-2 h-4 w-4 text-muted-foreground" />
-              <span className="flex flex-1 items-center gap-2 text-left text-sm">
-                {filters.status !== "all" && statusIcons[filters.status]}
-                {statusLabels[filters.status] ?? "All Status"}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              {Object.entries(statusIcons).map(([status, icon]) => (
-                <SelectItem key={status} value={status}>
-                  <div className="flex items-center gap-2">
-                    {icon}
-                    <span>{statusLabels[status]}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="all">All Status</option>
+            {Object.keys(statusLabels).filter(s => s !== "all").map((status) => (
+              <option key={status} value={status}>{statusLabels[status]}</option>
+            ))}
+          </NativeSelect>
 
-          <Select
+          <NativeSelect
             value={sort.field}
             onValueChange={(value) => setSort({ field: value as SortField })}
+            icon={<IconArrowsUpDown />}
           >
-            <SelectTrigger className="w-[150px] h-9">
-              <IconArrowsUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-              <span className="flex flex-1 text-left text-sm">{sortLabels[sort.field] ?? "Title"}</span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="title">Title</SelectItem>
-              <SelectItem value="rating">My Rating</SelectItem>
-              <SelectItem value="progress">Progress</SelectItem>
-              <SelectItem value="started_at">Date Started</SelectItem>
-              <SelectItem value="completed_at">Date Completed</SelectItem>
-            </SelectContent>
-          </Select>
+            <option value="title">Title</option>
+            <option value="rating">My Rating</option>
+            <option value="progress">Progress</option>
+            <option value="started_at">Date Started</option>
+            <option value="completed_at">Date Completed</option>
+          </NativeSelect>
 
           <Button
             variant="outline"

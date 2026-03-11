@@ -33,13 +33,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -238,22 +232,19 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={(val) => handleStatusChange(val as Status)} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select status">
-                      {field.value ? field.value.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase()) : "Select status"}
-                    </SelectValue>
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="backlog">Backlog</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="paused">Paused</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="dropped">Dropped</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <NativeSelect
+                  value={field.value}
+                  onValueChange={(val) => handleStatusChange(val as Status)}
+                  wrapperClassName="w-full"
+                >
+                  <option value="backlog">Backlog</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="paused">Paused</option>
+                  <option value="completed">Completed</option>
+                  <option value="dropped">Dropped</option>
+                </NativeSelect>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

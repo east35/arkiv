@@ -6,12 +6,7 @@ import { CreateListDialog } from "@/components/lists/CreateListDialog"
 import { ListCard } from "@/components/lists/ListCard"
 import { ListTableRow } from "@/components/lists/ListTableRow"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select"
+import { NativeSelect } from "@/components/ui/native-select"
 import {
   Sheet,
   SheetContent,
@@ -57,19 +52,16 @@ export default function Lists() {
   const sorted = useMemo(() => sortLists(lists, sortField, sortDir), [lists, sortField, sortDir])
 
   const SortControl = (
-    <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
-      <SelectTrigger className="w-full">
-        <IconArrowsUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-        <span className="flex flex-1 text-left text-sm">
-          {{ name: "Name", item_count: "Item Count", created_at: "Date Created" }[sortField]}
-        </span>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="name">Name</SelectItem>
-        <SelectItem value="item_count">Item Count</SelectItem>
-        <SelectItem value="created_at">Date Created</SelectItem>
-      </SelectContent>
-    </Select>
+    <NativeSelect
+      value={sortField}
+      onValueChange={(v) => setSortField(v as SortField)}
+      icon={<IconArrowsUpDown />}
+      wrapperClassName="w-full"
+    >
+      <option value="name">Name</option>
+      <option value="item_count">Item Count</option>
+      <option value="created_at">Date Created</option>
+    </NativeSelect>
   )
 
   const SortDirControl = (
@@ -112,19 +104,16 @@ export default function Lists() {
 
             {/* Desktop controls */}
             <div className="hidden md:flex items-center gap-2">
-              <Select value={sortField} onValueChange={(v) => setSortField(v as SortField)}>
-                <SelectTrigger className="w-[160px]">
-                  <IconArrowsUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="flex flex-1 text-left text-sm">
-                    {{ name: "Name", item_count: "Item Count", created_at: "Date Created" }[sortField]}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="item_count">Item Count</SelectItem>
-                  <SelectItem value="created_at">Date Created</SelectItem>
-                </SelectContent>
-              </Select>
+              <NativeSelect
+                value={sortField}
+                onValueChange={(v) => setSortField(v as SortField)}
+                icon={<IconArrowsUpDown />}
+                wrapperClassName="w-[160px]"
+              >
+                <option value="name">Name</option>
+                <option value="item_count">Item Count</option>
+                <option value="created_at">Date Created</option>
+              </NativeSelect>
 
               <Button
                 variant="outline"

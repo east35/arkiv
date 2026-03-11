@@ -7,16 +7,16 @@ interface DatePickerProps {
 }
 
 export function DatePicker({ date, setDate, className }: DatePickerProps) {
-  const value = date ? date.toISOString().split("T")[0] : ""
+  const value = date ? date.toISOString().slice(0, 16) : ""
 
   return (
     <div className="w-full min-w-0 overflow-hidden">
       <input
-        type="date"
+        type="datetime-local"
         value={value}
         onChange={(e) => {
           if (e.target.value) {
-            setDate(new Date(e.target.value + "T00:00:00"))
+            setDate(new Date(e.target.value))
           } else {
             setDate(undefined)
           }

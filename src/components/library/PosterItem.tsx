@@ -1,10 +1,9 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { format } from "date-fns"
-import { IconDots, IconStar, IconPlaylistAdd } from "@tabler/icons-react"
+import { IconDots, IconStar } from "@tabler/icons-react"
 import type { FullItem, Status } from "@/types"
-import { getStatusDate } from "@/store/useShelfStore"
-import { cn } from "@/lib/utils"
+import { getStatusDate, useShelfStore } from "@/store/useShelfStore"
+import { cn, formatDate } from "@/lib/utils"
 import { statusIcons } from "@/components/status-icons"
 import {
   DropdownMenu,
@@ -14,12 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
-import { iconActionButtonClassName } from "@/lib/icon-action-button"
 
 interface PosterItemProps {
   item: FullItem
   onEdit: (item: FullItem) => void
   mobileTapAction?: "edit" | "details"
+  hideStatusDate?: boolean
 }
 
 const STATUS_BAR: Record<Status, string> = {
@@ -38,14 +37,13 @@ function getProgressLabel(item: FullItem): string | null {
   } else {
     const p = item.book.progress
     if (p && p > 0) {
-      return item.book.page_count ? `${p} / ${item.book.page_count} Pages` : `${p} Pages`
+      return item.book.page_count ? `${p} / ${item.book.page_count}` : `${p}`
     }
   }
   return null
 }
 
 function CardBody({ item }: { item: FullItem }) {
-  const statusDate = getStatusDate(item)
   const isGame = item.media_type === "game"
   const progressLabel = getProgressLabel(item)
   const coverUrl =
@@ -69,29 +67,20 @@ function CardBody({ item }: { item: FullItem }) {
           loading="lazy"
         />
 
-        {/* Top row: status+date (left) | score (right) */}
-        <div className="absolute top-2 left-2 right-2 flex justify-between items-start gap-1 pointer-events-none">
-          <div className="flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-1 text-white text-xs font-semibold leading-none max-w-[75%]">
-            <span className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5">{statusIcons[item.status]}</span>
-            {statusDate && (
-              <span className="truncate">{format(new Date(statusDate), "MMM d, yyyy")}</span>
+        {/* Bottom: progress (left) | score (right) */}
+        {(progressLabel || item.user_score != null) && (
+          <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end gap-1 pointer-events-none">
+            {progressLabel ? (
+              <div className="rounded-full bg-black/70 backdrop-blur-sm px-3 py-1 text-white text-xs font-semibold leading-none">
+                {progressLabel}
+              </div>
+            ) : <div />}
+            {item.user_score != null && (
+              <div className="flex items-center gap-1 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-1 text-white text-xs font-semibold leading-none shrink-0">
+                <IconStar className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400 shrink-0" />
+                <span>{item.user_score}</span>
+              </div>
             )}
-          </div>
-
-          {item.user_score != null && (
-            <div className="flex items-center gap-1 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-1 text-white text-xs font-semibold leading-none shrink-0">
-              <IconStar className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400 shrink-0" />
-              <span>{item.user_score}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom: progress (left) */}
-        {progressLabel && (
-          <div className="absolute bottom-2 left-2 pointer-events-none">
-            <div className="rounded-full bg-black/70 backdrop-blur-sm px-3 py-1 text-white text-xs font-semibold leading-none">
-              {progressLabel}
-            </div>
           </div>
         )}
       </div>
@@ -112,8 +101,10 @@ function CardBody({ item }: { item: FullItem }) {
   )
 }
 
-export function PosterItem({ item, onEdit, mobileTapAction = "edit" }: PosterItemProps) {
+export function PosterItem({ item, onEdit, mobileTapAction = "edit", hideStatusDate }: PosterItemProps) {
   const [isManageListsOpen, setIsManageListsOpen] = useState(false)
+  const statusDate = getStatusDate(item)
+  const preferences = useShelfStore((s) => s.preferences)
 
   return (
     <>
@@ -134,27 +125,50 @@ export function PosterItem({ item, onEdit, mobileTapAction = "edit" }: PosterIte
           <CardBody item={item} />
         </Link>
 
-        {/* Hover actions — fades in on hover, sits over top-left corner */}
+        {/* Status pill / hover menu — yamtrack style */}
+        {/* Library: always visible pill; icon swaps to ⋯ on hover */}
+        {/* Home: dots-only pill appears on hover */}
         <div
-          className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+          className="absolute top-2 left-2 z-10"
           onClick={(e) => e.stopPropagation()}
         >
           <DropdownMenu>
-            <DropdownMenuTrigger
-              className={iconActionButtonClassName({ size: "sm", tone: "inverse", shape: "circle" })}
-              aria-label="Item actions"
-            >
-              <IconDots className="h-3.5 w-3.5" />
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-1 text-white text-xs font-semibold leading-none transition-opacity",
+                  hideStatusDate
+                    ? "opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    : "opacity-100",
+                )}
+                aria-label="Item actions"
+              >
+                {/* Status icon: visible at rest, hidden on hover */}
+                {!hideStatusDate && (
+                  <span className="shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5 group-hover:hidden">
+                    {statusIcons[item.status]}
+                  </span>
+                )}
+                {/* Dots icon: hidden at rest, visible on hover */}
+                <span className={cn(
+                  "shrink-0 [&>svg]:h-3.5 [&>svg]:w-3.5",
+                  hideStatusDate ? "block" : "hidden group-hover:block"
+                )}>
+                  <IconDots className="h-3.5 w-3.5" />
+                </span>
+                {!hideStatusDate && statusDate && (
+                  <span className="truncate max-w-[120px]">
+                    {formatDate(statusDate, preferences?.date_format)}
+                  </span>
+                )}
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem onClick={() => onEdit(item)}>Edit Status</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
-                <IconPlaylistAdd className="h-4 w-4 mr-2" />
-                Add to List...
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>Add to List…</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onEdit(item)}>
-                Delete...
+                Delete…
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

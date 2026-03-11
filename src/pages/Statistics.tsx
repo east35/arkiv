@@ -14,12 +14,7 @@ import { IconCalendar, IconTrophy, IconStar, IconBolt } from "@tabler/icons-reac
 import { useStatistics } from "@/hooks/useStatistics"
 import { useShelfStore } from "@/store/useShelfStore"
 import { useItems } from "@/hooks/useItems"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -188,25 +183,23 @@ export default function Statistics() {
             </TabsList>
 
             <TabsContent value="preset" className="mt-2">
-              <Select value={preset} onValueChange={(v) => setPreset(v as PresetRange)}>
-                <SelectTrigger className="w-[180px] h-11">
-                  <IconCalendar className="mr-2 h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="flex flex-1 text-left text-sm">{PRESET_LABELS[preset]}</span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="yesterday">Yesterday</SelectItem>
-                  <SelectItem value="this_week">This Week</SelectItem>
-                  <SelectItem value="last_week">Last Week</SelectItem>
-                  <SelectItem value="this_month">This Month</SelectItem>
-                  <SelectItem value="last_month">Last Month</SelectItem>
-                  <SelectItem value="7days">Last 7 Days</SelectItem>
-                  <SelectItem value="30days">Last 30 Days</SelectItem>
-                  <SelectItem value="90days">Last 90 Days</SelectItem>
-                  <SelectItem value="year">Last Year</SelectItem>
-                </SelectContent>
-              </Select>
+              <NativeSelect
+                value={preset}
+                onValueChange={(v) => setPreset(v as PresetRange)}
+                icon={<IconCalendar />}
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="this_week">This Week</option>
+                <option value="last_week">Last Week</option>
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="7days">Last 7 Days</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="90days">Last 90 Days</option>
+                <option value="year">Last Year</option>
+              </NativeSelect>
             </TabsContent>
 
             <TabsContent value="custom" className="mt-2">

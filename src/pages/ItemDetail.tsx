@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
-import { format } from "date-fns"
+import { formatDateTime } from "@/lib/utils"
 import {
   IconArrowLeft,
   IconCalendar,
@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils"
 export default function ItemDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { items, lists } = useShelfStore()
+  const { items, lists, preferences } = useShelfStore()
   const { fetchItems, deleteItem } = useItems()
   const { fetchItemMemberships, fetchLists } = useLists()
 
@@ -286,18 +286,18 @@ export default function ItemDetail() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Added</span>
-                      <span>{format(new Date(item.created_at), "MMM d, yyyy")}</span>
+                      <span>{formatDateTime(item.created_at, preferences?.date_format, preferences?.time_format)}</span>
                     </div>
                     {item.started_at && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Started</span>
-                        <span>{format(new Date(item.started_at), "MMM d, yyyy")}</span>
+                        <span>{formatDateTime(item.started_at, preferences?.date_format, preferences?.time_format)}</span>
                       </div>
                     )}
                     {item.completed_at && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Completed</span>
-                        <span>{format(new Date(item.completed_at), "MMM d, yyyy")}</span>
+                        <span>{formatDateTime(item.completed_at, preferences?.date_format, preferences?.time_format)}</span>
                       </div>
                     )}
                   </div>

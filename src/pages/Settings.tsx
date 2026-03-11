@@ -24,13 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { NativeSelect } from "@/components/ui/native-select"
 import {
   Card,
   CardContent,
@@ -249,51 +243,39 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <FormFieldBlock id="theme" label="Theme">
-                  <Select 
-                    value={formData.theme || "system"} 
+                  <NativeSelect
+                    id="theme"
+                    value={formData.theme || "system"}
                     onValueChange={handleThemeChange}
                   >
-                    <SelectTrigger id="theme">
-                      <SelectValue placeholder="Select theme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="system">System</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="system">System</option>
+                  </NativeSelect>
                 </FormFieldBlock>
 
                 <FormFieldBlock id="date-format" label="Date Format">
-                  <Select 
-                    value={formData.date_format || "iso"} 
+                  <NativeSelect
+                    id="date-format"
+                    value={formData.date_format || "iso"}
                     onValueChange={(val) => setFormData({ ...formData, date_format: val as DateFormat })}
                   >
-                    <SelectTrigger id="date-format">
-                      <SelectValue placeholder="Select format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="iso">ISO (YYYY-MM-DD)</SelectItem>
-                      <SelectItem value="us">US (MM/DD/YYYY)</SelectItem>
-                      <SelectItem value="eu">EU (DD/MM/YYYY)</SelectItem>
-                      <SelectItem value="long">Long (Month D, YYYY)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="iso">ISO (YYYY-MM-DD)</option>
+                    <option value="us">US (MM/DD/YYYY)</option>
+                    <option value="eu">EU (DD/MM/YYYY)</option>
+                    <option value="long">Long (Month D, YYYY)</option>
+                  </NativeSelect>
                 </FormFieldBlock>
 
                 <FormFieldBlock id="time-format" label="Time Format">
-                  <Select 
-                    value={formData.time_format || "12hr"} 
+                  <NativeSelect
+                    id="time-format"
+                    value={formData.time_format || "12hr"}
                     onValueChange={(val) => setFormData({ ...formData, time_format: val as TimeFormat })}
                   >
-                    <SelectTrigger id="time-format">
-                      <SelectValue placeholder="Select format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="12hr">12-hour (1:00 PM)</SelectItem>
-                      <SelectItem value="24hr">24-hour (13:00)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="12hr">12-hour (1:00 PM)</option>
+                    <option value="24hr">24-hour (13:00)</option>
+                  </NativeSelect>
                 </FormFieldBlock>
               </CardContent>
               <CardFooter>
