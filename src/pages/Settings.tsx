@@ -232,8 +232,8 @@ export default function Settings() {
         >
           {/* Mobile: sheet picker */}
           <Sheet open={tabSheetOpen} onOpenChange={setTabSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="w-full mb-4 justify-between md:hidden">
+            <SheetTrigger className="w-full mb-4 md:hidden">
+              <Button variant="outline" className="w-full justify-between">
                 {activeTabLabel}
                 <IconChevronDown className="h-4 w-4 text-muted-foreground" />
               </Button>

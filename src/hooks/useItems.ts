@@ -44,6 +44,7 @@ function hydrateItem(item: Item, book: BookFields | null, game: GameFields | nul
         author: null, publisher: null, publish_date: null,
         page_count: null, progress: null, format: null,
         themes: [], isbn: null, collection: null,
+        series_name: null, series_position: null, tag_categories: null,
       },
     } as BookItem
   }
