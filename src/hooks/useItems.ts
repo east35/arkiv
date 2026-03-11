@@ -16,6 +16,7 @@ import type {
   GameFields,
   Item,
   Status,
+  MediaType,
 } from "@/types"
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,7 @@ function hydrateItem(item: Item, book: BookFields | null, game: GameFields | nul
       developer: null, publisher: null, release_date: null,
       platforms: [], format: null, themes: [], screenshots: [],
       progress_hours: 0, progress_minutes: 0, collection: null,
+      game_modes: [], player_perspectives: [], game_category: null, steam_id: null,
     },
   } as GameItem
 }
@@ -69,35 +71,65 @@ export function useItems() {
    * Fetch all items for the current user (with book/game extensions).
    * Uses two parallel queries to avoid complex joins.
    */
-  const fetchItems = useCallback(async () => {
-    const [itemsRes, booksRes, gamesRes] = await Promise.all([
-      supabase.from("items").select("*"),
-      supabase.from("books").select("*"),
-      supabase.from("games").select("*"),
-    ])
+  const fetchItems = useCallback(async (mediaTypes?: MediaType[]) => {
+    const normalizedTypes = mediaTypes?.length
+      ? Array.from(new Set(mediaTypes))
+      : null
+
+    let itemsQuery = supabase.from("items").select("*")
+    if (normalizedTypes) {
+      itemsQuery = itemsQuery.in("media_type", normalizedTypes)
+    }
+
+    const itemsRes = await itemsQuery
 
     if (itemsRes.error) throw itemsRes.error
-    if (booksRes.error) throw booksRes.error
-    if (gamesRes.error) throw gamesRes.error
+
+    const itemRows = (itemsRes.data as Item[]) ?? []
+    const itemIds = itemRows.map((item) => item.id)
+
+    let booksData: BookFields[] = []
+    let gamesData: GameFields[] = []
+
+    if (itemIds.length > 0) {
+      const [booksRes, gamesRes] = await Promise.all([
+        supabase.from("books").select("*").in("item_id", itemIds),
+        supabase.from("games").select("*").in("item_id", itemIds),
+      ])
+      if (booksRes.error) throw booksRes.error
+      if (gamesRes.error) throw gamesRes.error
+      booksData = (booksRes.data as BookFields[]) ?? []
+      gamesData = (gamesRes.data as GameFields[]) ?? []
+    }
 
     // Index extensions by item_id for O(1) lookup
     const bookMap = new Map<string, BookFields>()
-    for (const b of booksRes.data as BookFields[]) {
+    for (const b of booksData) {
       bookMap.set(b.item_id, b)
     }
 
     const gameMap = new Map<string, GameFields>()
-    for (const g of gamesRes.data as GameFields[]) {
+    for (const g of gamesData) {
       gameMap.set(g.item_id, g)
     }
 
     // Hydrate each item with its extension
-    const hydrated = (itemsRes.data as Item[]).map((item) =>
+    const hydrated = itemRows.map((item) =>
       hydrateItem(item, bookMap.get(item.id) ?? null, gameMap.get(item.id) ?? null)
     )
 
-    setItems(hydrated)
-    return hydrated
+    if (!normalizedTypes) {
+      setItems(hydrated)
+      return hydrated
+    }
+
+    const existing = useShelfStore
+      .getState()
+      .items
+      .filter((item) => !normalizedTypes.includes(item.media_type))
+    const merged = [...existing, ...hydrated]
+    setItems(merged)
+    return merged
   }, [setItems])
 
   /**

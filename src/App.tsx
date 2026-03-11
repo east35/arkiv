@@ -1,11 +1,10 @@
-import { Routes, Route } from "react-router-dom"
+import { Routes, Route, Navigate } from "react-router-dom"
 import AppLayout from "@/components/layout/AppLayout"
 import { RequireAuth } from "@/components/auth/RequireAuth"
 import Home from "@/pages/Home"
 import Search from "@/pages/Search"
 import Games from "@/pages/Games"
 import Books from "@/pages/Books"
-import Statistics from "@/pages/Statistics"
 import Lists from "@/pages/Lists"
 import ListDetail from "@/pages/ListDetail"
 import Settings from "@/pages/Settings"
@@ -36,7 +35,7 @@ function App() {
           <Route path="/item/:id" element={<ItemDetail />} />
           <Route path="/games" element={<Games />} />
           <Route path="/books" element={<Books />} />
-          <Route path="/statistics" element={<Statistics />} />
+          <Route path="/statistics" element={<Navigate to="/settings?tab=statistics" replace />} />
           <Route path="/lists" element={<Lists />} />
           <Route path="/lists/:id" element={<ListDetail />} />
           <Route path="/settings" element={<Settings />} />

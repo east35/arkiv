@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 
 // Routes where the mobile bottom nav should be hidden entirely
 const hideNavPattern = /^\/(lists\/|item\/)/
+const AUTO_COLLAPSE_BREAKPOINT = 1100
 
 export default function AppLayout() {
   const location = useLocation()
@@ -15,10 +16,15 @@ export default function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem("sidebar-collapsed") === "true"
   })
+  const [forceSidebarCollapsed, setForceSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false
+    return window.innerWidth < AUTO_COLLAPSE_BREAKPOINT
+  })
 
   const [navVisible, setNavVisible] = useState(true)
   const lastScrollY = useRef(0)
   const mainRef = useRef<HTMLElement>(null)
+  const effectiveSidebarCollapsed = sidebarCollapsed || forceSidebarCollapsed
 
   useEffect(() => {
     const el = mainRef.current
@@ -43,6 +49,16 @@ export default function AppLayout() {
     return () => cancelAnimationFrame(frame)
   }, [location.pathname])
 
+  // Auto-collapse desktop sidebar at narrower desktop widths so header controls keep enough room.
+  useEffect(() => {
+    const handleResize = () => {
+      setForceSidebarCollapsed(window.innerWidth < AUTO_COLLAPSE_BREAKPOINT)
+    }
+    handleResize()
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => {
       const next = !prev
@@ -57,9 +73,12 @@ export default function AppLayout() {
       {/* Desktop Sidebar */}
       <aside className={cn(
         "hidden md:block flex-shrink-0 transition-all duration-300",
-        sidebarCollapsed ? "w-14" : "w-64"
+        effectiveSidebarCollapsed ? "w-14" : "w-64"
       )}>
-        <AppSidebar collapsed={sidebarCollapsed} onCollapse={toggleSidebar} />
+        <AppSidebar
+          collapsed={effectiveSidebarCollapsed}
+          onCollapse={forceSidebarCollapsed ? undefined : toggleSidebar}
+        />
       </aside>
 
       {/* Main Content Area */}

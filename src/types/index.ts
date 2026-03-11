@@ -13,10 +13,10 @@
 export type MediaType = "game" | "book"
 
 /** Item tracking statuses */
-export type Status = "backlog" | "in_progress" | "paused" | "completed" | "dropped"
+export type Status = "in_collection" | "backlog" | "in_progress" | "paused" | "completed" | "dropped"
 
 /** Data source for an item */
-export type Source = "igdb" | "google_books" | "manual"
+export type Source = "igdb" | "google_books" | "hardcover" | "manual"
 
 /** Date display format preference */
 export type DateFormat = "iso" | "eu" | "us" | "long"
@@ -52,6 +52,7 @@ export interface Item {
   notes: string | null
   source: Source
   external_id: string | null
+  source_votes: number | null
   started_at: string | null
   completed_at: string | null
   paused_at: string | null
@@ -72,6 +73,9 @@ export interface BookFields {
   themes: string[]
   isbn: string | null
   collection: string | null
+  series_name: string | null
+  series_position: number | null
+  tag_categories: Record<string, string[]> | null
 }
 
 /** Game-specific extension fields */
@@ -87,6 +91,10 @@ export interface GameFields {
   progress_hours: number
   progress_minutes: number
   collection: string | null
+  game_modes: string[]
+  player_perspectives: string[]
+  game_category: number | null
+  steam_id: string | null
 }
 
 /** Full book: core item + book-specific fields */
@@ -197,6 +205,7 @@ export interface IgdbGameDetails {
   id: number
   name: string
   summary: string | null
+  storyline: string | null
   cover: string | null
   genres: string[]
   themes: string[]
@@ -206,33 +215,45 @@ export interface IgdbGameDetails {
   screenshots: string[]
   releaseDate: string | null
   sourceScore: number | null
+  ratingsCount: number | null
+  franchise: string | null
+  collection: string | null
+  gameModes: string[]
+  playerPerspectives: string[]
+  gameCategory: number | null
+  steamId: string | null
   parentGame: string | null
   remasters: string[]
   standaloneExpansions: string[]
   similarGames: Array<{ name: string; cover: string | null }>
 }
 
-/** Google Books search result (compact) */
-export interface GoogleBooksSearchResult {
-  id: string
+/** Hardcover search result (compact) */
+export interface HardcoverSearchResult {
+  id: number
   title: string
   authors: string[]
-  thumbnail: string | null
-  pageCount: number | null
-  publishedDate: string | null
+  image: string | null
+  pages: number | null
+  releaseYear: number | null
 }
 
-/** Google Books full details */
-export interface GoogleBooksDetails {
-  id: string
+/** Hardcover full book details */
+export interface HardcoverBookDetails {
+  id: number
   title: string
+  subtitle: string | null
   authors: string[]
   publisher: string | null
-  publishedDate: string | null
+  releaseDate: string | null
   description: string | null
-  pageCount: number | null
-  categories: string[]
-  thumbnail: string | null
+  pages: number | null
+  genres: string[]
+  tagCategories: Record<string, string[]>
+  image: string | null
   isbn: string | null
-  averageRating: number | null
+  rating: number | null  // 0–5 scale (community average)
+  ratingsCount: number | null
+  seriesName: string | null
+  seriesPosition: number | null
 }

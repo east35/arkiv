@@ -30,7 +30,7 @@ export function NativeSelect({
         <select
           onChange={handleChange}
           className={cn(
-            "h-10 w-full appearance-none rounded-lg border border-input bg-transparent py-2 pr-8 pl-9 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [color-scheme:light] dark:[color-scheme:dark]",
+            "h-11 min-h-[44px] w-full appearance-none rounded-lg border border-input bg-white py-2 pr-8 pl-9 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-white/60 disabled:opacity-50 [color-scheme:light] dark:bg-black dark:disabled:bg-black/60 dark:[color-scheme:dark]",
             className
           )}
           {...props}
@@ -49,7 +49,7 @@ export function NativeSelect({
       <select
         onChange={handleChange}
         className={cn(
-          "h-10 w-full appearance-none rounded-lg border border-input bg-transparent py-2 pr-8 pl-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [color-scheme:light] dark:[color-scheme:dark]",
+          "h-11 min-h-[44px] w-full appearance-none rounded-lg border border-input bg-white py-2 pr-8 pl-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-white/60 disabled:opacity-50 [color-scheme:light] dark:bg-black dark:disabled:bg-black/60 dark:[color-scheme:dark]",
           className
         )}
         {...props}

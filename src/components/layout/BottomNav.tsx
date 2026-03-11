@@ -2,10 +2,10 @@ import { useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import {
   IconLayoutGrid, IconLayoutGridFilled,
-  IconChartPie2, IconChartPie2Filled,
   IconSettings, IconSettingsFilled,
   IconListDetails, IconListDetailsFilled,
   IconBooks,
+  IconPlus,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 
@@ -34,13 +34,6 @@ export function BottomNav({ visible = true }: BottomNavProps) {
     navigate(last)
   }
 
-  const navItems = [
-    { to: "/",           icon: IconLayoutGrid,    iconFilled: IconLayoutGridFilled,   label: "Home" },
-    { to: "/lists",      icon: IconListDetails,   iconFilled: IconListDetailsFilled,  label: "Lists" },
-    { to: "/statistics", icon: IconChartPie2,     iconFilled: IconChartPie2Filled,    label: "Stats" },
-    { to: "/settings",   icon: IconSettings,      iconFilled: IconSettingsFilled,     label: "Settings" },
-  ]
-
   return (
     <div
       className={cn(
@@ -51,23 +44,16 @@ export function BottomNav({ visible = true }: BottomNavProps) {
       <div className="flex items-center justify-around h-16">
 
         {/* Home */}
-        {navItems.slice(0, 1).map((item) => {
-          const isActive = location.pathname === item.to
-          const Icon = isActive ? item.iconFilled : item.icon
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={cn(
-                "flex flex-col items-center justify-center w-full h-full space-y-1",
-                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </Link>
-          )
-        })}
+        <Link
+          to="/"
+          className={cn(
+            "flex flex-col items-center justify-center w-full h-full space-y-1",
+            location.pathname === "/" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {location.pathname === "/" ? <IconLayoutGridFilled className="h-5 w-5" /> : <IconLayoutGrid className="h-5 w-5" />}
+          <span className="text-[10px] font-medium">Home</span>
+        </Link>
 
         {/* Collection — navigates to last visited, defaults to /games */}
         <button
@@ -81,8 +67,22 @@ export function BottomNav({ visible = true }: BottomNavProps) {
           <span className="text-[10px] font-medium">Collection</span>
         </button>
 
-        {/* Lists, Stats, Settings */}
-        {navItems.slice(1).map((item) => {
+        <Link
+          to="/search"
+          className="flex flex-col items-center justify-center w-full h-full"
+          aria-label="Add item"
+          title="Add item"
+        >
+          <span className="grid place-items-center h-11 w-11 rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <IconPlus className="h-5 w-5" />
+          </span>
+        </Link>
+
+        {/* Lists, Settings */}
+        {[
+          { to: "/lists", icon: IconListDetails, iconFilled: IconListDetailsFilled, label: "Lists" },
+          { to: "/settings", icon: IconSettings, iconFilled: IconSettingsFilled, label: "Settings" },
+        ].map((item) => {
           const isActive = location.pathname === item.to
           const Icon = isActive ? item.iconFilled : item.icon
           return (

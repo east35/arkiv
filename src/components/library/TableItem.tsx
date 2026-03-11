@@ -1,248 +1,228 @@
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import { IconDots, IconPlaylistAdd, IconStar } from "@tabler/icons-react"
-import type { FullItem, Status } from "@/types"
-import { getStatusDate, useShelfStore } from "@/store/useShelfStore"
-import { cn, formatDate } from "@/lib/utils"
-import { statusIcons } from "@/components/status-icons"
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  IconDots,
+  IconPlaylistAdd,
+  IconRefresh,
+  IconStar,
+} from "@tabler/icons-react";
+import type { FullItem, Status } from "@/types";
+import { getStatusDate, useShelfStore } from "@/store/useShelfStore";
+import { cn, formatDate } from "@/lib/utils";
+import { statusIcons, statusLabels } from "@/components/status-icons";
+import { useMetadataEnrich } from "@/hooks/useMetadataEnrich";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
-import { iconActionButtonClassName } from "@/lib/icon-action-button"
+} from "@/components/ui/dropdown-menu";
+import { ManageListsDialog } from "@/components/lists/ManageListsDialog";
+import { iconActionButtonClassName } from "@/lib/icon-action-button";
 
 interface TableItemProps {
-  item: FullItem
-  onEdit: (item: FullItem) => void
-  mobileTapAction?: "edit" | "details"
-  hideStatusDate?: boolean
+  item: FullItem;
+  onEdit: (item: FullItem) => void;
+  mobileTapAction?: "edit" | "details";
+  hideStatusDate?: boolean;
 }
 
+const STATUS_BLOCK: Record<Status, string> = {
+  in_collection: "bg-zinc-300 text-zinc-950",
+  backlog: "bg-purple-500 text-purple-950",
+  in_progress: "bg-primary text-primary-foreground",
+  completed: "bg-green-500 text-green-950",
+  paused: "bg-yellow-400 text-yellow-950",
+  dropped: "bg-red-500 text-red-950",
+};
 
-const statusColors: Record<Status, string> = {
-  backlog: "bg-slate-500/10 text-slate-500 hover:bg-slate-500/20 border-slate-500/20",
-  in_progress: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20",
-  completed: "bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20",
-  paused: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border-yellow-500/20",
-  dropped: "bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20",
+const STATUS_STRIP: Record<Status, string> = {
+  in_collection: "bg-zinc-300",
+  backlog: "bg-purple-500",
+  in_progress: "bg-primary",
+  completed: "bg-green-500",
+  paused: "bg-yellow-400",
+  dropped: "bg-red-500",
+};
+
+function formatGameProgress(hours: number, minutes: number): string {
+  if (hours <= 0 && minutes <= 0) return "-";
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes}m`;
 }
 
-export function TableItem({ item, onEdit, mobileTapAction = "edit", hideStatusDate }: TableItemProps) {
-  const [isManageListsOpen, setIsManageListsOpen] = useState(false)
-  const statusDate = getStatusDate(item)
-  const preferences = useShelfStore((s) => s.preferences)
-  const isGame = item.media_type === "game"
-  const coverUrl = item.cover_url || (isGame 
-    ? "https://images.igdb.com/igdb/image/upload/t_cover_small/nocover.png" 
-    : "https://books.google.com/googlebooks/images/no_cover_thumb.gif")
-
+function RowBody({
+  item,
+  statusText,
+  onEdit,
+  mobileTapAction,
+}: {
+  item: FullItem;
+  statusText: string;
+  onEdit: (item: FullItem) => void;
+  mobileTapAction: "edit" | "details";
+}) {
+  const isGame = item.media_type === "game";
+  const coverUrl =
+    item.cover_url ||
+    (isGame
+      ? "https://images.igdb.com/igdb/image/upload/t_cover_small/nocover.png"
+      : "https://books.google.com/googlebooks/images/no_cover_thumb.gif");
+  const subtitle = isGame ? item.game.developer : item.book.author;
   const progressDisplay = isGame
-    ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
-    : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`
+    ? formatGameProgress(item.game.progress_hours, item.game.progress_minutes)
+    : item.book.progress && item.book.progress > 0
+      ? `${item.book.progress} / ${item.book.page_count ?? "?"}`
+      : "-";
+
+  const row = (
+    <div className="flex items-stretch h-16">
+      {/* Status colour strip */}
+      <div className={cn("w-1 shrink-0", STATUS_STRIP[item.status])} />
+
+      {/* Cover */}
+      <div className="w-10 shrink-0 overflow-hidden bg-muted">
+        <img
+          src={coverUrl}
+          alt={item.title}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </div>
+
+      {/* Title + subtitle — absorbs all available space */}
+      <div className="flex min-w-0 flex-1 items-center px-3 border-r border-border">
+        <div className="min-w-0 w-full">
+          <h3 className="truncate text-sm font-bold leading-tight" title={item.title}>
+            {item.title}
+          </h3>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {subtitle || ""}
+          </p>
+        </div>
+      </div>
+
+      {/* Score */}
+      <div className="w-14 shrink-0 border-r border-border flex items-center justify-center gap-1 text-xs font-semibold">
+        {item.user_score != null ? (
+          <>
+            <IconStar className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+            <span>{item.user_score}</span>
+          </>
+        ) : (
+          <span className="text-muted-foreground/40">-</span>
+        )}
+      </div>
+
+      {/* Progress */}
+      <div className="w-14 shrink-0 border-r border-border flex items-center justify-center text-xs font-semibold">
+        <span className="text-muted-foreground">{progressDisplay}</span>
+      </div>
+
+      {/* Status / date */}
+      <div
+        className={cn(
+          "w-28 shrink-0 flex items-center justify-center gap-1.5 text-[11px] font-semibold",
+          STATUS_BLOCK[item.status],
+        )}
+      >
+        <span className="[&>svg]:h-3.5 [&>svg]:w-3.5 shrink-0">
+          {statusIcons[item.status]}
+        </span>
+        <span className="truncate">{statusText}</span>
+      </div>
+    </div>
+  );
+
+  if (mobileTapAction === "edit") {
+    return (
+      <>
+        <div className="cursor-pointer md:hidden" onClick={() => onEdit(item)}>
+          {row}
+        </div>
+        <Link to={`/item/${item.id}`} className="hidden md:block">
+          {row}
+        </Link>
+      </>
+    );
+  }
+
+  return (
+    <Link to={`/item/${item.id}`} className="block">
+      {row}
+    </Link>
+  );
+}
+
+export function TableItem({
+  item,
+  onEdit,
+  mobileTapAction = "edit",
+  hideStatusDate,
+}: TableItemProps) {
+  const [isManageListsOpen, setIsManageListsOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const { enrichSingle } = useMetadataEnrich();
+  const statusDate = getStatusDate(item);
+  const preferences = useShelfStore((s) => s.preferences);
+  const statusText = hideStatusDate
+    ? statusLabels[item.status]
+    : statusDate
+      ? formatDate(statusDate, preferences?.date_format)
+      : statusLabels[item.status];
 
   return (
     <>
-      <div className="group flex items-center gap-4 p-2 rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:bg-accent/50">
-        {mobileTapAction === "edit" ? (
-          <div onClick={() => onEdit(item)} className="flex flex-1 items-center gap-4 min-w-0 cursor-pointer md:hidden">
-            {/* Cover (Small) */}
-            <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
-              <img
-                src={coverUrl}
-                alt={item.title}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
+      <div className="group relative overflow-hidden border bg-card text-card-foreground dark:bg-[#0A0A0A]">
+        <RowBody
+          item={item}
+          statusText={statusText}
+          onEdit={onEdit}
+          mobileTapAction={mobileTapAction}
+        />
 
-            {/* Title & Author/Dev */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium leading-none truncate" title={item.title}>
-                {item.title}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {isGame ? item.game.developer : item.book.author}
-              </p>
-            </div>
-
-            {/* Score */}
-            <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
-              {item.user_score ? (
-                <>
-                  <span className="font-medium">{item.user_score}</span>
-                  <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                </>
-              ) : (
-                <span className="text-muted-foreground/50">-</span>
-              )}
-            </div>
-
-            {/* Progress */}
-            <div className="w-24 text-right text-xs text-muted-foreground hidden md:block">
-              {progressDisplay}
-            </div>
-
-            {/* Status */}
-            <div className="w-28 flex justify-end">
-              <Badge variant="outline" className={cn("gap-1.5", statusColors[item.status])}>
-                {statusIcons[item.status]}
-                <span className="capitalize">{item.status.replace("_", " ")}</span>
-              </Badge>
-            </div>
-
-            {/* Date */}
-            {!hideStatusDate && (
-              <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
-                {statusDate ? (
-                  <>
-                    {statusIcons[item.status]}
-                    {formatDate(statusDate, preferences?.date_format)}
-                  </>
-                ) : "-"}
-              </div>
-            )}
-          </div>
-        ) : (
-          <Link to={`/item/${item.id}`} className="flex flex-1 items-center gap-4 min-w-0 cursor-pointer md:hidden">
-            {/* Cover (Small) */}
-            <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
-              <img
-                src={coverUrl}
-                alt={item.title}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
-
-            {/* Title & Author/Dev */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-medium leading-none truncate" title={item.title}>
-                {item.title}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1 truncate">
-                {isGame ? item.game.developer : item.book.author}
-              </p>
-            </div>
-
-            {/* Score */}
-            <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
-              {item.user_score ? (
-                <>
-                  <span className="font-medium">{item.user_score}</span>
-                  <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                </>
-              ) : (
-                <span className="text-muted-foreground/50">-</span>
-              )}
-            </div>
-
-            {/* Progress */}
-            <div className="w-24 text-right text-xs text-muted-foreground hidden md:block">
-              {progressDisplay}
-            </div>
-
-            {/* Status */}
-            <div className="w-28 flex justify-end">
-              <Badge variant="outline" className={cn("gap-1.5", statusColors[item.status])}>
-                {statusIcons[item.status]}
-                <span className="capitalize">{item.status.replace("_", " ")}</span>
-              </Badge>
-            </div>
-
-            {/* Date */}
-            {!hideStatusDate && (
-              <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
-                {statusDate ? (
-                  <>
-                    {statusIcons[item.status]}
-                    {formatDate(statusDate, preferences?.date_format)}
-                  </>
-                ) : "-"}
-              </div>
-            )}
-          </Link>
-        )}
-
-        <Link to={`/item/${item.id}`} className="hidden md:flex flex-1 items-center gap-4 min-w-0">
-          {/* Cover (Small) */}
-          <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
-            <img
-              src={coverUrl}
-              alt={item.title}
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          </div>
-
-          {/* Title & Author/Dev */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium leading-none truncate" title={item.title}>
-              {item.title}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              {isGame ? item.game.developer : item.book.author}
-            </p>
-          </div>
-
-          {/* Score */}
-          <div className="w-16 text-right text-sm font-medium hidden sm:flex items-center justify-end gap-1">
-            {item.user_score ? (
-              <>
-                <span className="font-medium">{item.user_score}</span>
-                <IconStar className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-              </>
-            ) : (
-              <span className="text-muted-foreground/50">-</span>
-            )}
-          </div>
-
-          {/* Progress */}
-          <div className="w-24 text-right text-xs text-muted-foreground hidden md:block">
-            {progressDisplay}
-          </div>
-
-          {/* Status */}
-          <div className="w-28 flex justify-end">
-            <Badge variant="outline" className={cn("gap-1.5", statusColors[item.status])}>
-              {statusIcons[item.status]}
-              <span className="capitalize">{item.status.replace("_", " ")}</span>
-            </Badge>
-          </div>
-
-          {/* Date */}
-          {!hideStatusDate && (
-            <div className="w-24 text-right text-xs text-muted-foreground hidden lg:flex items-center justify-end gap-1.5">
-              {statusDate ? (
-                <>
-                  {statusIcons[item.status]}
-                  {formatDate(statusDate, preferences?.date_format)}
-                </>
-              ) : "-"}
-            </div>
-          )}
-        </Link>
-
-        {/* Actions */}
-        <div className="w-8 flex justify-end" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="hidden md:flex absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
           <DropdownMenu>
-            <DropdownMenuTrigger className={iconActionButtonClassName()} aria-label="Item actions">
+            <DropdownMenuTrigger
+              className={iconActionButtonClassName()}
+              aria-label="Item actions"
+            >
               <IconDots className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(item)}>
                 Edit Status
               </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={syncing}
+                onClick={async () => {
+                  setSyncing(true);
+                  try {
+                    await enrichSingle(item);
+                  } finally {
+                    setSyncing(false);
+                  }
+                }}
+              >
+                <IconRefresh
+                  className={cn("h-4 w-4 mr-2", syncing && "animate-spin")}
+                />
+                {syncing ? "Syncing..." : "Sync"}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
                 <IconPlaylistAdd className="h-4 w-4 mr-2" />
                 Add to List...
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onEdit(item)}>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => onEdit(item)}
+              >
                 Delete...
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -250,11 +230,11 @@ export function TableItem({ item, onEdit, mobileTapAction = "edit", hideStatusDa
         </div>
       </div>
 
-      <ManageListsDialog 
-        itemId={item.id} 
-        open={isManageListsOpen} 
-        onOpenChange={setIsManageListsOpen} 
+      <ManageListsDialog
+        itemId={item.id}
+        open={isManageListsOpen}
+        onOpenChange={setIsManageListsOpen}
       />
     </>
-  )
+  );
 }

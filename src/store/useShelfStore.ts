@@ -93,6 +93,7 @@ function getProgressValue(item: FullItem): number {
 /** Get the status-specific date for an item */
 function getStatusDate(item: FullItem): string | null {
   const dateMap: Record<Status, string | null> = {
+    in_collection: item.created_at,
     backlog: item.created_at,
     in_progress: item.started_at,
     paused: item.paused_at,

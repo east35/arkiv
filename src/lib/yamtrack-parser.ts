@@ -114,7 +114,7 @@ const STATUS_MAP: Record<string, Status> = {
 
 const SOURCE_MAP: Record<string, Source> = {
   "igdb": "igdb",
-  "hardcover": "google_books",
+  "hardcover": "hardcover",
 }
 
 // ---------------------------------------------------------------------------

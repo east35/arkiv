@@ -17,16 +17,22 @@ const collectionTabs: {
 interface CollectionTypeSwitcherProps {
   value: MediaType
   className?: string
+  onValueChange?: (value: MediaType) => void
 }
 
-export function CollectionTypeSwitcher({ value, className }: CollectionTypeSwitcherProps) {
+export function CollectionTypeSwitcher({ value, className, onValueChange }: CollectionTypeSwitcherProps) {
   const navigate = useNavigate()
 
   return (
     <SegmentedControl
       value={value}
       onValueChange={(nextValue) => {
-        const next = collectionTabs.find((tab) => tab.type === nextValue)
+        const nextType = nextValue as MediaType
+        if (onValueChange) {
+          onValueChange(nextType)
+          return
+        }
+        const next = collectionTabs.find((tab) => tab.type === nextType)
         if (next) navigate(next.href)
       }}
       items={collectionTabs.map((tab) => ({
@@ -37,8 +43,8 @@ export function CollectionTypeSwitcher({ value, className }: CollectionTypeSwitc
       }))}
       fullWidth
       className={className}
-      listClassName="rounded-full bg-card shadow-lg"
-      triggerClassName="rounded-full py-2.5"
+      listClassName="rounded-full bg-card shadow-lg !h-[38px] !p-0.5 !gap-0.5"
+      triggerClassName="!h-[34px] !rounded-full !px-4 !py-0 !leading-none"
     />
   )
 }

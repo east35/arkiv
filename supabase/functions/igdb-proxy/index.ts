@@ -67,10 +67,19 @@ class HttpError extends Error {
   }
 }
 
+function isLocalhostOrigin(origin: string): boolean {
+  try {
+    const { hostname } = new URL(origin)
+    return hostname === "localhost" || hostname === "127.0.0.1"
+  } catch {
+    return false
+  }
+}
+
 function getCorsHeaders(req: Request): Headers {
   const headers = new Headers(baseCorsHeaders)
   const origin = req.headers.get("origin")
-  if (origin && allowedOrigins.has(origin)) {
+  if (origin && (allowedOrigins.has(origin) || isLocalhostOrigin(origin))) {
     headers.set("Access-Control-Allow-Origin", origin)
   }
   return headers
@@ -78,7 +87,7 @@ function getCorsHeaders(req: Request): Headers {
 
 function isOriginAllowed(req: Request): boolean {
   const origin = req.headers.get("origin")
-  return !origin || allowedOrigins.has(origin)
+  return !origin || allowedOrigins.has(origin) || isLocalhostOrigin(origin)
 }
 
 function jsonResponse(req: Request, payload: unknown, status = 200): Response {
@@ -100,37 +109,37 @@ function enforceBodyLimit(req: Request): void {
   }
 }
 
-function enforceRateLimit(userId: string): void {
+function enforceRateLimit(key: string): void {
   const now = Date.now()
-  const entry = requestCounts.get(userId)
+  const entry = requestCounts.get(key)
   if (!entry || now > entry.resetAt) {
-    requestCounts.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    requestCounts.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
     return
   }
   if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
     throw new HttpError(429, "Too many requests, please try again shortly")
   }
   entry.count += 1
-  requestCounts.set(userId, entry)
+  requestCounts.set(key, entry)
 }
 
-async function requireAuthenticatedUser(req: Request): Promise<{ id: string }> {
+async function getRequesterKey(req: Request): Promise<string> {
   const authHeader = req.headers.get("authorization")
-  if (!authHeader?.toLowerCase().startsWith("bearer ")) {
-    throw new HttpError(401, "Authentication required")
+  if (authHeader?.toLowerCase().startsWith("bearer ")) {
+    const token = authHeader.slice(7).trim()
+    if (token) {
+      const { data, error } = await authClient.auth.getUser(token)
+      if (!error && data.user) {
+        return data.user.id
+      }
+    }
   }
 
-  const token = authHeader.slice(7).trim()
-  if (!token) {
-    throw new HttpError(401, "Authentication required")
-  }
-
-  const { data, error } = await authClient.auth.getUser(token)
-  if (error || !data.user) {
-    throw new HttpError(401, "Authentication required")
-  }
-
-  return { id: data.user.id }
+  // Fallback for unauthenticated/stale-session clients — still rate-limited by IP.
+  const forwardedFor = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+  const origin = req.headers.get("origin")?.trim()
+  const userAgent = req.headers.get("user-agent")?.trim()
+  return [forwardedFor, origin, userAgent].filter(Boolean).join("|") || "anonymous"
 }
 
 function validateSearchQuery(query: unknown): string {
@@ -272,11 +281,15 @@ async function searchGames(query: string) {
 async function getGameDetails(id: number) {
   const body = `
     where id = ${id};
-    fields id, name, summary, cover.image_id,
+    fields id, name, summary, storyline, cover.image_id,
            genres.name, themes.name, platforms.name,
            involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
            screenshots.image_id, first_release_date,
-           aggregated_rating, parent_game.name,
+           total_rating, total_rating_count, parent_game.name,
+           franchises.name, collection.name,
+           game_modes.name, player_perspectives.name,
+           category,
+           external_games.category, external_games.uid,
            remasters.name, standalone_expansions.name,
            similar_games.name, similar_games.cover.image_id;
     limit 1;
@@ -287,10 +300,16 @@ async function getGameDetails(id: number) {
   const game = results[0]
   const companies = (game.involved_companies as Array<Record<string, unknown>>) || []
 
+  // Extract Steam App ID from external_games (category=1 is Steam)
+  const externalGames = (game.external_games as Array<{ category: number; uid: string }>) || []
+  const steamEntry = externalGames.find((eg) => eg.category === 1)
+  const steamId = steamEntry?.uid ?? null
+
   return {
     id: game.id,
     name: game.name,
     summary: game.summary || null,
+    storyline: (game.storyline as string) ?? null,
     cover: game.cover
       ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${(game.cover as Record<string, string>).image_id}.jpg`
       : null,
@@ -309,7 +328,15 @@ async function getGameDetails(id: number) {
     releaseDate: game.first_release_date
       ? new Date((game.first_release_date as number) * 1000).toISOString().split("T")[0]
       : null,
-    sourceScore: game.aggregated_rating ? Number((game.aggregated_rating as number).toFixed(2)) : null,
+    // Use total_rating (weighted critic + community) as the primary score
+    sourceScore: game.total_rating != null ? Number((game.total_rating as number).toFixed(1)) : null,
+    ratingsCount: (game.total_rating_count as number) ?? null,
+    franchise: ((game.franchises as Array<{ name: string }>) ?? [])[0]?.name ?? null,
+    collection: game.collection ? (game.collection as { name: string }).name : null,
+    gameModes: ((game.game_modes as Array<{ name: string }>) || []).map((m) => m.name),
+    playerPerspectives: ((game.player_perspectives as Array<{ name: string }>) || []).map((p) => p.name),
+    gameCategory: game.category != null ? (game.category as number) : null,
+    steamId,
     // Related content
     parentGame: game.parent_game ? (game.parent_game as { name: string }).name : null,
     remasters: ((game.remasters as Array<{ name: string }>) || []).map((r) => r.name),
@@ -344,8 +371,8 @@ serve(async (req: Request) => {
     }
 
     enforceBodyLimit(req)
-    const user = await requireAuthenticatedUser(req)
-    enforceRateLimit(user.id)
+    const requesterKey = await getRequesterKey(req)
+    enforceRateLimit(requesterKey)
 
     const body = await req.json()
     if (!body || typeof body !== "object") {

@@ -55,7 +55,7 @@ import { cn } from "@/lib/utils"
 // Form Schema
 // ---------------------------------------------------------------------------
 
-const statusSchema = z.enum(["backlog", "in_progress", "paused", "completed", "dropped"])
+const statusSchema = z.enum(["in_collection", "backlog", "in_progress", "paused", "completed", "dropped"])
 
 // We allow string | number | null for form inputs to handle the "empty" state of number inputs
 const formSchema = z.object({
@@ -238,6 +238,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
                   onValueChange={(val) => handleStatusChange(val as Status)}
                   wrapperClassName="w-full"
                 >
+                  <option value="in_collection">In Collection</option>
                   <option value="backlog">Backlog</option>
                   <option value="in_progress">In Progress</option>
                   <option value="paused">Paused</option>

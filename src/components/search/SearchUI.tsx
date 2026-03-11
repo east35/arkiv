@@ -1,15 +1,37 @@
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
-import { IconSearch, IconLoader2, IconDeviceGamepad2, IconBook, IconX } from "@tabler/icons-react"
+import {
+  IconSearch,
+  IconLoader2,
+  IconDeviceGamepad2,
+  IconBook,
+  IconX,
+  IconLayoutGrid,
+  IconTable,
+} from "@tabler/icons-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SearchResultItem } from "./SearchResultItem"
 import { useDebounce } from "@/hooks/useDebounce"
-import { useExternalSearch, SEARCH_DEBOUNCE_MS } from "@/hooks/useExternalSearch"
+import { useExternalSearch, SEARCH_DEBOUNCE_MS, type SearchResult } from "@/hooks/useExternalSearch"
 import { useCommitItem, SHEET_CLOSE_DELAY_MS } from "@/hooks/useCommitItem"
+import { useItems } from "@/hooks/useItems"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { MediaType, FullItem } from "@/types"
 import { SegmentedControl } from "@/components/ui/segmented-control"
+import { CollectionTypeSwitcher } from "@/components/library/CollectionTypeSwitcher"
+import { useShelfStore } from "@/store/useShelfStore"
+import { useMediaQuery } from "@/hooks/useMediaQuery"
 
 export function SearchUI() {
   const navigate = useNavigate()
@@ -20,13 +42,20 @@ export function SearchUI() {
   const [query, setQuery] = useState(searchParams.get("q") || "")
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // State for post-add editing
-  const [newItem, setNewItem] = useState<FullItem | null>(null)
+  // null → no alert; "status" → ask to update status; "cancel" → ask to cancel add
+  const [alertPhase, setAlertPhase] = useState<"status" | "cancel" | null>(null)
+  const [pendingItem, setPendingItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [confirmResult, setConfirmResult] = useState<SearchResult | null>(null)
+  const statusChoiceMade = useRef(false)
+  const viewMode = useShelfStore((state) => state.viewMode)
+  const setViewMode = useShelfStore((state) => state.setViewMode)
+  const isDesktop = useMediaQuery("(min-width: 768px)")
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
   const { results, loading, search, clearResults } = useExternalSearch()
   const { commit, committingId } = useCommitItem()
+  const { deleteItem } = useItems()
 
   // Attempt focus on mount — works reliably on desktop, best-effort on iOS
   useEffect(() => {
@@ -34,14 +63,15 @@ export function SearchUI() {
     return () => cancelAnimationFrame(frame)
   }, [])
 
-  // Keep URL in sync with query state
+  // Keep URL in sync with filter state
   useEffect(() => {
+    const nextParams = new URLSearchParams()
+    nextParams.set("type", mediaType)
     if (query) {
-      setSearchParams({ q: query }, { replace: true })
-    } else {
-      setSearchParams({}, { replace: true })
+      nextParams.set("q", query)
     }
-  }, [query, setSearchParams])
+    setSearchParams(nextParams, { replace: true })
+  }, [mediaType, query, setSearchParams])
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -51,18 +81,58 @@ export function SearchUI() {
     }
   }, [debouncedQuery, mediaType, search, clearResults])
 
-  const handleAdd = async (result: { id: string | number; title: string }) => {
+  const handleAdd = async (result: SearchResult) => {
     const item = await commit(result.id, mediaType)
     if (item) {
-      setNewItem(item)
-      setIsSheetOpen(true)
+      setPendingItem(item)
+      statusChoiceMade.current = false
+      setAlertPhase("status")
     }
+  }
+
+  const handleConfirmAdd = async () => {
+    if (!confirmResult) return
+    const result = confirmResult
+    setConfirmResult(null)
+    await handleAdd(result)
+  }
+
+  // Status alert handlers
+  const handleUpdateStatus = () => {
+    statusChoiceMade.current = true
+    setAlertPhase(null)
+    setIsSheetOpen(true)
+  }
+
+  const handleJustAdd = () => {
+    statusChoiceMade.current = true
+    setAlertPhase(null)
+    setPendingItem(null)
+  }
+
+  const handleStatusAlertOpenChange = (open: boolean) => {
+    if (!open && !statusChoiceMade.current) {
+      // Dismissed without a choice (e.g. Escape) → ask about cancelling
+      setAlertPhase("cancel")
+    }
+  }
+
+  // Cancel alert handlers
+  const handleConfirmCancel = async () => {
+    if (pendingItem) await deleteItem(pendingItem.id)
+    setAlertPhase(null)
+    setPendingItem(null)
+  }
+
+  const handleKeepItem = () => {
+    setAlertPhase(null)
+    setPendingItem(null)
   }
 
   const handleSheetOpenChange = (open: boolean) => {
     setIsSheetOpen(open)
     if (!open) {
-      setTimeout(() => setNewItem(null), SHEET_CLOSE_DELAY_MS)
+      setTimeout(() => setPendingItem(null), SHEET_CLOSE_DELAY_MS)
     }
   }
 
@@ -70,11 +140,15 @@ export function SearchUI() {
     { value: "game" as MediaType, label: "Games", icon: IconDeviceGamepad2 },
     { value: "book" as MediaType, label: "Books", icon: IconBook },
   ]
+  const viewModeItems = [
+    { value: "poster", icon: IconLayoutGrid, ariaLabel: "Poster View" },
+    { value: "table", icon: IconTable, ariaLabel: "Table View" },
+  ]
 
   return (
     <div className="flex flex-col fixed md:relative inset-0 md:inset-auto z-[60] md:z-auto bg-background">
       {/* Full-width header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 py-4 border-b mb-6">
+      <div className="sticky top-0 z-20 border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
         <div className="flex items-center justify-between gap-4 mb-4">
           <h1 className="text-3xl font-bold tracking-tight">Add to Collection</h1>
           <div className="flex items-center gap-2">
@@ -89,6 +163,17 @@ export function SearchUI() {
               }))}
               size="sm"
               className="hidden md:block"
+              listClassName="!h-[38px] !p-0.5 !gap-0.5"
+              triggerClassName="!h-[34px] !px-4 !py-0 !leading-none"
+            />
+            <SegmentedControl
+              value={viewMode}
+              onValueChange={(value) => setViewMode(value as "poster" | "table")}
+              items={viewModeItems}
+              size="sm"
+              className="hidden md:block"
+              listClassName="!h-[38px] !p-0.5 !gap-0.5"
+              triggerClassName="!h-[34px] !w-9 !px-0 !py-0"
             />
             {/* Mobile close */}
             <Button
@@ -121,44 +206,124 @@ export function SearchUI() {
         </div>
       </div>
 
-      <div className="space-y-2 px-4 sm:px-6 pb-8 overflow-y-auto flex-1 max-w-3xl w-full mx-auto">
-        {results.map((result) => (
-          <SearchResultItem
-            key={result.id}
-            result={result}
-            onAdd={() => handleAdd(result)}
-            isAdding={committingId === result.id}
-          />
-        ))}
-
-        {!loading && debouncedQuery && results.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            No results found for "{query}"
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto bg-[#f5f5f5] px-4 pb-8 dark:bg-[#171717] sm:px-6">
+        <div className="mx-auto w-full max-w-[1400px] py-6">
+          {!loading && debouncedQuery && results.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground">
+              No results found for "{query}"
+            </div>
+          ) : viewMode === "poster" ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {results.map((result) => (
+                <SearchResultItem
+                  key={result.id}
+                  result={result}
+                  viewMode={viewMode}
+                  isDesktop={isDesktop}
+                  onAdd={handleAdd}
+                  onMobileTap={setConfirmResult}
+                  isAdding={committingId === result.id}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="mx-auto flex max-w-5xl flex-col gap-2">
+              {results.map((result) => (
+                <SearchResultItem
+                  key={result.id}
+                  result={result}
+                  viewMode={viewMode}
+                  isDesktop={isDesktop}
+                  onAdd={handleAdd}
+                  onMobileTap={setConfirmResult}
+                  isAdding={committingId === result.id}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <StatusSheet
-        item={newItem}
+        item={pendingItem}
         open={isSheetOpen}
         onOpenChange={handleSheetOpenChange}
       />
 
+      <AlertDialog
+        open={!!confirmResult}
+        onOpenChange={(open) => {
+          if (!open) setConfirmResult(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add to collection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Add "{confirmResult?.title}" to your collection?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAdd}>
+              Add to Collection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert 1: offer to update status */}
+      <AlertDialog
+        open={alertPhase === "status"}
+        onOpenChange={handleStatusAlertOpenChange}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update status?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{pendingItem?.title}" was added to your collection. Would you like to update its status now?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleJustAdd}>
+              No, just add to collection
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleUpdateStatus}>
+              Yes, update status
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert 2: confirm cancelling the add */}
+      <AlertDialog open={alertPhase === "cancel"}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel adding to collection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove "{pendingItem?.title}" from your collection?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleKeepItem}>
+              No, keep it
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Mobile type picker — pinned to bottom of full-screen overlay */}
       <div className="md:hidden fixed z-20 left-0 right-0 px-4 pb-safe" style={{ bottom: '1rem' }}>
-        <SegmentedControl
+        <CollectionTypeSwitcher
           value={mediaType}
-          onValueChange={(value) => setMediaType(value as MediaType)}
-          items={typeItems.map(({ value, label, icon }) => ({
-            value,
-            label,
-            icon,
-            ariaLabel: label,
-          }))}
-          fullWidth
+          onValueChange={setMediaType}
           className="w-full"
-          listClassName="rounded-full bg-card shadow-lg"
-          triggerClassName="py-2.5"
         />
       </div>
     </div>

@@ -87,7 +87,11 @@ function presetToDateRange(preset: PresetRange): { start: string; end: string } 
 // Page
 // ---------------------------------------------------------------------------
 
-export default function Statistics() {
+interface StatisticsDashboardProps {
+  embedded?: boolean
+}
+
+export function StatisticsDashboard({ embedded = false }: StatisticsDashboardProps) {
   const { computeStatistics, stats } = useStatistics()
   const { items } = useShelfStore()
   const { fetchItems } = useItems()
@@ -137,79 +141,91 @@ export default function Statistics() {
   // Empty state
   if (stats.statusCounts.total === 0) {
     return (
-      <div className="flex flex-col h-full overflow-hidden">
-        <div className="border-b px-4 sm:px-6 py-4">
-          <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
-        </div>
+      <div className="flex flex-col gap-4">
+        {!embedded && (
+          <div className="border-b px-4 sm:px-6 py-4">
+            <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
+          </div>
+        )}
         <EmptyState
           title="No stats available"
-          description="Add items to your shelf to see your statistics."
+          description="Add items to your collection to see your statistics."
           icon={<IconTrophy className="h-10 w-10" />}
-          className="flex-1 px-4"
+          className={embedded ? "h-64" : "flex-1 px-4"}
         />
       </div>
     )
   }
 
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Sticky header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 py-4 flex-shrink-0">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
+  const rangeControls = (
+    <Tabs
+      value={rangeTab}
+      onValueChange={(v) => setRangeTab(v as "preset" | "custom")}
+      className={embedded ? "w-full" : "w-full sm:w-auto"}
+    >
+      <TabsList>
+        <TabsTrigger value="preset">Preset</TabsTrigger>
+        <TabsTrigger value="custom">Custom</TabsTrigger>
+      </TabsList>
 
-          {/* Date range control */}
-          <Tabs
-            value={rangeTab}
-            onValueChange={(v) => setRangeTab(v as "preset" | "custom")}
-            className="w-full sm:w-auto"
+      <TabsContent value="preset" className="mt-2">
+        <NativeSelect
+          value={preset}
+          onValueChange={(v) => setPreset(v as PresetRange)}
+          icon={<IconCalendar />}
+        >
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="this_week">This Week</option>
+          <option value="last_week">Last Week</option>
+          <option value="this_month">This Month</option>
+          <option value="last_month">Last Month</option>
+          <option value="7days">Last 7 Days</option>
+          <option value="30days">Last 30 Days</option>
+          <option value="90days">Last 90 Days</option>
+          <option value="year">Last Year</option>
+        </NativeSelect>
+      </TabsContent>
+
+      <TabsContent value="custom" className="mt-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <DatePicker date={customStart} setDate={setCustomStart} className="w-36 h-11" />
+          <span className="text-muted-foreground text-sm">to</span>
+          <DatePicker date={customEnd} setDate={setCustomEnd} className="w-36 h-11" />
+          <Button
+            size="default"
+            className="h-11"
+            onClick={handleApplyCustom}
+            disabled={!customStart || !customEnd}
           >
-            <TabsList>
-              <TabsTrigger value="preset">Preset</TabsTrigger>
-              <TabsTrigger value="custom">Custom</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="preset" className="mt-2">
-              <NativeSelect
-                value={preset}
-                onValueChange={(v) => setPreset(v as PresetRange)}
-                icon={<IconCalendar />}
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="this_week">This Week</option>
-                <option value="last_week">Last Week</option>
-                <option value="this_month">This Month</option>
-                <option value="last_month">Last Month</option>
-                <option value="7days">Last 7 Days</option>
-                <option value="30days">Last 30 Days</option>
-                <option value="90days">Last 90 Days</option>
-                <option value="year">Last Year</option>
-              </NativeSelect>
-            </TabsContent>
-
-            <TabsContent value="custom" className="mt-2">
-              <div className="flex items-center gap-2">
-                <DatePicker date={customStart} setDate={setCustomStart} className="w-36 h-11" />
-                <span className="text-muted-foreground text-sm">to</span>
-                <DatePicker date={customEnd} setDate={setCustomEnd} className="w-36 h-11" />
-                <Button
-                  size="default"
-                  className="h-11"
-                  onClick={handleApplyCustom}
-                  disabled={!customStart || !customEnd}
-                >
-                  Apply
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
+            Apply
+          </Button>
         </div>
-      </div>
+      </TabsContent>
+    </Tabs>
+  )
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 space-y-6 py-6 pb-8">
+  return (
+    <div className={embedded ? "space-y-6" : "flex flex-col h-full overflow-hidden"}>
+      {!embedded ? (
+        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 py-4 flex-shrink-0">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
+            {rangeControls}
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Date Range</CardTitle>
+            <CardDescription>Choose a date range for your metrics.</CardDescription>
+          </CardHeader>
+          <CardContent>{rangeControls}</CardContent>
+        </Card>
+      )}
+
+      <div className={embedded ? "space-y-6 pb-2" : "flex-1 overflow-y-auto px-4 sm:px-6 space-y-6 py-6 pb-8"}>
 
         {/* KPI Cards */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
@@ -312,4 +328,8 @@ export default function Statistics() {
       </div>
     </div>
   )
+}
+
+export default function Statistics() {
+  return <StatisticsDashboard />
 }

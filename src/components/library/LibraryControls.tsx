@@ -1,10 +1,12 @@
+import { useMemo } from "react"
 import type { ReactNode } from "react"
-import { IconSearch, IconFilter, IconArrowsUpDown, IconLayoutGrid, IconTable, IconAdjustmentsHorizontal, IconPlus } from "@tabler/icons-react"
-import { Link } from "react-router-dom"
+import { IconSearch, IconFilter, IconArrowsUpDown, IconLayoutGrid, IconTable, IconAdjustmentsHorizontal, IconChevronDown } from "@tabler/icons-react"
+import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { NativeSelect } from "@/components/ui/native-select"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
   Sheet,
   SheetContent,
@@ -12,6 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { Switch } from "@/components/ui/switch"
 import { useShelfStore } from "@/store/useShelfStore"
 import { cn } from "@/lib/utils"
 import type { Status, SortField } from "@/types"
@@ -22,10 +25,21 @@ interface LibraryControlsProps {
   mediaType?: "game" | "book"
   hideSearch?: boolean
   title?: ReactNode
-  addHref?: string
+  statusFilterMode?: "single" | "multi"
+  selectedStatuses?: Status[]
+  onSelectedStatusesChange?: (statuses: Status[]) => void
 }
 
-export function LibraryControls({ mediaType, hideSearch, title, addHref }: LibraryControlsProps) {
+const STATUS_OPTIONS: Status[] = ["in_collection", "backlog", "in_progress", "paused", "completed", "dropped"]
+
+export function LibraryControls({
+  mediaType,
+  hideSearch,
+  title,
+  statusFilterMode = "single",
+  selectedStatuses,
+  onSelectedStatusesChange,
+}: LibraryControlsProps) {
   const {
     filters,
     sort,
@@ -48,6 +62,29 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
       ))}
     </NativeSelect>
   )
+
+  const isMultiStatus = statusFilterMode === "multi" && Array.isArray(selectedStatuses) && !!onSelectedStatusesChange
+
+  const multiStatusLabel = useMemo(() => {
+    if (!isMultiStatus || !selectedStatuses) return "All Status"
+    if (selectedStatuses.length === 0) return "No Status"
+    if (selectedStatuses.length === STATUS_OPTIONS.length) return "All Status"
+    if (selectedStatuses.length === 1) return statusLabels[selectedStatuses[0]]
+    return `${selectedStatuses.length} statuses`
+  }, [isMultiStatus, selectedStatuses])
+
+  const toggleStatus = (status: Status) => {
+    if (!isMultiStatus || !selectedStatuses || !onSelectedStatusesChange) return
+    if (selectedStatuses.includes(status)) {
+      if (selectedStatuses.length === 1) {
+        toast.info("At least one status must stay selected on Home.")
+        return
+      }
+      onSelectedStatusesChange(selectedStatuses.filter((s) => s !== status))
+      return
+    }
+    onSelectedStatusesChange([...selectedStatuses, status])
+  }
 
   const SortControl = (
     <NativeSelect
@@ -93,10 +130,36 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-xl px-4 pb-8">
               <SheetHeader className="text-left mb-4">
-                <SheetTitle>Filter & Sort</SheetTitle>
+                <SheetTitle>{isMultiStatus ? "Customize Homepage" : "Filter & Sort"}</SheetTitle>
+                {isMultiStatus && (
+                  <p className="text-sm text-muted-foreground">
+                    Choose which status types you want to see
+                  </p>
+                )}
               </SheetHeader>
               <div className="space-y-3">
-                {StatusFilter}
+                {isMultiStatus ? (
+                  <div className="space-y-2">
+                    {STATUS_OPTIONS.map((status) => {
+                      const checked = selectedStatuses?.includes(status)
+                      return (
+                        <div
+                          key={status}
+                          className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+                        >
+                          <span className="text-sm font-medium">{statusLabels[status]}</span>
+                          <Switch
+                            checked={checked}
+                            onCheckedChange={() => toggleStatus(status)}
+                            aria-label={statusLabels[status]}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  StatusFilter
+                )}
                 {SortControl}
                 {SortDirection}
               </div>
@@ -106,17 +169,60 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
 
         {/* Desktop: inline controls */}
         <div className="hidden md:flex items-center gap-2">
-          <NativeSelect
-            value={filters.status}
-            onValueChange={(value) => setFilters({ status: value as Status | "all" })}
-            icon={<IconFilter />}
-            wrapperClassName="w-[160px]"
-          >
-            <option value="all">All Status</option>
-            {Object.keys(statusLabels).filter(s => s !== "all").map((status) => (
-              <option key={status} value={status}>{statusLabels[status]}</option>
-            ))}
-          </NativeSelect>
+          {isMultiStatus ? (
+            <Dialog>
+              <DialogTrigger
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "justify-between min-w-[220px] h-11 min-h-[44px] bg-white dark:bg-black border-input hover:bg-white dark:hover:bg-black"
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <IconAdjustmentsHorizontal className="h-4 w-4" />
+                  {multiStatusLabel}
+                </span>
+                <IconChevronDown className="h-4 w-4 text-muted-foreground" />
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Customize Homepage</DialogTitle>
+                  <DialogDescription>
+                    Choose which status types you want to see
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  {STATUS_OPTIONS.map((status) => {
+                    const checked = selectedStatuses?.includes(status)
+                    return (
+                      <div
+                        key={status}
+                        className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+                      >
+                        <span className="text-sm font-medium">{statusLabels[status]}</span>
+                        <Switch
+                          checked={checked}
+                          onCheckedChange={() => toggleStatus(status)}
+                          aria-label={statusLabels[status]}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <NativeSelect
+              value={filters.status}
+              onValueChange={(value) => setFilters({ status: value as Status | "all" })}
+              icon={<IconFilter />}
+              wrapperClassName="w-[160px]"
+            >
+              <option value="all">All Status</option>
+              {Object.keys(statusLabels).filter(s => s !== "all").map((status) => (
+                <option key={status} value={status}>{statusLabels[status]}</option>
+              ))}
+            </NativeSelect>
+          )}
 
           <NativeSelect
             value={sort.field}
@@ -140,15 +246,6 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
           </Button>
 
           <div className="w-px h-9 bg-border mx-1" />
-
-          {addHref && (
-            <Link to={addHref}>
-              <Button size="sm">
-                <IconPlus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </Link>
-          )}
         </div>
 
         <SegmentedControl
@@ -158,7 +255,7 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
             { value: "poster", icon: IconLayoutGrid, ariaLabel: "Poster View" },
             { value: "table", icon: IconTable, ariaLabel: "Table View" },
           ]}
-          className="bg-background shadow-sm"
+          className="bg-background"
           triggerClassName="w-9 px-0"
         />
         </div>{/* end controls */}
@@ -169,7 +266,7 @@ export function LibraryControls({ mediaType, hideSearch, title, addHref }: Libra
         <div className="relative hidden md:block w-full sm:w-72">
           <IconSearch className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={`Search ${mediaType ? mediaType + "s" : "shelf"}...`}
+            placeholder={`Search ${mediaType ? mediaType + "s" : "collection"}...`}
             className="pl-9"
             value={filters.search}
             onChange={(e) => setFilters({ search: e.target.value })}

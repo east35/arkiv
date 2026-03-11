@@ -9,11 +9,14 @@ import {
   IconTrash,
   IconSearchOff,
   IconPlaylistAdd,
+  IconSparkles,
+  IconLoader2,
 } from "@tabler/icons-react"
 
 import { useShelfStore } from "@/store/useShelfStore"
 import { useItems } from "@/hooks/useItems"
 import { useLists } from "@/hooks/useLists"
+import { useMetadataEnrich } from "@/hooks/useMetadataEnrich"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -33,9 +36,28 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import type { FullItem, Status } from "@/types"
+import type { FullItem, GameFields, Status } from "@/types"
 import { statusIcons } from "@/components/status-icons"
 import { cn } from "@/lib/utils"
+
+const GAME_CATEGORY_LABELS: Record<number, string> = {
+  1: "DLC",
+  2: "Expansion",
+  3: "Bundle",
+  4: "Standalone Expansion",
+  5: "Mod",
+  6: "Episode",
+  8: "Remake",
+  9: "Remaster",
+  10: "Expanded Game",
+  11: "Port",
+  12: "Fork",
+}
+
+function gameCategoryLabel(game: GameFields): string | null {
+  if (game.game_category == null || game.game_category === 0) return null
+  return GAME_CATEGORY_LABELS[game.game_category] ?? null
+}
 
 export default function ItemDetail() {
   const { id } = useParams<{ id: string }>()
@@ -44,10 +66,12 @@ export default function ItemDetail() {
   const { fetchItems, deleteItem } = useItems()
   const { fetchItemMemberships, fetchLists } = useLists()
 
+  const { enrichSingle } = useMetadataEnrich()
   const [item, setItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isManageListsOpen, setIsManageListsOpen] = useState(false)
   const [itemListIds, setItemListIds] = useState<string[]>([])
+  const [enriching, setEnriching] = useState(false)
 
   // Find item in store or fetch
   useEffect(() => {
@@ -104,8 +128,9 @@ export default function ItemDetail() {
     ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" 
     : "https://books.google.com/googlebooks/images/no_cover_thumb.gif")
   const statusButtonClass: Record<Status, string> = {
-    backlog: "bg-slate-600 hover:bg-slate-700 text-white",
-    in_progress: "bg-blue-600 hover:bg-blue-700 text-white",
+    in_collection: "bg-slate-600 hover:bg-slate-700 text-white",
+    backlog: "bg-purple-600 hover:bg-purple-700 text-white",
+    in_progress: "bg-primary hover:bg-primary/90 text-primary-foreground",
     completed: "bg-green-600 hover:bg-green-700 text-white",
     paused: "bg-orange-500 hover:bg-orange-600 text-white",
     dropped: "bg-red-600 hover:bg-red-700 text-white",
@@ -119,7 +144,7 @@ export default function ItemDetail() {
   return (
     <>
       {/* Header — full width */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 px-4 sm:px-6 mb-6 border-b">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 px-4 sm:px-6 mb-6 border-b">
         <div className="flex items-center justify-between">
           <Link to={-1 as any} className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
             <IconArrowLeft className="h-4 w-4 mr-2" />
@@ -127,6 +152,25 @@ export default function ItemDetail() {
           </Link>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden md:inline-flex"
+              disabled={enriching}
+              onClick={async () => {
+                setEnriching(true)
+                try {
+                  await enrichSingle(item)
+                } finally {
+                  setEnriching(false)
+                }
+              }}
+            >
+              {enriching
+                ? <IconLoader2 className="h-4 w-4 mr-2 animate-spin" />
+                : <IconSparkles className="h-4 w-4 mr-2" />}
+              Enrich
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger
                 className={cn(buttonVariants({ variant: "destructive", size: "sm" }), "hidden md:inline-flex")}
@@ -205,6 +249,20 @@ export default function ItemDetail() {
               </div>
             </div>
 
+            {/* Community Score */}
+            {item.source_score != null && (
+              <div className="p-4 rounded-lg border bg-card">
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Community Score</div>
+                <div className="text-3xl font-bold flex items-baseline gap-1">
+                  <span className="font-medium">{item.source_score}</span>
+                  <span className="text-sm text-muted-foreground font-normal">/ 10</span>
+                </div>
+                {item.source_votes != null && (
+                  <div className="text-xs text-muted-foreground mt-1">{item.source_votes.toLocaleString()} votes</div>
+                )}
+              </div>
+            )}
+
             {/* Progress */}
             <div className="p-4 rounded-lg border bg-card">
               <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Progress</div>
@@ -240,6 +298,27 @@ export default function ItemDetail() {
                     <IconCalendar className="h-4 w-4" />
                     {new Date(isGame ? item.game.release_date! : item.book.publish_date!).getFullYear()}
                   </span>
+                </>
+              )}
+
+              {!isGame && item.book.series_name && (
+                <>
+                  <Separator orientation="vertical" className="h-4" />
+                  <span>{item.book.series_name}{item.book.series_position ? ` · Book ${item.book.series_position}` : ''}</span>
+                </>
+              )}
+
+              {isGame && item.game.collection && (
+                <>
+                  <Separator orientation="vertical" className="h-4" />
+                  <span>{item.game.collection}</span>
+                </>
+              )}
+
+              {isGame && gameCategoryLabel(item.game) && (
+                <>
+                  <Separator orientation="vertical" className="h-4" />
+                  <Badge variant="outline" className="text-xs">{gameCategoryLabel(item.game)}</Badge>
                 </>
               )}
 
@@ -280,7 +359,6 @@ export default function ItemDetail() {
                   </div>
                 </div>
 
-
                 <div>
                   <h3 className="text-sm font-medium mb-3 text-muted-foreground">Dates</h3>
                   <div className="space-y-2 text-sm">
@@ -303,6 +381,46 @@ export default function ItemDetail() {
                   </div>
                 </div>
               </div>
+
+              {isGame && item.game.themes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Themes</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {item.game.themes.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}
+                  </div>
+                </div>
+              )}
+
+              {isGame && item.game.game_modes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Game Modes</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {item.game.game_modes.map(m => <Badge key={m} variant="secondary">{m}</Badge>)}
+                  </div>
+                </div>
+              )}
+
+              {isGame && item.game.player_perspectives.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Perspective</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {item.game.player_perspectives.map(p => <Badge key={p} variant="secondary">{p}</Badge>)}
+                  </div>
+                </div>
+              )}
+
+              {!isGame && item.book.tag_categories &&
+                Object.entries(item.book.tag_categories).map(([category, tags]) =>
+                  tags.length > 0 ? (
+                    <div key={category}>
+                      <h3 className="text-sm font-medium mb-3 text-muted-foreground">{category}</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}
+                      </div>
+                    </div>
+                  ) : null
+                )
+              }
 
               {itemLists.length > 0 && (
                 <div>

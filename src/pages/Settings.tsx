@@ -1,18 +1,29 @@
-import { useEffect, useState } from "react"
-import { IconLoader2, IconDownload, IconUpload, IconRefresh, IconCircleCheck, IconLogout } from "@tabler/icons-react"
-import { toast } from "sonner"
+import { useEffect, useState } from "react";
+import {
+  IconLoader2,
+  IconDownload,
+  IconUpload,
+  IconCircleCheck,
+  IconLogout,
+  IconChevronDown,
+  IconCheck,
+} from "@tabler/icons-react";
+import { toast } from "sonner";
 
-import { useNavigate } from "react-router-dom"
-import { useAuth } from "@/hooks/useAuth"
-import { usePreferences } from "@/hooks/usePreferences"
-import { useShelfStore } from "@/store/useShelfStore"
-import { useItems } from "@/hooks/useItems"
-import { useTheme } from "@/components/theme-provider"
-import { useMetadataEnrich, type EnrichReport } from "@/hooks/useMetadataEnrich"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { FormFieldBlock } from "@/components/ui/form-field-block"
-import { LoadingState } from "@/components/ui/loading-state"
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { usePreferences } from "@/hooks/usePreferences";
+import { useShelfStore } from "@/store/useShelfStore";
+import { useItems } from "@/hooks/useItems";
+import { useTheme } from "@/components/theme-provider";
+import {
+  useMetadataEnrich,
+  type EnrichReport,
+} from "@/hooks/useMetadataEnrich";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FormFieldBlock } from "@/components/ui/form-field-block";
+import { LoadingState } from "@/components/ui/loading-state";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,8 +34,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { NativeSelect } from "@/components/ui/native-select"
+} from "@/components/ui/alert-dialog";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Card,
   CardContent,
@@ -32,113 +43,175 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { DateFormat, TimeFormat, UserPreferences } from "@/types"
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { StatisticsDashboard } from "@/pages/Statistics";
+import type { DateFormat, TimeFormat, UserPreferences } from "@/types";
 
 export default function Settings() {
-  const { user, signOut } = useAuth()
-  const { preferences } = useShelfStore()
-  const { fetchPreferences, updatePreferences } = usePreferences()
-  const { items } = useShelfStore()
-  const { fetchItems } = useItems()
-  const { setTheme } = useTheme()
-  const navigate = useNavigate()
-  const { progress: enrichProgress, scan, execute: executeEnrich, reset: resetEnrich } = useMetadataEnrich()
+  const { user, signOut } = useAuth();
+  const { preferences } = useShelfStore();
+  const { fetchPreferences, updatePreferences } = usePreferences();
+  const { items } = useShelfStore();
+  const { fetchItems } = useItems();
+  const { setTheme } = useTheme();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab = [
+    "account",
+    "linked",
+    "preferences",
+    "statistics",
+    "data",
+  ].includes(tabParam ?? "")
+    ? (tabParam as "account" | "linked" | "preferences" | "statistics" | "data")
+    : "account";
+  const {
+    progress: enrichProgress,
+    scan,
+    execute: executeEnrich,
+    reset: resetEnrich,
+  } = useMetadataEnrich();
 
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState<Partial<UserPreferences>>({})
-  const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({})
-  const [sparseCount, setSparseCount] = useState<number | null>(null)
-  const [enrichReport, setEnrichReport] = useState<EnrichReport | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [tabSheetOpen, setTabSheetOpen] = useState(false);
 
-  // Fetch prefs on mount
+  const tabs = [
+    { value: "account", label: "Account" },
+    { value: "linked", label: "Linked" },
+    { value: "preferences", label: "Preferences" },
+    { value: "statistics", label: "Statistics" },
+    { value: "data", label: "Data" },
+  ] as const;
+
+  const activeTabLabel = tabs.find((t) => t.value === activeTab)?.label ?? "Account";
+  const [formData, setFormData] = useState<Partial<UserPreferences>>({});
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({});
+  const [sparseCount, setSparseCount] = useState<number | null>(null);
+  const [enrichReport, setEnrichReport] = useState<EnrichReport | null>(null);
+
+  // Fetch prefs on mount.
   useEffect(() => {
-    fetchPreferences()
-  }, [fetchPreferences])
+    fetchPreferences();
+  }, [fetchPreferences]);
+
+  // Keep sparse count in sync with the live items list.
+  useEffect(() => {
+    const sparse = scan();
+    setSparseCount(sparse.length);
+  }, [items, scan]);
 
   // Sync form data with prefs
   useEffect(() => {
     if (preferences) {
-      setFormData(preferences)
+      setFormData(preferences);
     }
-  }, [preferences])
+  }, [preferences]);
 
   const handleThemeChange = (val: string | null) => {
-    if (!val) return
-    const newTheme = val as "light" | "dark" | "system"
-    setTheme(newTheme)
-    setFormData({ ...formData, theme: newTheme })
-  }
+    if (!val) return;
+    const newTheme = val as "light" | "dark" | "system";
+    setTheme(newTheme);
+    setFormData({ ...formData, theme: newTheme });
+  };
 
   const getUsernameError = (username?: string | null) => {
-    if (!username) return null
-    const value = username.trim()
-    if (value.length < 2 || value.length > 30) return "Username must be 2-30 characters"
-    if (!/^[a-zA-Z0-9_]+$/.test(value)) return "Username can only contain letters, numbers, and underscores"
-    return null
-  }
+    if (!username) return null;
+    const value = username.trim();
+    if (value.length < 2 || value.length > 30)
+      return "Username must be 2-30 characters";
+    if (!/^[a-zA-Z0-9_]+$/.test(value))
+      return "Username can only contain letters, numbers, and underscores";
+    return null;
+  };
 
   const handleSave = async () => {
-    const usernameError = getUsernameError(formData.username)
+    const usernameError = getUsernameError(formData.username);
     if (usernameError) {
-      setFieldErrors({ username: usernameError })
-      toast.error(usernameError)
-      return
+      setFieldErrors({ username: usernameError });
+      toast.error(usernameError);
+      return;
     }
-    setFieldErrors({})
+    setFieldErrors({});
 
-    setLoading(true)
+    setLoading(true);
     try {
-      await updatePreferences(formData)
-      toast.success("Settings saved")
+      await updatePreferences(formData);
+      toast.success("Settings saved");
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to save settings")
+      console.error(error);
+      toast.error("Failed to save settings");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleExport = async () => {
     // Ensure we have latest items
-    await fetchItems()
-    
+    await fetchItems();
+
     // Generate CSV
-    const headers = ["ID", "Title", "Media Type", "Status", "Score", "Platform/Author", "Created At"]
-    const rows = items.map(item => [
+    const headers = [
+      "ID",
+      "Title",
+      "Media Type",
+      "Status",
+      "Score",
+      "Platform/Author",
+      "Created At",
+    ];
+    const rows = items.map((item) => [
       item.id,
       `"${item.title.replace(/"/g, '""')}"`, // Escape quotes
       item.media_type,
       item.status,
       item.user_score ?? "",
       item.media_type === "game" ? item.game.developer : item.book.author,
-      item.created_at
-    ])
+      item.created_at,
+    ]);
 
     const csvContent = [
       headers.join(","),
-      ...rows.map(r => r.join(","))
-    ].join("\n")
+      ...rows.map((r) => r.join(",")),
+    ].join("\n");
 
     // IconDownload
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", `arkiv_export_${new Date().toISOString().split("T")[0]}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `arkiv_export_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const runEnrich = async (force = false) => {
+    setEnrichReport(null);
+    const report = await executeEnrich(force);
+    setEnrichReport(report);
+    const sparse = scan();
+    setSparseCount(sparse.length);
+  };
 
   if (!preferences) {
-    return <LoadingState className="h-full" />
+    return <LoadingState className="h-full" />;
   }
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
@@ -150,11 +223,49 @@ export default function Settings() {
       </div>
 
       <div className="flex-1 px-4 sm:px-6 pb-8">
-        <Tabs defaultValue="account" className="max-w-3xl">
-          <TabsList className="w-full mb-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(tab) =>
+            setSearchParams(tab === "account" ? {} : { tab })
+          }
+          className="max-w-5xl"
+        >
+          {/* Mobile: sheet picker */}
+          <Sheet open={tabSheetOpen} onOpenChange={setTabSheetOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full mb-4 justify-between md:hidden">
+                {activeTabLabel}
+                <IconChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="pb-safe">
+              <SheetHeader>
+                <SheetTitle>Settings</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 flex flex-col gap-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.value}
+                    className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-left text-sm font-medium hover:bg-accent transition-colors"
+                    onClick={() => {
+                      setSearchParams(tab.value === "account" ? {} : { tab: tab.value });
+                      setTabSheetOpen(false);
+                    }}
+                  >
+                    {tab.label}
+                    {activeTab === tab.value && <IconCheck className="h-4 w-4" />}
+                  </button>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Desktop: normal tab list */}
+          <TabsList className="hidden md:flex w-full mb-4">
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="linked">Linked</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
+            <TabsTrigger value="statistics">Statistics</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
 
@@ -163,33 +274,50 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>Account Information</CardTitle>
-                <CardDescription>
-                  Manage your personal details.
-                </CardDescription>
+                <CardDescription>Manage your personal details.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormFieldBlock id="email" label="Email" description="Managed via Supabase Auth.">
+                <FormFieldBlock
+                  id="email"
+                  label="Email"
+                  description="Managed via Supabase Auth."
+                >
                   <Input id="email" value={user?.email || ""} disabled />
                 </FormFieldBlock>
-                <FormFieldBlock id="username" label="Username" error={fieldErrors.username}>
+                <FormFieldBlock
+                  id="username"
+                  label="Username"
+                  error={fieldErrors.username}
+                >
                   <Input
                     id="username"
                     value={formData.username || ""}
                     onChange={(e) => {
-                      const value = e.target.value
-                      setFormData({ ...formData, username: value })
+                      const value = e.target.value;
+                      setFormData({ ...formData, username: value });
                       if (fieldErrors.username) {
-                        setFieldErrors((prev) => ({ ...prev, username: undefined }))
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          username: undefined,
+                        }));
                       }
                     }}
-                    onBlur={() => setFieldErrors((prev) => ({ ...prev, username: getUsernameError(formData.username) || undefined }))}
+                    onBlur={() =>
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        username:
+                          getUsernameError(formData.username) || undefined,
+                      }))
+                    }
                     placeholder="Set a username"
                   />
                 </FormFieldBlock>
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>
-                  {loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading && (
+                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Save Changes
                 </Button>
               </CardFooter>
@@ -206,26 +334,40 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormFieldBlock id="steamId" label="Steam ID" description="Used to fetch game playtimes (coming soon).">
+                <FormFieldBlock
+                  id="steamId"
+                  label="Steam ID"
+                  description="Used to fetch game playtimes (coming soon)."
+                >
                   <Input
                     id="steamId"
                     value={formData.steam_id || ""}
-                    onChange={(e) => setFormData({ ...formData, steam_id: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, steam_id: e.target.value })
+                    }
                     placeholder="76561198000000000"
                   />
                 </FormFieldBlock>
-                <FormFieldBlock id="calibre" label="Calibre Library Path" description="Local path to your Calibre library (coming soon).">
+                <FormFieldBlock
+                  id="calibre"
+                  label="Calibre Library Path"
+                  description="Local path to your Calibre library (coming soon)."
+                >
                   <Input
                     id="calibre"
                     value={formData.calibre_path || ""}
-                    onChange={(e) => setFormData({ ...formData, calibre_path: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, calibre_path: e.target.value })
+                    }
                     placeholder="/Users/name/Calibre Library"
                   />
                 </FormFieldBlock>
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>
-                  {loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading && (
+                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Save Changes
                 </Button>
               </CardFooter>
@@ -237,9 +379,7 @@ export default function Settings() {
             <Card>
               <CardHeader>
                 <CardTitle>App Preferences</CardTitle>
-                <CardDescription>
-                  Customize your experience.
-                </CardDescription>
+                <CardDescription>Customize your experience.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <FormFieldBlock id="theme" label="Theme">
@@ -258,7 +398,12 @@ export default function Settings() {
                   <NativeSelect
                     id="date-format"
                     value={formData.date_format || "iso"}
-                    onValueChange={(val) => setFormData({ ...formData, date_format: val as DateFormat })}
+                    onValueChange={(val) =>
+                      setFormData({
+                        ...formData,
+                        date_format: val as DateFormat,
+                      })
+                    }
                   >
                     <option value="iso">ISO (YYYY-MM-DD)</option>
                     <option value="us">US (MM/DD/YYYY)</option>
@@ -271,7 +416,12 @@ export default function Settings() {
                   <NativeSelect
                     id="time-format"
                     value={formData.time_format || "12hr"}
-                    onValueChange={(val) => setFormData({ ...formData, time_format: val as TimeFormat })}
+                    onValueChange={(val) =>
+                      setFormData({
+                        ...formData,
+                        time_format: val as TimeFormat,
+                      })
+                    }
                   >
                     <option value="12hr">12-hour (1:00 PM)</option>
                     <option value="24hr">24-hour (13:00)</option>
@@ -280,11 +430,17 @@ export default function Settings() {
               </CardContent>
               <CardFooter>
                 <Button onClick={handleSave} disabled={loading}>
-                  {loading && <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading && (
+                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Save Changes
                 </Button>
               </CardFooter>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="statistics">
+            <StatisticsDashboard embedded />
           </TabsContent>
 
           {/* Data Export */}
@@ -293,7 +449,7 @@ export default function Settings() {
               <CardHeader>
                 <CardTitle>Data Management</CardTitle>
                 <CardDescription>
-                  Export your shelf or manage your data.
+                  Export your collection or manage your data.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -303,44 +459,42 @@ export default function Settings() {
                     <div>
                       <h4 className="font-medium">Enrich Collection</h4>
                       <p className="text-sm text-muted-foreground">
-                        Backfill missing metadata (genres, descriptions, etc.) from IGDB & Google Books.
+                        Backfill missing metadata (genres, descriptions, etc.)
+                        from IGDB & Hardcover.
                       </p>
                     </div>
-                    {enrichProgress.phase === "idle" && !enrichReport && (
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          const sparse = scan()
-                          setSparseCount(sparse.length)
-                        }}
-                      >
-                        <IconRefresh className="mr-2 h-4 w-4" />
-                        Scan
-                      </Button>
-                    )}
                   </div>
 
                   {/* Scan result — confirm before enriching */}
-                  {sparseCount !== null && enrichProgress.phase === "idle" && !enrichReport && (
-                    <div className="flex items-center justify-between bg-background p-3 rounded border">
-                      <p className="text-sm">
-                        {sparseCount === 0
-                          ? "All items already have full metadata."
-                          : <><strong>{sparseCount}</strong> items need enrichment.</>}
-                      </p>
-                      {sparseCount > 0 && (
-                        <Button
-                          size="sm"
-                          onClick={async () => {
-                            const report = await executeEnrich()
-                            setEnrichReport(report)
-                          }}
-                        >
-                          Enrich Now
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                  {sparseCount !== null &&
+                    enrichProgress.phase === "idle" &&
+                    !enrichReport && (
+                      <div className="flex items-center justify-between bg-background p-3 rounded border">
+                        <p className="text-sm">
+                          {sparseCount === 0 ? (
+                            "All items already have full metadata."
+                          ) : (
+                            <>
+                              <strong>{sparseCount}</strong> items need
+                              enrichment.
+                            </>
+                          )}
+                        </p>
+                        {sparseCount > 0 ? (
+                          <Button size="sm" onClick={() => runEnrich(false)}>
+                            Enrich Now
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => runEnrich(true)}
+                          >
+                            Force Re-enrich
+                          </Button>
+                        )}
+                      </div>
+                    )}
 
                   {/* Progress bar */}
                   {enrichProgress.phase === "enriching" && (
@@ -348,20 +502,25 @@ export default function Settings() {
                       <div className="flex items-center gap-2">
                         <IconLoader2 className="h-4 w-4 animate-spin" />
                         <span className="text-sm">
-                          Enriching… {enrichProgress.current} / {enrichProgress.total}
+                          Enriching… {enrichProgress.current} /{" "}
+                          {enrichProgress.total}
                         </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2">
                         <div
                           className="bg-primary h-2 rounded-full transition-all"
-                          style={{ width: `${(enrichProgress.current / enrichProgress.total) * 100}%` }}
+                          style={{
+                            width: `${(enrichProgress.current / enrichProgress.total) * 100}%`,
+                          }}
                         />
                       </div>
                       <div className="flex gap-4 text-xs text-muted-foreground">
                         <span>✓ {enrichProgress.enriched} enriched</span>
                         <span>⊘ {enrichProgress.skipped} skipped</span>
                         {enrichProgress.errors.length > 0 && (
-                          <span className="text-destructive">✗ {enrichProgress.errors.length} errors</span>
+                          <span className="text-destructive">
+                            ✗ {enrichProgress.errors.length} errors
+                          </span>
                         )}
                       </div>
                     </div>
@@ -372,34 +531,54 @@ export default function Settings() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-green-600">
                         <IconCircleCheck className="h-4 w-4" />
-                        <span className="text-sm font-medium">Enrichment complete</span>
+                        <span className="text-sm font-medium">
+                          Enrichment complete
+                        </span>
                       </div>
                       <div className="flex gap-4 text-xs text-muted-foreground">
                         <span>✓ {enrichReport.enriched} enriched</span>
                         <span>⊘ {enrichReport.skipped} skipped</span>
                         {enrichReport.errors.length > 0 && (
-                          <span className="text-destructive">✗ {enrichReport.errors.length} errors</span>
+                          <span className="text-destructive">
+                            ✗ {enrichReport.errors.length} errors
+                          </span>
                         )}
                       </div>
                       {enrichReport.errors.length > 0 && (
                         <details className="text-xs text-destructive">
-                          <summary className="cursor-pointer">View errors</summary>
+                          <summary className="cursor-pointer">
+                            View errors
+                          </summary>
                           <ul className="mt-1 space-y-0.5 pl-4 list-disc">
-                            {enrichReport.errors.map((e, i) => <li key={i}>{e}</li>)}
+                            {enrichReport.errors.map((e, i) => (
+                              <li key={i}>{e}</li>
+                            ))}
                           </ul>
                         </details>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          resetEnrich()
-                          setSparseCount(null)
-                          setEnrichReport(null)
-                        }}
-                      >
-                        Reset
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={() => runEnrich(false)}>
+                          Run Again
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => runEnrich(true)}
+                        >
+                          Force Re-enrich
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            resetEnrich();
+                            setSparseCount(null);
+                            setEnrichReport(null);
+                          }}
+                        >
+                          Reset
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -433,7 +612,7 @@ export default function Settings() {
             </Card>
           </TabsContent>
         </Tabs>
-        
+
         {/* Mobile Sign Out */}
         <div className="md:hidden mt-8">
           <AlertDialog>
@@ -452,12 +631,17 @@ export default function Settings() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => signOut()} className="bg-destructive text-white hover:bg-destructive/90">Sign Out</AlertDialogAction>
+                <AlertDialogAction
+                  onClick={() => signOut()}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                >
+                  Sign Out
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </div>
       </div>
     </div>
-  )
+  );
 }

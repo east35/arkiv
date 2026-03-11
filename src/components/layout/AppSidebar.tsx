@@ -1,7 +1,7 @@
-import { Link, useLocation } from "react-router-dom"
-import { cn } from "@/lib/utils"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,33 +12,46 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import {
-  IconLayoutGrid, IconLayoutGridFilled,
-  IconDeviceGamepad2, IconDeviceGamepad2Filled,
-  IconBook, IconBookFilled,
-  IconChartPie2, IconChartPie2Filled,
-  IconSettings, IconSettingsFilled,
-  IconListDetails, IconListDetailsFilled,
+  IconLayoutGrid,
+  IconLayoutGridFilled,
+  IconDeviceGamepad2,
+  IconDeviceGamepad2Filled,
+  IconBook,
+  IconBookFilled,
+  IconSettings,
+  IconSettingsFilled,
+  IconListDetails,
+  IconListDetailsFilled,
+  IconPlus,
   IconLogout,
   IconMenu2,
   IconChevronLeft,
   IconChevronRight,
-} from "@tabler/icons-react"
-import { useAuth } from "@/hooks/useAuth"
+} from "@tabler/icons-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavItemProps {
-  to: string
-  icon: React.ComponentType<{ className?: string }>
-  iconFilled: React.ComponentType<{ className?: string }>
-  label: string
-  active?: boolean
-  collapsed?: boolean
-  onClick?: () => void
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconFilled: React.ComponentType<{ className?: string }>;
+  label: string;
+  active?: boolean;
+  collapsed?: boolean;
+  onClick?: () => void;
 }
 
-function NavItem({ to, icon: Icon, iconFilled: IconFilled, label, active, collapsed, onClick }: NavItemProps) {
-  const IconComponent = active ? IconFilled : Icon
+function NavItem({
+  to,
+  icon: Icon,
+  iconFilled: IconFilled,
+  label,
+  active,
+  collapsed,
+  onClick,
+}: NavItemProps) {
+  const IconComponent = active ? IconFilled : Icon;
   return (
     <Link to={to} onClick={onClick} title={collapsed ? label : undefined}>
       <Button
@@ -46,52 +59,114 @@ function NavItem({ to, icon: Icon, iconFilled: IconFilled, label, active, collap
         className={cn(
           "w-full",
           collapsed ? "justify-center px-0" : "justify-start",
-          active && "bg-secondary"
+          active && "bg-secondary",
         )}
       >
         <IconComponent className={cn("h-4 w-4", !collapsed && "mr-2")} />
         {!collapsed && label}
       </Button>
     </Link>
-  )
+  );
 }
 
 interface AppSidebarProps {
-  className?: string
-  onNavClick?: () => void
-  collapsed?: boolean
-  onCollapse?: () => void
+  className?: string;
+  onNavClick?: () => void;
+  collapsed?: boolean;
+  onCollapse?: () => void;
 }
 
-export function AppSidebar({ className, onNavClick, collapsed = false, onCollapse }: AppSidebarProps) {
-  const location = useLocation()
-  const { signOut } = useAuth()
+export function AppSidebar({
+  className,
+  onNavClick,
+  collapsed = false,
+  onCollapse,
+}: AppSidebarProps) {
+  const location = useLocation();
+  const { signOut } = useAuth();
 
   const mainItems = [
-    { to: "/",           icon: IconLayoutGrid,     iconFilled: IconLayoutGridFilled,     label: "Home" },
-    { to: "/books",      icon: IconBook,            iconFilled: IconBookFilled,            label: "Books" },
-    { to: "/games",      icon: IconDeviceGamepad2,  iconFilled: IconDeviceGamepad2Filled,  label: "Games" },
-    { to: "/lists",      icon: IconListDetails,      iconFilled: IconListDetailsFilled,     label: "Lists" },
-    { to: "/statistics", icon: IconChartPie2,       iconFilled: IconChartPie2Filled,       label: "Statistics" },
-  ]
+    {
+      to: "/",
+      icon: IconLayoutGrid,
+      iconFilled: IconLayoutGridFilled,
+      label: "Home",
+    },
+    {
+      to: "/books",
+      icon: IconBook,
+      iconFilled: IconBookFilled,
+      label: "Books",
+    },
+    {
+      to: "/games",
+      icon: IconDeviceGamepad2,
+      iconFilled: IconDeviceGamepad2Filled,
+      label: "Games",
+    },
+    {
+      to: "/lists",
+      icon: IconListDetails,
+      iconFilled: IconListDetailsFilled,
+      label: "Lists",
+    },
+  ];
 
   return (
     <div className={cn("h-full border-r bg-background", className)}>
       <div className="py-4 h-full flex flex-col">
-
         {/* Logo area */}
-        <div className={cn("mb-4", collapsed ? "px-1 flex justify-center" : "px-7")}>
+        <div
+          className={cn(
+            "mb-4",
+            collapsed ? "px-1 flex justify-center" : "px-7",
+          )}
+        >
           {collapsed ? (
             <>
-              <img src="/logo/arkiv-icon-white.svg" alt="Arkiv" className="h-7 hidden dark:block" />
-              <img src="/logo/arkiv-icon-black.svg" alt="Arkiv" className="h-7 dark:hidden" />
+              <img
+                src="/logo/arkiv-icon-white.svg"
+                alt="Arkiv"
+                className="h-7 hidden dark:block"
+              />
+              <img
+                src="/logo/arkiv-icon-black.svg"
+                alt="Arkiv"
+                className="h-7 dark:hidden"
+              />
             </>
           ) : (
             <>
-              <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-8 hidden dark:block" />
-              <img src="/logo/arkiv-logo-black.svg" alt="Arkiv" className="h-8 dark:hidden" />
+              <img
+                src="/logo/arkiv-logo-white.svg"
+                alt="Arkiv"
+                className="h-8 hidden dark:block"
+              />
+              <img
+                src="/logo/arkiv-logo-black.svg"
+                alt="Arkiv"
+                className="h-8 dark:hidden"
+              />
             </>
           )}
+        </div>
+
+        <div className={cn("mb-3", collapsed ? "px-1" : "px-3")}>
+          <Link
+            to="/search"
+            onClick={onNavClick}
+            title={collapsed ? "Add Item" : undefined}
+          >
+            <Button
+              className={cn(
+                "w-full",
+                collapsed ? "justify-center px-0" : "justify-start",
+              )}
+            >
+              <IconPlus className={cn("h-4 w-4", !collapsed && "mr-2")} />
+              {!collapsed && "Add to Collection"}
+            </Button>
+          </Link>
         </div>
 
         {/* Main nav */}
@@ -112,7 +187,6 @@ export function AppSidebar({ className, onNavClick, collapsed = false, onCollaps
 
         {/* Bottom: collapse + settings + sign out */}
         <div className={cn("mt-auto space-y-1", collapsed ? "px-1" : "px-3")}>
-
           {/* Collapse toggle — above Settings */}
           {onCollapse && (
             <div className="hidden md:block">
@@ -120,7 +194,7 @@ export function AppSidebar({ className, onNavClick, collapsed = false, onCollaps
                 variant="ghost"
                 className={cn(
                   "w-full text-muted-foreground hover:text-foreground",
-                  collapsed ? "justify-center px-0" : "justify-start"
+                  collapsed ? "justify-center px-0" : "justify-start",
                 )}
                 onClick={onCollapse}
                 title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -156,7 +230,7 @@ export function AppSidebar({ className, onNavClick, collapsed = false, onCollaps
                 className={cn(
                   buttonVariants({ variant: "ghost" }),
                   "w-full text-muted-foreground hover:text-foreground",
-                  collapsed ? "justify-center px-0" : "justify-start"
+                  collapsed ? "justify-center px-0" : "justify-start",
                 )}
                 title={collapsed ? "Sign Out" : undefined}
               >
@@ -172,7 +246,12 @@ export function AppSidebar({ className, onNavClick, collapsed = false, onCollaps
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => signOut()} className="bg-destructive text-white hover:bg-destructive/90">Sign Out</AlertDialogAction>
+                  <AlertDialogAction
+                    onClick={() => signOut()}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                  >
+                    Sign Out
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -180,13 +259,18 @@ export function AppSidebar({ className, onNavClick, collapsed = false, onCollaps
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function MobileNav() {
   return (
     <Sheet>
-      <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "md:hidden")}>
+      <SheetTrigger
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "icon-sm" }),
+          "md:hidden",
+        )}
+      >
         <IconMenu2 className="h-5 w-5" />
         <span className="sr-only">Toggle menu</span>
       </SheetTrigger>
@@ -194,5 +278,5 @@ export function MobileNav() {
         <AppSidebar onNavClick={() => {}} />
       </SheetContent>
     </Sheet>
-  )
+  );
 }

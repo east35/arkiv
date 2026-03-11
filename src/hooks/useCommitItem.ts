@@ -8,7 +8,7 @@
  * 4. Create item in Supabase
  *
  * API response shapes are defined in types/index.ts and match the
- * objects returned by the igdb-proxy and google-books-proxy Edge Functions.
+ * objects returned by the igdb-proxy and hardcover-proxy Edge Functions.
  */
 
 import { useState } from "react"
@@ -22,7 +22,7 @@ import type {
   BookFields,
   GameFields,
   IgdbGameDetails,
-  GoogleBooksDetails,
+  HardcoverBookDetails,
 } from "@/types"
 import { toast } from "sonner"
 
@@ -30,7 +30,7 @@ import { toast } from "sonner"
 export const SHEET_CLOSE_DELAY_MS = 300
 
 /**
- * Normalize a 5-star rating (Google Books) to our 0–10 scale.
+ * Normalize a 0–5 rating (Hardcover) to our 0–10 scale.
  * Returns null when the input is missing or out of range.
  */
 function normalizeBookRating(rating: number | null): number | null {
@@ -43,15 +43,15 @@ function normalizeBookRating(rating: number | null): number | null {
  * to create a library item.
  */
 function validateDetails(
-  details: IgdbGameDetails | GoogleBooksDetails | null,
+  details: IgdbGameDetails | HardcoverBookDetails | null,
   mediaType: MediaType,
-): asserts details is IgdbGameDetails | GoogleBooksDetails {
+): asserts details is IgdbGameDetails | HardcoverBookDetails {
   if (!details) {
     throw new Error("No details returned from API")
   }
   const title = mediaType === "game"
     ? (details as IgdbGameDetails).name
-    : (details as GoogleBooksDetails).title
+    : (details as HardcoverBookDetails).title
   if (!title) {
     throw new Error("API returned an item with no title")
   }
@@ -73,7 +73,7 @@ export function useCommitItem() {
     setCommittingId(id)
     try {
       // 1. Fetch full details via Edge Function
-      const functionName = mediaType === "game" ? "igdb-proxy" : "google-books-proxy"
+      const functionName = mediaType === "game" ? "igdb-proxy" : "hardcover-proxy"
       const { data: details, error: fetchError } = await supabase.functions.invoke(functionName, {
         body: { action: "details", id },
       })
@@ -86,21 +86,22 @@ export function useCommitItem() {
       // 3. Map to core item schema
       const isGame = mediaType === "game"
       const gameDetails = isGame ? (details as IgdbGameDetails) : null
-      const bookDetails = isGame ? null : (details as GoogleBooksDetails)
+      const bookDetails = isGame ? null : (details as HardcoverBookDetails)
 
       const coreItem: Omit<Item, "id" | "user_id" | "created_at" | "updated_at"> = {
         media_type: mediaType,
         title: gameDetails?.name ?? bookDetails!.title,
-        cover_url: gameDetails?.cover ?? bookDetails!.thumbnail ?? null,
-        genres: gameDetails?.genres ?? bookDetails!.categories ?? [],
+        cover_url: gameDetails?.cover ?? bookDetails!.image ?? null,
+        genres: gameDetails?.genres ?? bookDetails!.genres ?? [],
         description: gameDetails?.summary ?? bookDetails!.description ?? null,
-        status: "backlog",
+        status: "in_collection",
         user_score: null,
         source_score: isGame
           ? (gameDetails!.sourceScore ?? null)
-          : normalizeBookRating(bookDetails!.averageRating ?? null),
+          : normalizeBookRating(bookDetails!.rating ?? null),
+        source_votes: isGame ? (gameDetails!.ratingsCount ?? null) : (bookDetails!.ratingsCount ?? null),
         notes: null,
-        source: isGame ? "igdb" : "google_books",
+        source: isGame ? "igdb" : "hardcover",
         external_id: String(id),
         started_at: null,
         completed_at: null,
@@ -115,13 +116,17 @@ export function useCommitItem() {
         extension = {
           author: bookDetails.authors?.[0] ?? null,
           publisher: bookDetails.publisher ?? null,
-          publish_date: bookDetails.publishedDate ?? null,
-          page_count: bookDetails.pageCount ?? null,
+          publish_date: bookDetails.releaseDate ?? null,
+          page_count: bookDetails.pages ?? null,
           progress: 0,
           format: "digital",
           themes: [],
           isbn: bookDetails.isbn ?? null,
           collection: null,
+          series_name: bookDetails.seriesName ?? null,
+          series_position: bookDetails.seriesPosition ?? null,
+          tag_categories: Object.keys(bookDetails.tagCategories ?? {}).length
+            ? bookDetails.tagCategories : null,
         } satisfies Omit<BookFields, "item_id">
       } else {
         extension = {
@@ -134,13 +139,17 @@ export function useCommitItem() {
           screenshots: gameDetails!.screenshots ?? [],
           progress_hours: 0,
           progress_minutes: 0,
-          collection: null,
+          // Prefer the more specific collections name, fall back to franchise
+          collection: gameDetails!.collection ?? gameDetails!.franchise ?? null,
+          game_modes: gameDetails!.gameModes ?? [],
+          player_perspectives: gameDetails!.playerPerspectives ?? [],
+          game_category: gameDetails!.gameCategory ?? null,
+          steam_id: gameDetails!.steamId ?? null,
         } satisfies Omit<GameFields, "item_id">
       }
 
       // 5. Persist to Supabase
       const newItem = await createItem(coreItem, extension)
-      toast.success(`Added "${newItem.title}" to shelf`)
       return newItem
     } catch (err) {
       const message = err instanceof Error
@@ -154,7 +163,7 @@ export function useCommitItem() {
 
       // Duplicate constraint — item already exists, return it so callers can navigate
       if (code === "23505" || message.includes("duplicate") || message.includes("unique")) {
-        toast.info("Already in your shelf.")
+        toast.info("Already in your collection.")
         const existing = useShelfStore.getState().items.find(
           i => i.external_id === String(id) && i.media_type === mediaType
         )

@@ -1,19 +1,25 @@
-import { useEffect, useState, useMemo } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { IconArrowLeft, IconTrash, IconDots, IconQuestionMark, IconSearch } from "@tabler/icons-react"
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  IconArrowLeft,
+  IconTrash,
+  IconDots,
+  IconQuestionMark,
+  IconSearch,
+} from "@tabler/icons-react";
 
-import { useShelfStore } from "@/store/useShelfStore"
-import { useLists } from "@/hooks/useLists"
-import { useItems } from "@/hooks/useItems"
-import { LibraryControls } from "@/components/library/LibraryControls"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useShelfStore } from "@/store/useShelfStore";
+import { useLists } from "@/hooks/useLists";
+import { useItems } from "@/hooks/useItems";
+import { LibraryControls } from "@/components/library/LibraryControls";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,108 +29,116 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { PosterItem } from "@/components/library/PosterItem"
-import { TableItem } from "@/components/library/TableItem"
-import { StatusSheet } from "@/components/status-sheet/StatusSheet"
-import { EmptyState } from "@/components/ui/empty-state"
-import { LoadingState } from "@/components/ui/loading-state"
-import { toast } from "sonner"
-import type { FullItem, ListItem } from "@/types"
-import { iconActionButtonClassName } from "@/lib/icon-action-button"
+} from "@/components/ui/alert-dialog";
+import { PosterItem } from "@/components/library/PosterItem";
+import { TableItem } from "@/components/library/TableItem";
+import { StatusSheet } from "@/components/status-sheet/StatusSheet";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { toast } from "sonner";
+import type { FullItem, ListItem } from "@/types";
+import { iconActionButtonClassName } from "@/lib/icon-action-button";
 
 export default function ListDetail() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  
-  const { lists, items: allItems, viewMode } = useShelfStore()
-  const { fetchLists, fetchListItems, deleteList, removeItemFromList } = useLists()
-  const { fetchItems } = useItems() // To ensure we have items loaded
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
-  const [listItems, setListItems] = useState<ListItem[]>([])
-  const [loading, setLoading] = useState(true)
-  
-  const [selectedItem, setSelectedItem] = useState<FullItem | null>(null)
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [search, setSearch] = useState("")
+  const { lists, items: allItems, viewMode } = useShelfStore();
+  const { fetchLists, fetchListItems, deleteList, removeItemFromList } =
+    useLists();
+  const { fetchItems } = useItems(); // To ensure we have items loaded
+
+  const [listItems, setListItems] = useState<ListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   // Get list metadata from store
-  const list = lists.find(l => l.id === id)
+  const list = lists.find((l) => l.id === id);
 
   // Fetch data
   useEffect(() => {
-    if (!id) return
+    if (!id) return;
 
     const loadData = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         // Ensure basics are loaded
-        if (lists.length === 0) await fetchLists()
-        if (allItems.length === 0) await fetchItems()
-        
-        // Fetch list members
-        const members = await fetchListItems(id)
-        setListItems(members)
-      } catch (err) {
-        console.error(err)
-        toast.error("Failed to load list details")
-      } finally {
-        setLoading(false)
-      }
-    }
+        if (lists.length === 0) await fetchLists();
+        if (allItems.length === 0) await fetchItems();
 
-    loadData()
-  }, [id, lists.length, allItems.length, fetchLists, fetchItems, fetchListItems])
+        // Fetch list members
+        const members = await fetchListItems(id);
+        setListItems(members);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load list details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [
+    id,
+    lists.length,
+    allItems.length,
+    fetchLists,
+    fetchItems,
+    fetchListItems,
+  ]);
 
   // Hydrate + filter items
   const displayItems = useMemo(() => {
     const hydrated = listItems
-      .map(li => allItems.find(i => i.id === li.item_id))
-      .filter((i): i is FullItem => !!i)
-    if (!search.trim()) return hydrated
-    const q = search.toLowerCase()
-    return hydrated.filter(i => i.title.toLowerCase().includes(q))
-  }, [listItems, allItems, search])
+      .map((li) => allItems.find((i) => i.id === li.item_id))
+      .filter((i): i is FullItem => !!i);
+    if (!search.trim()) return hydrated;
+    const q = search.toLowerCase();
+    return hydrated.filter((i) => i.title.toLowerCase().includes(q));
+  }, [listItems, allItems, search]);
 
   const handleDeleteList = async () => {
-    if (!list) return
+    if (!list) return;
     try {
-      await deleteList(list.id)
-      toast.success("List deleted")
-      navigate("/lists")
+      await deleteList(list.id);
+      toast.success("List deleted");
+      navigate("/lists");
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to delete list")
+      console.error(error);
+      toast.error("Failed to delete list");
     }
-  }
+  };
 
   const handleRemoveFromList = async (itemId: string) => {
-    if (!list) return
+    if (!list) return;
     try {
-      await removeItemFromList(list.id, itemId)
-      setListItems(prev => prev.filter(li => li.item_id !== itemId))
-      toast.success("Item removed from list")
+      await removeItemFromList(list.id, itemId);
+      setListItems((prev) => prev.filter((li) => li.item_id !== itemId));
+      toast.success("Item removed from list");
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to remove item")
+      console.error(error);
+      toast.error("Failed to remove item");
     }
-  }
+  };
 
   const handleEdit = (item: FullItem) => {
-    setSelectedItem(item)
-    setIsSheetOpen(true)
-  }
+    setSelectedItem(item);
+    setIsSheetOpen(true);
+  };
 
   const handleSheetOpenChange = (open: boolean) => {
-    setIsSheetOpen(open)
+    setIsSheetOpen(open);
     if (!open) {
-      setTimeout(() => setSelectedItem(null), 300)
+      setTimeout(() => setSelectedItem(null), 300);
     }
-  }
+  };
 
   if (loading && !list) {
-    return <LoadingState className="h-full" />
+    return <LoadingState className="h-full" />;
   }
 
   if (!list) {
@@ -141,25 +155,35 @@ export default function ListDetail() {
           </Button>
         }
       />
-    )
+    );
   }
 
   return (
     <div className="flex flex-col min-h-full">
       {/* Header — matches other page headers */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
         <div className="flex items-center justify-between gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="text-muted-foreground hover:text-foreground"
+          >
             <IconArrowLeft className="h-4 w-4 mr-1" />
             Back
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className={iconActionButtonClassName({ size: "lg" })}>
+            <DropdownMenuTrigger
+              className={iconActionButtonClassName({ size: "lg" })}
+            >
               <IconDots className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem className="text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
                 <IconTrash className="h-4 w-4 mr-2" />
                 Delete List
               </DropdownMenuItem>
@@ -171,10 +195,13 @@ export default function ListDetail() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{list.name}</h1>
             {list.description && (
-              <p className="text-muted-foreground text-sm mt-0.5">{list.description}</p>
+              <p className="text-muted-foreground text-sm mt-0.5">
+                {list.description}
+              </p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              {displayItems.length} {displayItems.length === 1 ? "item" : "items"}
+              {displayItems.length}{" "}
+              {displayItems.length === 1 ? "item" : "items"}
             </p>
           </div>
 
@@ -197,7 +224,7 @@ export default function ListDetail() {
         {displayItems.length === 0 ? (
           <EmptyState
             title="Empty List"
-            description="Add items from your shelf or search."
+            description="Add items from your collection or search."
             className="h-64 border-2 border-dashed rounded-lg bg-muted/10 mx-4 sm:mx-0"
             titleClassName="mb-2"
           />
@@ -214,9 +241,9 @@ export default function ListDetail() {
                       className="absolute top-2 left-2 h-6 w-6 opacity-0 group-hover/list-item:opacity-100 focus:opacity-100 transition-opacity z-10"
                       title="Remove from list"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        e.preventDefault()
-                        handleRemoveFromList(item.id)
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleRemoveFromList(item.id);
                       }}
                     >
                       <IconTrash className="h-3 w-3" />
@@ -227,7 +254,10 @@ export default function ListDetail() {
             ) : (
               <div className="flex flex-col gap-2 pb-8">
                 {displayItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 group/list-item">
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 group/list-item"
+                  >
                     <div className="flex-1 min-w-0">
                       <TableItem item={item} onEdit={handleEdit} />
                     </div>
@@ -248,28 +278,35 @@ export default function ListDetail() {
         )}
       </div>
 
-      <StatusSheet 
-        item={selectedItem} 
-        open={isSheetOpen} 
-        onOpenChange={handleSheetOpenChange} 
+      <StatusSheet
+        item={selectedItem}
+        open={isSheetOpen}
+        onOpenChange={handleSheetOpenChange}
       />
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete list?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{list.name}". This action cannot be undone.
+              This will permanently delete "{list.name}". This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteList} className="bg-destructive text-white hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDeleteList}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }
