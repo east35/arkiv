@@ -1,17 +1,10 @@
-import type { ComponentType } from "react"
-import { IconBook, IconDeviceGamepad2 } from "@tabler/icons-react"
 import { useNavigate } from "react-router-dom"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import type { MediaType } from "@/types"
 
-const collectionTabs: {
-  type: MediaType
-  label: string
-  href: string
-  icon: ComponentType<{ className?: string }>
-}[] = [
-  { type: "game", label: "Games", href: "/games", icon: IconDeviceGamepad2 },
-  { type: "book", label: "Books", href: "/books", icon: IconBook },
+const collectionTabs: { type: MediaType; label: string; href: string }[] = [
+  { type: "game", label: "Games", href: "/games" },
+  { type: "book", label: "Books", href: "/books" },
 ]
 
 interface CollectionTypeSwitcherProps {
@@ -38,13 +31,12 @@ export function CollectionTypeSwitcher({ value, className, onValueChange }: Coll
       items={collectionTabs.map((tab) => ({
         value: tab.type,
         label: tab.label,
-        icon: tab.icon,
         ariaLabel: tab.label,
       }))}
       fullWidth
       className={className}
-      listClassName="rounded-full bg-card shadow-lg !h-[38px] !p-0.5 !gap-0.5"
-      triggerClassName="!h-[34px] !rounded-full !px-4 !py-0 !leading-none"
+      listClassName="!p-0 !gap-0 !border-0 !h-[55px]"
+      triggerClassName="!h-[55px] font-semibold text-sm"
     />
   )
 }

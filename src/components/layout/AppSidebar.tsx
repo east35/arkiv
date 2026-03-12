@@ -114,7 +114,7 @@ export function AppSidebar({
 
   return (
     <div className={cn("h-full border-r bg-background", className)}>
-      <div className="py-4 h-full flex flex-col">
+      <div className="pt-4 pb-2 h-full flex flex-col">
         {/* Logo area */}
         <div
           className={cn(
@@ -122,36 +122,38 @@ export function AppSidebar({
             collapsed ? "px-1 flex justify-center" : "px-7",
           )}
         >
-          {collapsed ? (
-            <>
-              <img
-                src="/logo/arkiv-icon-white.svg"
-                alt="Arkiv"
-                className="h-7 hidden dark:block"
-              />
-              <img
-                src="/logo/arkiv-icon-black.svg"
-                alt="Arkiv"
-                className="h-7 dark:hidden"
-              />
-            </>
-          ) : (
-            <>
-              <img
-                src="/logo/arkiv-logo-white.svg"
-                alt="Arkiv"
-                className="h-8 hidden dark:block"
-              />
-              <img
-                src="/logo/arkiv-logo-black.svg"
-                alt="Arkiv"
-                className="h-8 dark:hidden"
-              />
-            </>
-          )}
+          <Link to="/" onClick={onNavClick} aria-label="Go to Home">
+            {collapsed ? (
+              <>
+                <img
+                  src="/logo/arkiv-icon-white.svg"
+                  alt="Arkiv"
+                  className="h-7 hidden dark:block"
+                />
+                <img
+                  src="/logo/arkiv-icon-black.svg"
+                  alt="Arkiv"
+                  className="h-7 dark:hidden"
+                />
+              </>
+            ) : (
+              <>
+                <img
+                  src="/logo/arkiv-logo-white.svg"
+                  alt="Arkiv"
+                  className="h-8 hidden dark:block"
+                />
+                <img
+                  src="/logo/arkiv-logo-black.svg"
+                  alt="Arkiv"
+                  className="h-8 dark:hidden"
+                />
+              </>
+            )}
+          </Link>
         </div>
 
-        <div className={cn("mb-3", collapsed ? "px-1" : "px-3")}>
+        <div className={cn("mt-1", "px-1")}>
           <Link
             to="/search"
             onClick={onNavClick}
@@ -170,7 +172,7 @@ export function AppSidebar({
         </div>
 
         {/* Main nav */}
-        <div className={cn("space-y-1", collapsed ? "px-1" : "px-3")}>
+        <div className={cn("space-y-1", "px-1")}>
           {mainItems.map((item) => (
             <NavItem
               key={item.to}
@@ -186,7 +188,7 @@ export function AppSidebar({
         </div>
 
         {/* Bottom: collapse + settings + sign out */}
-        <div className={cn("mt-auto space-y-1", collapsed ? "px-1" : "px-3")}>
+        <div className={cn("mt-auto space-y-1", "px-1")}>
           {/* Collapse toggle — above Settings */}
           {onCollapse && (
             <div className="hidden md:block">

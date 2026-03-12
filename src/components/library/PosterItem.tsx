@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { IconDots, IconRefresh, IconStar } from "@tabler/icons-react";
+import {
+  IconDots,
+  IconPencil,
+  IconPlaylistAdd,
+  IconRefresh,
+  IconStar,
+  IconTrash,
+} from "@tabler/icons-react";
 import type { FullItem, Status } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { statusIcons, statusLabels } from "@/components/status-icons";
+import { getStatusDate, useShelfStore } from "@/store/useShelfStore";
 import { useMetadataEnrich } from "@/hooks/useMetadataEnrich";
 import {
   DropdownMenu,
@@ -79,16 +87,16 @@ function CardBody({
 
         {/* Bottom: progress (left) | score (right) */}
         {(progressLabel || item.user_score != null) && (
-          <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end gap-1 pointer-events-none">
+          <div className="absolute bottom-0 left-0 right-0 flex justify-between items-stretch pointer-events-none">
             {progressLabel ? (
-              <div className="rounded-full bg-black/70 backdrop-blur-sm px-3 py-1 text-white text-xs font-semibold leading-none">
+              <div className="flex items-center bg-black/70 backdrop-blur-sm px-3 h-7 text-white text-xs font-semibold">
                 {progressLabel}
               </div>
             ) : (
               <div />
             )}
             {item.user_score != null && (
-              <div className="flex items-center gap-1 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-1 text-white text-xs font-semibold leading-none shrink-0">
+              <div className="flex items-center gap-1 bg-black/70 backdrop-blur-sm px-2.5 h-7 text-white text-xs font-semibold shrink-0">
                 <IconStar className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400 shrink-0" />
                 <span>{item.user_score}</span>
               </div>
@@ -135,12 +143,18 @@ export function PosterItem({
   item,
   onEdit,
   mobileTapAction = "edit",
-  hideStatusDate: _hideStatusDate,
+  hideStatusDate,
 }: PosterItemProps) {
   const [isManageListsOpen, setIsManageListsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const { enrichSingle } = useMetadataEnrich();
-  const statusText = statusLabels[item.status];
+  const preferences = useShelfStore((s) => s.preferences);
+  const statusDate = getStatusDate(item);
+  const statusText = hideStatusDate
+    ? statusLabels[item.status]
+    : statusDate
+      ? formatDate(statusDate, preferences?.date_format)
+      : statusLabels[item.status];
 
   return (
     <>
@@ -172,7 +186,7 @@ export function PosterItem({
           <DropdownMenu>
             <DropdownMenuTrigger
               className={cn(
-                "grid h-7 w-7 place-items-center rounded-md bg-black/70 text-white transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100",
+                "grid h-7 w-7 place-items-center bg-black/70 text-white transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100",
               )}
               aria-label="Item actions"
             >
@@ -180,6 +194,7 @@ export function PosterItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem onClick={() => onEdit(item)}>
+                <IconPencil className="h-4 w-4 mr-2" />
                 Edit Status
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -199,6 +214,7 @@ export function PosterItem({
                 {syncing ? "Syncing…" : "Sync"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
+                <IconPlaylistAdd className="h-4 w-4 mr-2" />
                 Add to List…
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -206,6 +222,7 @@ export function PosterItem({
                 className="text-destructive focus:text-destructive"
                 onClick={() => onEdit(item)}
               >
+                <IconTrash className="h-4 w-4 mr-2" />
                 Delete…
               </DropdownMenuItem>
             </DropdownMenuContent>

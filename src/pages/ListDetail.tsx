@@ -161,7 +161,7 @@ export default function ListDetail() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header — matches other page headers */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b mb-4">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b">
         <div className="flex items-center justify-between gap-2">
           <Button
             variant="ghost"
@@ -220,7 +220,7 @@ export default function ListDetail() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 sm:px-6 pb-8">
+      <div className="flex-1 px-4 sm:px-6 pt-6 pb-8 bg-[#f5f5f5] dark:bg-[#171717]">
         {displayItems.length === 0 ? (
           <EmptyState
             title="Empty List"
