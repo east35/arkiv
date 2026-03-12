@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { Outlet, useLocation } from "react-router-dom"
 import { AppSidebar } from "./AppSidebar"
 import { BottomNav } from "./BottomNav"
-import { ScrollToTop } from "./ScrollToTop"
+import { PageTransitionReveal } from "./PageTransitionReveal"
 import { cn } from "@/lib/utils"
 
 // Routes where the mobile bottom nav should be hidden entirely
@@ -14,6 +14,11 @@ export default function AppLayout() {
   const location = useLocation()
   const hideNav = hideNavPattern.test(location.pathname)
   const isCollectionRoute = collectionRoutes.includes(location.pathname)
+  const isHomeRoute = location.pathname === "/"
+  const isSearchRoute = location.pathname === "/search"
+  const isListsRoute = location.pathname === "/lists"
+  const isSurfaceRoute =
+    isCollectionRoute || isHomeRoute || isSearchRoute || isListsRoute
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem("sidebar-collapsed") === "true"
@@ -25,8 +30,10 @@ export default function AppLayout() {
 
   const [navVisible, setNavVisible] = useState(true)
   const [scrolled, setScrolled] = useState(false)
+  const [sidebarFading, setSidebarFading] = useState(false)
   const lastScrollY = useRef(0)
   const mainRef = useRef<HTMLElement>(null)
+  const sidebarFadeTimeoutRef = useRef<number | null>(null)
   const effectiveSidebarCollapsed = sidebarCollapsed || forceSidebarCollapsed
 
   useEffect(() => {
@@ -64,21 +71,35 @@ export default function AppLayout() {
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (sidebarFadeTimeoutRef.current !== null) {
+        window.clearTimeout(sidebarFadeTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const toggleSidebar = () => {
-    setSidebarCollapsed(prev => {
-      const next = !prev
-      localStorage.setItem("sidebar-collapsed", String(next))
-      return next
-    })
+    if (sidebarFading) return
+    setSidebarFading(true)
+    sidebarFadeTimeoutRef.current = window.setTimeout(() => {
+      setSidebarCollapsed(prev => {
+        const next = !prev
+        localStorage.setItem("sidebar-collapsed", String(next))
+        return next
+      })
+      requestAnimationFrame(() => setSidebarFading(false))
+      sidebarFadeTimeoutRef.current = null
+    }, 90)
   }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <ScrollToTop />
       {/* Desktop Sidebar */}
       <aside className={cn(
-        "hidden md:block flex-shrink-0 transition-all duration-300 relative z-10",
-        effectiveSidebarCollapsed ? "w-14" : "w-64"
+        "hidden md:block flex-shrink-0 relative z-10 transition-opacity duration-150",
+        sidebarFading ? "opacity-0" : "opacity-100",
+        effectiveSidebarCollapsed ? "w-14" : "w-80"
       )}>
         <AppSidebar
           collapsed={effectiveSidebarCollapsed}
@@ -90,8 +111,13 @@ export default function AppLayout() {
       <div className="flex flex-col flex-1 overflow-hidden">
         <main
           ref={mainRef}
-          className={cn("flex-1 overflow-y-auto pt-safe md:pb-0", hideNav ? "pb-0" : isCollectionRoute ? "pb-[115px]" : "pb-16")}
+          className={cn(
+            "app-scroll-area relative flex-1 overflow-y-auto overflow-x-hidden md:pb-0",
+            isSurfaceRoute && "bg-[#f5f5f5] dark:bg-[#171717]",
+            hideNav ? "pb-0" : isCollectionRoute ? "pb-[115px]" : isHomeRoute ? "pb-0" : "pb-16",
+          )}
         >
+          <PageTransitionReveal />
           <Outlet context={{ navVisible, scrolled }} />
         </main>
 
