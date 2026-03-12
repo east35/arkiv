@@ -11,6 +11,7 @@ import {
   IconPlaylistAdd,
   IconSparkles,
   IconLoader2,
+  IconEdit,
 } from "@tabler/icons-react"
 
 import { useShelfStore } from "@/store/useShelfStore"
@@ -144,7 +145,7 @@ export default function ItemDetail() {
   return (
     <>
       {/* Header — full width */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 px-4 sm:px-6 mb-6 border-b">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 px-4 sm:px-6 border-b">
         <div className="flex items-center justify-between">
           <Link to={-1 as any} className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
             <IconArrowLeft className="h-4 w-4 mr-2" />
@@ -197,17 +198,18 @@ export default function ItemDetail() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto min-h-full flex flex-col w-full">
+      <div className="flex-1 bg-[#f5f5f5] dark:bg-[#171717]">
+      <div className="max-w-5xl mx-auto flex flex-col w-full">
       {/* Mobile: title above cover */}
       <h1 className="md:hidden text-3xl font-bold tracking-tight px-4 mb-4 text-center">{item.title}</h1>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8 px-4 sm:px-6 pb-24 md:pb-20">
+      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8 px-4 sm:px-6 pt-6 pb-24 md:pb-20">
 
         {/* Left: Cover & Quick Stats */}
         <div className="space-y-6">
           {/* Cover: centered + constrained on mobile, full-width on desktop */}
-          <div className="max-w-[180px] mx-auto md:max-w-none rounded-lg overflow-hidden border shadow-sm aspect-[2/3] bg-muted relative">
+          <div className="max-w-[180px] mx-auto md:max-w-none overflow-hidden border aspect-[2/3] bg-muted relative">
             <img
               src={coverUrl}
               alt={item.title}
@@ -217,14 +219,22 @@ export default function ItemDetail() {
 
           {/* Status + Add to List CTAs — desktop only */}
           <div className="hidden md:flex flex-col gap-2">
-            <Button
-              className="w-full font-semibold gap-2"
-              size="lg"
+            <button
+              className={cn(
+                "w-full flex items-center h-11 font-semibold text-sm overflow-hidden",
+                statusButtonClass[item.status],
+              )}
               onClick={() => setIsSheetOpen(true)}
             >
-              {statusIcons[item.status]}
-              {item.status.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
-            </Button>
+              <span className="flex items-center gap-2 flex-1 px-4">
+                {statusIcons[item.status]}
+                {item.status.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
+              </span>
+              <span className="w-px self-stretch bg-white/30 my-2" />
+              <span className="flex items-center justify-center w-12">
+                <IconEdit className="h-4 w-4" />
+              </span>
+            </button>
             <Button
               variant="outline"
               className="w-full gap-2"
@@ -509,6 +519,7 @@ export default function ItemDetail() {
           onOpenChange={setIsManageListsOpen}
         />
       )}
+    </div>
     </div>
     </>
   )

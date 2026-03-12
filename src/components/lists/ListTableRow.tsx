@@ -47,10 +47,10 @@ export function ListTableRow({ list }: ListTableRowProps) {
   }
 
   return (
-    <div className="group flex items-center gap-4 p-2 rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:bg-accent/50">
+    <div className="group flex items-center gap-4 p-2 border bg-card text-card-foreground transition-all hover:bg-accent/50">
       <Link to={`/lists/${list.id}`} className="flex flex-1 items-center gap-4 min-w-0">
         {/* Cover thumbnail */}
-        <div className="h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
+        <div className="h-12 w-8 shrink-0 overflow-hidden bg-muted">
           {coverUrl ? (
             <img src={coverUrl} alt={list.name} className="h-full w-full object-cover" loading="lazy" />
           ) : (

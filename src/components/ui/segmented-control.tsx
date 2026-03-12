@@ -8,6 +8,7 @@ interface SegmentedControlItem {
   value: string
   label?: ReactNode
   icon?: React.ComponentType<{ className?: string }>
+  activeIcon?: React.ComponentType<{ className?: string }>
   ariaLabel?: string
 }
 
@@ -35,8 +36,10 @@ export function SegmentedControl({
   return (
     <Tabs value={value} onValueChange={onValueChange} className={className}>
       <TabsList className={cn(fullWidth && "w-full", size === "sm" ? "h-9" : "h-11", listClassName)}>
-        {items.map(({ value: itemValue, label, icon: Icon, ariaLabel }) => {
+        {items.map(({ value: itemValue, label, icon: Icon, activeIcon: ActiveIcon, ariaLabel }) => {
           const iconOnly = Boolean(Icon) && !label
+          const isActive = value === itemValue
+          const DisplayIcon = isActive && ActiveIcon ? ActiveIcon : Icon
 
           return (
             <TabsTrigger
@@ -45,13 +48,13 @@ export function SegmentedControl({
               aria-label={ariaLabel}
               title={typeof label === "string" ? label : ariaLabel}
               className={cn(
-                size === "sm" ? "h-7 px-3 text-sm" : "h-9 text-sm",
+                size === "sm" ? "h-7 px-3 text-sm" : "h-full text-sm",
                 fullWidth ? "flex-1" : "flex-initial",
                 iconOnly && "w-9 px-0",
                 triggerClassName
               )}
             >
-              {Icon && <Icon className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />}
+              {DisplayIcon && <DisplayIcon className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />}
               {label}
             </TabsTrigger>
           )

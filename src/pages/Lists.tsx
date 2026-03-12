@@ -109,7 +109,7 @@ export default function Lists() {
                   <IconAdjustmentsHorizontal className="h-4 w-4 mr-2" />
                   Sort
                 </SheetTrigger>
-                <SheetContent side="bottom" className="rounded-t-xl px-4 pb-8">
+                <SheetContent side="bottom" className="px-4 pb-8">
                   <SheetHeader className="text-left mb-4">
                     <SheetTitle>Sort</SheetTitle>
                   </SheetHeader>
@@ -122,7 +122,7 @@ export default function Lists() {
             </div>
 
             {/* Desktop controls */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center">
               <NativeSelect
                 value={sortField}
                 onValueChange={(v) => setSortField(v as SortField)}

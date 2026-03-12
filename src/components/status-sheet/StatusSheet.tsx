@@ -1,30 +1,30 @@
-import * as React from "react"
-import { Link } from "react-router-dom"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { format } from "date-fns"
-import { IconTrash, IconDeviceFloppy, IconX } from "@tabler/icons-react"
+import * as React from "react";
+import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { format } from "date-fns";
+import { IconTrash, IconDeviceFloppy, IconX } from "@tabler/icons-react";
 
-import { useMediaQuery } from "@/hooks/useMediaQuery"
-import { useItems } from "@/hooks/useItems"
-import type { FullItem, Status } from "@/types"
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useItems } from "@/hooks/useItems";
+import type { FullItem, Status } from "@/types";
 
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 import {
   Form,
   FormControl,
@@ -32,12 +32,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { NativeSelect } from "@/components/ui/native-select"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { DatePicker } from "@/components/ui/date-picker"
-import { toast } from "sonner"
+} from "@/components/ui/form";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,14 +48,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Form Schema
 // ---------------------------------------------------------------------------
 
-const statusSchema = z.enum(["in_collection", "backlog", "in_progress", "paused", "completed", "dropped"])
+const statusSchema = z.enum([
+  "in_collection",
+  "backlog",
+  "in_progress",
+  "paused",
+  "completed",
+  "dropped",
+]);
 
 // We allow string | number | null for form inputs to handle the "empty" state of number inputs
 const formSchema = z.object({
@@ -69,18 +76,18 @@ const formSchema = z.object({
   paused_at: z.date().nullable().optional(),
   dropped_at: z.date().nullable().optional(),
   notes: z.string().nullable().optional(),
-})
+});
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof formSchema>;
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 interface StatusSheetProps {
-  item: FullItem | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  item: FullItem | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,9 +95,9 @@ interface StatusSheetProps {
 // ---------------------------------------------------------------------------
 
 export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
-  const isDesktop = useMediaQuery("(min-width: 768px)")
-  const { editItem, deleteItem } = useItems()
-  const [isDeleting, setIsDeleting] = React.useState(false)
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { editItem, deleteItem } = useItems();
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   // -------------------------------------------------------------------------
   // Form Setup
@@ -110,7 +117,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
       dropped_at: null,
       notes: "",
     },
-  })
+  });
 
   // Reset form when item changes
   React.useEffect(() => {
@@ -119,33 +126,39 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
         status: item.status,
         user_score: item.user_score ?? "",
         progress: item.media_type === "book" ? (item.book.progress ?? "") : "",
-        progress_hours: item.media_type === "game" ? (item.game.progress_hours ?? "") : "",
-        progress_minutes: item.media_type === "game" ? (item.game.progress_minutes ?? "") : "",
+        progress_hours:
+          item.media_type === "game" ? (item.game.progress_hours ?? "") : "",
+        progress_minutes:
+          item.media_type === "game" ? (item.game.progress_minutes ?? "") : "",
         started_at: item.started_at ? new Date(item.started_at) : null,
         completed_at: item.completed_at ? new Date(item.completed_at) : null,
         paused_at: item.paused_at ? new Date(item.paused_at) : null,
         dropped_at: item.dropped_at ? new Date(item.dropped_at) : null,
         notes: item.notes || "",
-      })
+      });
     }
-  }, [item, form])
+  }, [item, form]);
 
   // -------------------------------------------------------------------------
   // Handlers
   // -------------------------------------------------------------------------
 
   async function onSubmit(values: FormValues) {
-    if (!item) return
+    if (!item) return;
 
     try {
       // Convert form values (string | number) to clamped numbers or null.
-      const cleanNumber = (val: string | number | undefined | null, min = 0, max?: number) => {
-        if (val === "" || val === null || val === undefined) return null
-        const n = Number(val)
-        if (isNaN(n)) return null
-        const clamped = Math.max(min, max != null ? Math.min(n, max) : n)
-        return clamped
-      }
+      const cleanNumber = (
+        val: string | number | undefined | null,
+        min = 0,
+        max?: number,
+      ) => {
+        if (val === "" || val === null || val === undefined) return null;
+        const n = Number(val);
+        if (isNaN(n)) return null;
+        const clamped = Math.max(min, max != null ? Math.min(n, max) : n);
+        return clamped;
+      };
 
       const coreUpdates: Partial<FullItem> = {
         status: values.status,
@@ -155,76 +168,75 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
         completed_at: values.completed_at?.toISOString() ?? null,
         paused_at: values.paused_at?.toISOString() ?? null,
         dropped_at: values.dropped_at?.toISOString() ?? null,
-      }
+      };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let extensionUpdates: any = {}
+      let extensionUpdates: any = {};
 
       if (item.media_type === "book") {
         extensionUpdates = {
           progress: cleanNumber(values.progress, 0),
-        }
+        };
       } else {
         extensionUpdates = {
           progress_hours: cleanNumber(values.progress_hours, 0) || 0,
           progress_minutes: cleanNumber(values.progress_minutes, 0, 59) || 0,
-        }
+        };
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await editItem(item.id, coreUpdates as any, extensionUpdates)
-      toast.success("Item updated")
-      onOpenChange(false)
+      await editItem(item.id, coreUpdates as any, extensionUpdates);
+      toast.success("Item updated");
+      onOpenChange(false);
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to update item")
+      console.error(error);
+      toast.error("Failed to update item");
     }
   }
 
   async function handleDelete() {
-    if (!item) return
+    if (!item) return;
     try {
-      setIsDeleting(true)
-      await deleteItem(item.id)
-      toast.success("Item deleted")
-      onOpenChange(false)
+      setIsDeleting(true);
+      await deleteItem(item.id);
+      toast.success("Item deleted");
+      onOpenChange(false);
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to delete item")
+      console.error(error);
+      toast.error("Failed to delete item");
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
   }
 
   // Handle status change to auto-set dates if empty
   const handleStatusChange = (value: Status) => {
-    form.setValue("status", value)
-    const now = new Date()
-    
+    form.setValue("status", value);
+    const now = new Date();
+
     // Only auto-set if currently null
     if (value === "in_progress" && !form.getValues("started_at")) {
-      form.setValue("started_at", now, { shouldDirty: true })
+      form.setValue("started_at", now, { shouldDirty: true });
     } else if (value === "completed" && !form.getValues("completed_at")) {
-      form.setValue("completed_at", now, { shouldDirty: true })
+      form.setValue("completed_at", now, { shouldDirty: true });
     } else if (value === "paused" && !form.getValues("paused_at")) {
-      form.setValue("paused_at", now, { shouldDirty: true })
+      form.setValue("paused_at", now, { shouldDirty: true });
     } else if (value === "dropped" && !form.getValues("dropped_at")) {
-      form.setValue("dropped_at", now, { shouldDirty: true })
+      form.setValue("dropped_at", now, { shouldDirty: true });
     }
-  }
+  };
 
   // -------------------------------------------------------------------------
   // Render Content
   // -------------------------------------------------------------------------
 
-  if (!item) return null
+  if (!item) return null;
 
-  const watchedStatus = form.watch("status")
+  const watchedStatus = form.watch("status");
 
   const Content = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        
         {/* Row 1: Status */}
         <FormField
           control={form.control}
@@ -260,14 +272,18 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
               <FormItem>
                 <FormLabel>Score (0-10)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.1" 
-                    min="0" 
-                    max="10" 
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
                     {...field}
-                    value={field.value === null || field.value === undefined ? "" : field.value} 
-                    onChange={field.onChange} 
+                    value={
+                      field.value === null || field.value === undefined
+                        ? ""
+                        : field.value
+                    }
+                    onChange={field.onChange}
                   />
                 </FormControl>
                 <FormMessage />
@@ -284,12 +300,16 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
                   <FormLabel>Page</FormLabel>
                   <FormControl>
                     <div className="flex items-center gap-2">
-                      <Input 
-                        type="number" 
-                        min="0" 
+                      <Input
+                        type="number"
+                        min="0"
                         {...field}
-                        value={field.value === null || field.value === undefined ? "" : field.value}
-                        onChange={field.onChange} 
+                        value={
+                          field.value === null || field.value === undefined
+                            ? ""
+                            : field.value
+                        }
+                        onChange={field.onChange}
                       />
                       <span className="text-sm text-muted-foreground whitespace-nowrap">
                         / {item.book.page_count ?? "?"}
@@ -309,12 +329,16 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
                   <FormItem className="flex-1">
                     <FormLabel>Hours</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0" 
+                      <Input
+                        type="number"
+                        min="0"
                         {...field}
-                        value={field.value === null || field.value === undefined ? "" : field.value}
-                        onChange={field.onChange} 
+                        value={
+                          field.value === null || field.value === undefined
+                            ? ""
+                            : field.value
+                        }
+                        onChange={field.onChange}
                       />
                     </FormControl>
                     <FormMessage />
@@ -328,13 +352,17 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
                   <FormItem className="flex-1">
                     <FormLabel>Mins</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        max="59" 
+                      <Input
+                        type="number"
+                        min="0"
+                        max="59"
                         {...field}
-                        value={field.value === null || field.value === undefined ? "" : field.value}
-                        onChange={field.onChange} 
+                        value={
+                          field.value === null || field.value === undefined
+                            ? ""
+                            : field.value
+                        }
+                        onChange={field.onChange}
                       />
                     </FormControl>
                     <FormMessage />
@@ -346,60 +374,60 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
         </div>
 
         {/* Row 3: Dates — always show Started, plus the status-specific date */}
-        <div className="space-y-4 rounded-md border p-4 bg-muted/20">
-            <h4 className="text-sm font-medium leading-none mb-4">Dates</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-4 border p-4 bg-muted/20">
+          <h4 className="text-sm font-medium leading-none mb-4">Dates</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="started_at"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Started</FormLabel>
+                  <DatePicker date={field.value} setDate={field.onChange} />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {watchedStatus === "completed" && (
               <FormField
                 control={form.control}
-                name="started_at"
+                name="completed_at"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Started</FormLabel>
+                    <FormLabel>Completed</FormLabel>
                     <DatePicker date={field.value} setDate={field.onChange} />
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              {watchedStatus === "completed" && (
-                <FormField
-                  control={form.control}
-                  name="completed_at"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Completed</FormLabel>
-                      <DatePicker date={field.value} setDate={field.onChange} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              {watchedStatus === "paused" && (
-                <FormField
-                  control={form.control}
-                  name="paused_at"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Paused</FormLabel>
-                      <DatePicker date={field.value} setDate={field.onChange} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              {watchedStatus === "dropped" && (
-                <FormField
-                  control={form.control}
-                  name="dropped_at"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Dropped</FormLabel>
-                      <DatePicker date={field.value} setDate={field.onChange} />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
+            )}
+            {watchedStatus === "paused" && (
+              <FormField
+                control={form.control}
+                name="paused_at"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Paused</FormLabel>
+                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            {watchedStatus === "dropped" && (
+              <FormField
+                control={form.control}
+                name="dropped_at"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Dropped</FormLabel>
+                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
         </div>
 
         {/* Row 4: Notes */}
@@ -410,42 +438,54 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Add your thoughts..." 
-                  className="resize-none min-h-[100px]" 
+                <Textarea
+                  placeholder="Add your thoughts..."
+                  className="resize-none min-h-[100px]"
                   {...field}
-                  value={field.value ?? ""} 
+                  value={field.value ?? ""}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         {/* Metadata (Read-only) */}
         <div className="text-xs text-muted-foreground pt-4 border-t">
-          <p>Added: {item.created_at ? format(new Date(item.created_at), "PPP") : "Unknown"}</p>
+          <p>
+            Added:{" "}
+            {item.created_at
+              ? format(new Date(item.created_at), "PPP")
+              : "Unknown"}
+          </p>
           <p>Source: {item.source}</p>
           <p>ID: {item.id}</p>
         </div>
 
         {/* Footer Actions */}
         <div className="sticky bottom-0 bg-background border-t flex justify-between items-center pt-4 pb-6 md:relative md:bg-transparent md:border-t-0 md:pb-0">
-           <AlertDialog>
-            <AlertDialogTrigger className={cn(buttonVariants({ variant: "destructive" }))}>
-                <IconTrash className="h-4 w-4 mr-2" />
-                Delete
+          <AlertDialog>
+            <AlertDialogTrigger
+              className={cn(buttonVariants({ variant: "destructive" }))}
+            >
+              <IconTrash className="h-4 w-4 mr-2" />
+              Delete
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete "{item.title}" and all its history. This action cannot be undone.
+                  This will permanently delete "{item.title}" and all its
+                  history. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90" disabled={isDeleting}>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                  disabled={isDeleting}
+                >
                   {isDeleting ? "Deleting..." : "Delete"}
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -453,18 +493,22 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
           </AlertDialog>
 
           <div className="flex gap-2">
-             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                Cancel
-             </Button>
-             <Button type="submit" disabled={!form.formState.isDirty}>
-                <IconDeviceFloppy className="h-4 w-4 mr-2" />
-                Update
-             </Button>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!form.formState.isDirty}>
+              <IconDeviceFloppy className="h-4 w-4 mr-2" />
+              Update
+            </Button>
           </div>
         </div>
       </form>
     </Form>
-  )
+  );
 
   // -------------------------------------------------------------------------
   // Responsive Wrapper
@@ -477,22 +521,31 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
           <DialogHeader>
             <DialogTitle>{item.title}</DialogTitle>
             <DialogDescription>
-              {item.media_type === "game" ? "Game" : "Book"} details and progress
+              {item.media_type === "game" ? "Game" : "Book"} details and
+              progress
             </DialogDescription>
           </DialogHeader>
           {Content}
         </DialogContent>
       </Dialog>
-    )
+    );
   }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="!h-[90vh] flex flex-col rounded-t-xl px-4 overflow-hidden" showCloseButton={false}>
+      <SheetContent
+        side="bottom"
+        className="!h-[90vh] flex flex-col px-4 overflow-hidden"
+        showCloseButton={false}
+      >
         <SheetHeader className="text-left mb-4 flex-shrink-0 px-0 pt-4">
           <div className="flex items-center justify-between gap-2">
             <SheetTitle className="truncate">{item.title}</SheetTitle>
-            <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onOpenChange(false)}
+            >
               <IconX className="h-4 w-4" />
             </Button>
           </div>
@@ -501,7 +554,10 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
           </SheetDescription>
           <Link
             to={`/item/${item.id}`}
-            className={cn(buttonVariants({ variant: "outline" }), "w-full mt-1")}
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "w-full mt-1",
+            )}
             onClick={() => onOpenChange(false)}
           >
             View Details
@@ -512,5 +568,5 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
 }

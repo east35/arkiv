@@ -12,7 +12,6 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { IconSearch } from "@tabler/icons-react";
 import { useOutletContext } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { CollectionTypeSwitcher } from "./CollectionTypeSwitcher";
 
 interface LibraryViewProps {
   mediaType?: MediaType;
@@ -25,8 +24,8 @@ export default function LibraryView({
 }: LibraryViewProps) {
   const { viewMode, getFilteredItems, filters, setFilters } = useShelfStore();
   const { fetchItems } = useItems();
-  const { navVisible = true } = useOutletContext<{ navVisible?: boolean }>();
-  const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
+  const { scrolled } = useOutletContext<{ scrolled?: boolean }>();
+const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(
     !useShelfStore.getState().items.length,
@@ -54,7 +53,7 @@ export default function LibraryView({
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b">
+      <div className={cn("sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-4 sm:pt-6 pb-2", scrolled && "border-b")}>
         <LibraryControls
           mediaType={mediaType}
           hideSearch={hideSearch}
@@ -62,19 +61,20 @@ export default function LibraryView({
         />
       </div>
 
-      <div className="flex-1 p-4 sm:p-6 bg-[#f5f5f5] dark:bg-[#171717]">
+      <div className="flex-1 bg-[#f5f5f5] dark:bg-[#171717]">
         {!hideSearch && (
-          <div className="relative mb-4 md:hidden">
-            <IconSearch className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <div className="relative border-b bg-background">
+            <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder={`Search ${mediaType ? mediaType + "s" : "collection"}...`}
-              className="pl-9 h-10"
+              className="pl-12 h-11 border-0 focus-visible:ring-0 bg-transparent"
               value={filters.search}
               onChange={(e) => setFilters({ search: e.target.value })}
             />
           </div>
         )}
 
+        <div className="p-4">
         {loading ? (
           <LoadingState />
         ) : items.length === 0 ? (
@@ -111,6 +111,7 @@ export default function LibraryView({
             )}
           </>
         )}
+        </div>
       </div>
 
       <StatusSheet
@@ -119,18 +120,6 @@ export default function LibraryView({
         onOpenChange={handleSheetOpenChange}
       />
 
-      {/* Mobile collection tab switcher */}
-      {mediaType && (
-        <div
-          className={cn(
-            "md:hidden fixed z-20 left-0 right-0 px-4 transition-transform duration-200 ease-out",
-            navVisible ? "translate-y-0" : "translate-y-16",
-          )}
-          style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}
-        >
-          <CollectionTypeSwitcher value={mediaType} className="w-full" />
-        </div>
-      )}
     </div>
   );
 }

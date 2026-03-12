@@ -35,7 +35,7 @@ export function MobileFab({
     >
       <Button
         size="icon"
-        className={cn("h-14 w-14 rounded-full shadow-lg", buttonClassName)}
+        className={cn("h-14 w-14", buttonClassName)}
         onClick={onClick}
         aria-label={label}
         title={label}

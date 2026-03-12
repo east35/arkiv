@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils"
 
 // Routes where the mobile bottom nav should be hidden entirely
 const hideNavPattern = /^\/(lists\/|item\/)/
+const collectionRoutes = ["/books", "/games"]
 const AUTO_COLLAPSE_BREAKPOINT = 1100
 
 export default function AppLayout() {
   const location = useLocation()
   const hideNav = hideNavPattern.test(location.pathname)
+  const isCollectionRoute = collectionRoutes.includes(location.pathname)
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem("sidebar-collapsed") === "true"
@@ -22,6 +24,7 @@ export default function AppLayout() {
   })
 
   const [navVisible, setNavVisible] = useState(true)
+  const [scrolled, setScrolled] = useState(false)
   const lastScrollY = useRef(0)
   const mainRef = useRef<HTMLElement>(null)
   const effectiveSidebarCollapsed = sidebarCollapsed || forceSidebarCollapsed
@@ -31,6 +34,7 @@ export default function AppLayout() {
     if (!el) return
     const handleScroll = () => {
       const current = el.scrollTop
+      setScrolled(current > 0)
       if (current < 80 || current < lastScrollY.current) {
         setNavVisible(true)
       } else if (current > lastScrollY.current + 6) {
@@ -45,6 +49,7 @@ export default function AppLayout() {
   // Reset on route change
   useEffect(() => {
     const frame = requestAnimationFrame(() => setNavVisible(true))
+    setScrolled(false)
     lastScrollY.current = 0
     return () => cancelAnimationFrame(frame)
   }, [location.pathname])
@@ -85,9 +90,9 @@ export default function AppLayout() {
       <div className="flex flex-col flex-1 overflow-hidden">
         <main
           ref={mainRef}
-          className={cn("flex-1 overflow-y-auto pt-safe md:pb-0", hideNav ? "pb-0" : "pb-16")}
+          className={cn("flex-1 overflow-y-auto pt-safe md:pb-0", hideNav ? "pb-0" : isCollectionRoute ? "pb-[115px]" : "pb-16")}
         >
-          <Outlet context={{ navVisible }} />
+          <Outlet context={{ navVisible, scrolled }} />
         </main>
 
         {!hideNav && <BottomNav visible={navVisible} />}

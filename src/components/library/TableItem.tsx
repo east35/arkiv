@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   IconDots,
+  IconPencil,
   IconPlaylistAdd,
   IconRefresh,
   IconStar,
+  IconTrash,
 } from "@tabler/icons-react";
 import type { FullItem, Status } from "@/types";
 import { getStatusDate, useShelfStore } from "@/store/useShelfStore";
@@ -95,7 +97,10 @@ function RowBody({
       {/* Title + subtitle — absorbs all available space */}
       <div className="flex min-w-0 flex-1 items-center px-3 border-r border-border">
         <div className="min-w-0 w-full">
-          <h3 className="truncate text-sm font-bold leading-tight" title={item.title}>
+          <h3
+            className="truncate text-sm font-bold leading-tight"
+            title={item.title}
+          >
             {item.title}
           </h3>
           <p className="truncate text-[11px] text-muted-foreground">
@@ -117,7 +122,7 @@ function RowBody({
       </div>
 
       {/* Progress */}
-      <div className="w-14 shrink-0 border-r border-border flex items-center justify-center text-xs font-semibold">
+      <div className="w-24 px-4 shrink-0 border-r border-border flex items-center justify-center text-xs font-semibold">
         <span className="text-muted-foreground">{progressDisplay}</span>
       </div>
 
@@ -196,6 +201,7 @@ export function TableItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(item)}>
+                <IconPencil className="h-4 w-4 mr-2" />
                 Edit Status
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -223,6 +229,7 @@ export function TableItem({
                 className="text-destructive focus:text-destructive"
                 onClick={() => onEdit(item)}
               >
+                <IconTrash className="h-4 w-4 mr-2" />
                 Delete...
               </DropdownMenuItem>
             </DropdownMenuContent>
