@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react"
-import { useSearchParams, useNavigate } from "react-router-dom"
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   IconSearch,
   IconLoader2,
@@ -8,15 +8,19 @@ import {
   IconX,
   IconLayoutGrid,
   IconTable,
-} from "@tabler/icons-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { SearchResultItem } from "./SearchResultItem"
-import { useDebounce } from "@/hooks/useDebounce"
-import { useExternalSearch, SEARCH_DEBOUNCE_MS, type SearchResult } from "@/hooks/useExternalSearch"
-import { useCommitItem, SHEET_CLOSE_DELAY_MS } from "@/hooks/useCommitItem"
-import { useItems } from "@/hooks/useItems"
-import { StatusSheet } from "@/components/status-sheet/StatusSheet"
+} from "@tabler/icons-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { SearchResultItem } from "./SearchResultItem";
+import { useDebounce } from "@/hooks/useDebounce";
+import {
+  useExternalSearch,
+  SEARCH_DEBOUNCE_MS,
+  type SearchResult,
+} from "@/hooks/useExternalSearch";
+import { useCommitItem, SHEET_CLOSE_DELAY_MS } from "@/hooks/useCommitItem";
+import { useItems } from "@/hooks/useItems";
+import { StatusSheet } from "@/components/status-sheet/StatusSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,131 +30,135 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import type { MediaType, FullItem } from "@/types"
-import { SegmentedControl } from "@/components/ui/segmented-control"
-import { CollectionTypeSwitcher } from "@/components/library/CollectionTypeSwitcher"
-import { useShelfStore } from "@/store/useShelfStore"
-import { useMediaQuery } from "@/hooks/useMediaQuery"
+} from "@/components/ui/alert-dialog";
+import type { MediaType, FullItem } from "@/types";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { CollectionTypeSwitcher } from "@/components/library/CollectionTypeSwitcher";
+import { useShelfStore } from "@/store/useShelfStore";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export function SearchUI() {
-  const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [mediaType, setMediaType] = useState<MediaType>(
-    (searchParams.get("type") as MediaType) || "game"
-  )
-  const [query, setQuery] = useState(searchParams.get("q") || "")
-  const inputRef = useRef<HTMLInputElement>(null)
+    (searchParams.get("type") as MediaType) || "game",
+  );
+  const [query, setQuery] = useState(searchParams.get("q") || "");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // null → no alert; "status" → ask to update status; "cancel" → ask to cancel add
-  const [alertPhase, setAlertPhase] = useState<"status" | "cancel" | null>(null)
-  const [pendingItem, setPendingItem] = useState<FullItem | null>(null)
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
-  const [confirmResult, setConfirmResult] = useState<SearchResult | null>(null)
-  const statusChoiceMade = useRef(false)
-  const viewMode = useShelfStore((state) => state.viewMode)
-  const setViewMode = useShelfStore((state) => state.setViewMode)
-  const isDesktop = useMediaQuery("(min-width: 768px)")
+  const [alertPhase, setAlertPhase] = useState<"status" | "cancel" | null>(
+    null,
+  );
+  const [pendingItem, setPendingItem] = useState<FullItem | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [confirmResult, setConfirmResult] = useState<SearchResult | null>(null);
+  const statusChoiceMade = useRef(false);
+  const viewMode = useShelfStore((state) => state.viewMode);
+  const setViewMode = useShelfStore((state) => state.setViewMode);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS)
-  const { results, loading, search, clearResults } = useExternalSearch()
-  const { commit, committingId } = useCommitItem()
-  const { deleteItem } = useItems()
+  const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
+  const { results, loading, search, clearResults } = useExternalSearch();
+  const { commit, committingId } = useCommitItem();
+  const { deleteItem } = useItems();
 
   // Attempt focus on mount — works reliably on desktop, best-effort on iOS
   useEffect(() => {
-    const frame = requestAnimationFrame(() => inputRef.current?.focus())
-    return () => cancelAnimationFrame(frame)
-  }, [])
+    const frame = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   // Keep URL in sync with filter state
   useEffect(() => {
-    const nextParams = new URLSearchParams()
-    nextParams.set("type", mediaType)
+    const nextParams = new URLSearchParams();
+    nextParams.set("type", mediaType);
     if (query) {
-      nextParams.set("q", query)
+      nextParams.set("q", query);
     }
-    setSearchParams(nextParams, { replace: true })
-  }, [mediaType, query, setSearchParams])
+    setSearchParams(nextParams, { replace: true });
+  }, [mediaType, query, setSearchParams]);
 
   useEffect(() => {
     if (debouncedQuery) {
-      search(debouncedQuery, mediaType)
+      search(debouncedQuery, mediaType);
     } else {
-      clearResults()
+      clearResults();
     }
-  }, [debouncedQuery, mediaType, search, clearResults])
+  }, [debouncedQuery, mediaType, search, clearResults]);
 
   const handleAdd = async (result: SearchResult) => {
-    const item = await commit(result.id, mediaType)
+    const item = await commit(result.id, mediaType);
     if (item) {
-      setPendingItem(item)
-      statusChoiceMade.current = false
-      setAlertPhase("status")
+      setPendingItem(item);
+      statusChoiceMade.current = false;
+      setAlertPhase("status");
     }
-  }
+  };
 
   const handleConfirmAdd = async () => {
-    if (!confirmResult) return
-    const result = confirmResult
-    setConfirmResult(null)
-    await handleAdd(result)
-  }
+    if (!confirmResult) return;
+    const result = confirmResult;
+    setConfirmResult(null);
+    await handleAdd(result);
+  };
 
   // Status alert handlers
   const handleUpdateStatus = () => {
-    statusChoiceMade.current = true
-    setAlertPhase(null)
-    setIsSheetOpen(true)
-  }
+    statusChoiceMade.current = true;
+    setAlertPhase(null);
+    setIsSheetOpen(true);
+  };
 
   const handleJustAdd = () => {
-    statusChoiceMade.current = true
-    setAlertPhase(null)
-    setPendingItem(null)
-  }
+    statusChoiceMade.current = true;
+    setAlertPhase(null);
+    setPendingItem(null);
+  };
 
   const handleStatusAlertOpenChange = (open: boolean) => {
     if (!open && !statusChoiceMade.current) {
       // Dismissed without a choice (e.g. Escape) → ask about cancelling
-      setAlertPhase("cancel")
+      setAlertPhase("cancel");
     }
-  }
+  };
 
   // Cancel alert handlers
   const handleConfirmCancel = async () => {
-    if (pendingItem) await deleteItem(pendingItem.id)
-    setAlertPhase(null)
-    setPendingItem(null)
-  }
+    if (pendingItem) await deleteItem(pendingItem.id);
+    setAlertPhase(null);
+    setPendingItem(null);
+  };
 
   const handleKeepItem = () => {
-    setAlertPhase(null)
-    setPendingItem(null)
-  }
+    setAlertPhase(null);
+    setPendingItem(null);
+  };
 
   const handleSheetOpenChange = (open: boolean) => {
-    setIsSheetOpen(open)
+    setIsSheetOpen(open);
     if (!open) {
-      setTimeout(() => setPendingItem(null), SHEET_CLOSE_DELAY_MS)
+      setTimeout(() => setPendingItem(null), SHEET_CLOSE_DELAY_MS);
     }
-  }
+  };
 
   const typeItems = [
     { value: "game" as MediaType, label: "Games", icon: IconDeviceGamepad2 },
     { value: "book" as MediaType, label: "Books", icon: IconBook },
-  ]
+  ];
   const viewModeItems = [
     { value: "poster", icon: IconLayoutGrid, ariaLabel: "Poster View" },
     { value: "table", icon: IconTable, ariaLabel: "Table View" },
-  ]
+  ];
 
   return (
     <div className="flex flex-col fixed md:relative inset-0 md:inset-auto z-[60] md:z-auto bg-background">
       {/* Full-width header */}
       <div className="sticky top-0 z-20 border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
         <div className="flex items-center justify-between gap-4 mb-4">
-          <h1 className="text-3xl font-bold tracking-tight">Add to Collection</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Add to Collection
+          </h1>
           <div className="flex items-center gap-2">
             <SegmentedControl
               value={mediaType}
@@ -168,7 +176,9 @@ export function SearchUI() {
             />
             <SegmentedControl
               value={viewMode}
-              onValueChange={(value) => setViewMode(value as "poster" | "table")}
+              onValueChange={(value) =>
+                setViewMode(value as "poster" | "table")
+              }
               items={viewModeItems}
               size="sm"
               className="hidden md:block"
@@ -253,7 +263,7 @@ export function SearchUI() {
       <AlertDialog
         open={!!confirmResult}
         onOpenChange={(open) => {
-          if (!open) setConfirmResult(null)
+          if (!open) setConfirmResult(null);
         }}
       >
         <AlertDialogContent>
@@ -281,7 +291,8 @@ export function SearchUI() {
           <AlertDialogHeader>
             <AlertDialogTitle>Update status?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{pendingItem?.title}" was added to your collection. Would you like to update its status now?
+              "{pendingItem?.title}" was added to your collection. Would you
+              like to update its status now?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -319,7 +330,7 @@ export function SearchUI() {
       </AlertDialog>
 
       {/* Mobile type picker — pinned to bottom of full-screen overlay */}
-      <div className="md:hidden fixed z-20 left-0 right-0 px-4 pb-safe" style={{ bottom: '1rem' }}>
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-background pb-safe">
         <CollectionTypeSwitcher
           value={mediaType}
           onValueChange={setMediaType}
@@ -327,5 +338,5 @@ export function SearchUI() {
         />
       </div>
     </div>
-  )
+  );
 }
