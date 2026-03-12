@@ -1,25 +1,18 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
-  IconDots,
   IconPencil,
   IconPlaylistAdd,
   IconRefresh,
   IconStar,
   IconTrash,
+  IconEye,
 } from "@tabler/icons-react";
 import type { FullItem, Status } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { statusIcons, statusLabels } from "@/components/status-icons";
 import { getStatusDate, useShelfStore } from "@/store/useShelfStore";
 import { useMetadataEnrich } from "@/hooks/useMetadataEnrich";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog";
 
 interface PosterItemProps {
@@ -81,7 +74,7 @@ function CardBody({
         <img
           src={coverUrl}
           alt={item.title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover"
           loading="lazy"
         />
 
@@ -139,14 +132,28 @@ function CardBody({
   );
 }
 
+function pathToLabel(pathname: string): string {
+  if (pathname === "/") return "Home";
+  if (pathname === "/books") return "Books";
+  if (pathname === "/games") return "Games";
+  if (pathname === "/search") return "Search";
+  if (pathname.startsWith("/lists/")) return "List";
+  return "Collection";
+}
+
 export function PosterItem({
   item,
   onEdit,
   mobileTapAction = "edit",
   hideStatusDate,
 }: PosterItemProps) {
+  const location = useLocation();
+  const backLabel = pathToLabel(location.pathname);
   const [isManageListsOpen, setIsManageListsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [flyoutSide, setFlyoutSide] = useState<"right" | "left">("right");
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const { enrichSingle } = useMetadataEnrich();
   const preferences = useShelfStore((s) => s.preferences);
   const statusDate = getStatusDate(item);
@@ -156,77 +163,114 @@ export function PosterItem({
       ? formatDate(statusDate, preferences?.date_format)
       : statusLabels[item.status];
 
+  // Cancel hover on scroll
+  useEffect(() => {
+    if (!isHovered) return;
+    const hide = () => setIsHovered(false);
+    window.addEventListener("scroll", hide, { capture: true, passive: true });
+    return () => window.removeEventListener("scroll", hide, { capture: true });
+  }, [isHovered]);
+
+  const handleMouseEnter = () => {
+    if (window.innerWidth < 768) return;
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setFlyoutSide(rect.right + rect.width > window.innerWidth ? "left" : "right");
+    }
+    setIsHovered(true);
+  };
+
   return (
     <>
-      <div className="group relative flex flex-col overflow-hidden bg-card dark:bg-[#0A0A0A]">
-        {/* Mobile: configurable tap behavior */}
-        {mobileTapAction === "edit" ? (
-          <div
-            className="md:hidden cursor-pointer"
-            onClick={() => onEdit(item)}
-          >
-            <CardBody item={item} statusText={statusText} />
-          </div>
-        ) : (
-          <Link to={`/item/${item.id}`} className="md:hidden flex flex-col">
+      <div
+        ref={wrapperRef}
+        className="poster-item relative z-0"
+        data-hovered={isHovered || undefined}
+        style={isHovered ? { zIndex: 50 } : undefined}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Card */}
+        <div className="flex flex-col overflow-hidden bg-card dark:bg-[#0A0A0A]">
+          {mobileTapAction === "edit" ? (
+            <div
+              className="md:hidden cursor-pointer"
+              onClick={() => onEdit(item)}
+            >
+              <CardBody item={item} statusText={statusText} />
+            </div>
+          ) : (
+            <Link to={`/item/${item.id}`} state={{ backLabel }} className="md:hidden flex flex-col">
+              <CardBody item={item} statusText={statusText} />
+            </Link>
+          )}
+
+          {/* Desktop: navigates to detail */}
+          <Link to={`/item/${item.id}`} state={{ backLabel }} className="hidden md:flex md:flex-col">
             <CardBody item={item} statusText={statusText} />
           </Link>
-        )}
+        </div>
 
-        {/* Desktop: navigates to detail */}
-        <Link to={`/item/${item.id}`} className="hidden md:flex md:flex-col">
-          <CardBody item={item} statusText={statusText} />
-        </Link>
-
-        {/* Actions only: status/date now lives in bottom status bar */}
+        {/* Hover flyout — desktop only */}
         <div
-          className="absolute top-2 right-2 z-10"
+          className={cn(
+            "absolute top-0 inset-y-0 w-full z-10 bg-zinc-900 text-white flex-col hidden md:flex",
+            flyoutSide === "right" ? "left-full" : "right-full",
+            "transition-[opacity,transform] duration-150",
+            isHovered
+              ? "opacity-100 translate-x-0 pointer-events-auto"
+              : cn(
+                  "opacity-0 pointer-events-none",
+                  flyoutSide === "right" ? "-translate-x-2" : "translate-x-2",
+                ),
+          )}
           onClick={(e) => e.stopPropagation()}
         >
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className={cn(
-                "grid h-7 w-7 place-items-center bg-black/70 text-white transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100",
-              )}
-              aria-label="Item actions"
-            >
-              <IconDots className="h-3.5 w-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => onEdit(item)}>
-                <IconPencil className="h-4 w-4 mr-2" />
-                Edit Status
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={syncing}
-                onClick={async () => {
-                  setSyncing(true);
-                  try {
-                    await enrichSingle(item);
-                  } finally {
-                    setSyncing(false);
-                  }
-                }}
-              >
-                <IconRefresh
-                  className={cn("h-4 w-4 mr-2", syncing && "animate-spin")}
-                />
-                {syncing ? "Syncing…" : "Sync"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
-                <IconPlaylistAdd className="h-4 w-4 mr-2" />
-                Add to List…
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => onEdit(item)}
-              >
-                <IconTrash className="h-4 w-4 mr-2" />
-                Delete…
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link
+            to={`/item/${item.id}`}
+            state={{ backLabel }}
+            className="flex items-center gap-3 px-3 flex-1 hover:bg-white/10 w-full"
+            onClick={() => setIsHovered(false)}
+          >
+            <IconEye className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold whitespace-nowrap">View Details</span>
+          </Link>
+
+          <button
+            className="flex items-center gap-3 px-3 flex-1 hover:bg-white/10 text-left w-full"
+            onClick={() => { setIsHovered(false); onEdit(item); }}
+          >
+            <IconPencil className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold whitespace-nowrap">Edit Status</span>
+          </button>
+
+          <button
+            className="flex items-center gap-3 px-3 flex-1 hover:bg-white/10 text-left w-full disabled:opacity-50"
+            disabled={syncing}
+            onClick={async () => {
+              setSyncing(true);
+              try { await enrichSingle(item); } finally { setSyncing(false); }
+            }}
+          >
+            <IconRefresh className={cn("h-4 w-4 shrink-0", syncing && "animate-spin")} />
+            <span className="text-sm font-semibold whitespace-nowrap">{syncing ? "Syncing…" : "Sync"}</span>
+          </button>
+
+          <button
+            className="flex items-center gap-3 px-3 flex-1 hover:bg-white/10 text-left w-full"
+            onClick={() => { setIsHovered(false); setIsManageListsOpen(true); }}
+          >
+            <IconPlaylistAdd className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold whitespace-nowrap">Add to List…</span>
+          </button>
+
+          <button
+            className="flex items-center gap-3 px-3 flex-1 bg-red-600 hover:bg-red-700 text-left w-full"
+            onClick={() => { setIsHovered(false); onEdit(item); }}
+          >
+            <IconTrash className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold whitespace-nowrap">Delete</span>
+          </button>
         </div>
       </div>
 

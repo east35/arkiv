@@ -77,7 +77,7 @@ export default function AppLayout() {
       <ScrollToTop />
       {/* Desktop Sidebar */}
       <aside className={cn(
-        "hidden md:block flex-shrink-0 transition-all duration-300",
+        "hidden md:block flex-shrink-0 transition-all duration-300 relative z-10",
         effectiveSidebarCollapsed ? "w-14" : "w-64"
       )}>
         <AppSidebar

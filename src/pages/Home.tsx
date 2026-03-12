@@ -16,14 +16,18 @@ export default function Home() {
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(!items.length);
-  const [selectedStatuses, setSelectedStatuses] = useState<Status[]>(["in_progress"]);
+  const [selectedStatuses, setSelectedStatuses] = useState<Status[]>([
+    "in_progress",
+  ]);
 
   // Fetch on mount
   useEffect(() => {
     fetchItems().finally(() => setLoading(false));
   }, [fetchItems]);
 
-  const filteredItems = items.filter((item) => selectedStatuses.includes(item.status));
+  const filteredItems = items.filter((item) =>
+    selectedStatuses.includes(item.status),
+  );
 
   // Sort using the shared store sort state
   const sortItems = (itemsToSort: FullItem[]) => {
@@ -120,7 +124,7 @@ export default function Home() {
           <>
             {filteredGames.length > 0 && (
               <section className="px-4 sm:px-6 py-6 bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60">
-                <h2 className="text-xl font-semibold mb-4">Video Games</h2>
+                <h2 className="text-3xl font-semibold mb-6">Video Games</h2>
                 {viewMode === "poster" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {filteredGames.map((item) => (
@@ -149,7 +153,7 @@ export default function Home() {
 
             {filteredBooks.length > 0 && (
               <section className="px-4 sm:px-6 py-6 bg-[#E8E8E8] dark:bg-[#212121]">
-                <h2 className="text-xl font-semibold mb-4">Books</h2>
+                <h2 className="text-3xl font-semibold mb-6">Books</h2>
                 {viewMode === "poster" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {filteredBooks.map((item) => (

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   IconDots,
   IconPencil,
@@ -60,11 +60,13 @@ function RowBody({
   statusText,
   onEdit,
   mobileTapAction,
+  backLabel,
 }: {
   item: FullItem;
   statusText: string;
   onEdit: (item: FullItem) => void;
   mobileTapAction: "edit" | "details";
+  backLabel: string;
 }) {
   const isGame = item.media_type === "game";
   const coverUrl =
@@ -147,7 +149,7 @@ function RowBody({
         <div className="cursor-pointer md:hidden" onClick={() => onEdit(item)}>
           {row}
         </div>
-        <Link to={`/item/${item.id}`} className="hidden md:block">
+        <Link to={`/item/${item.id}`} state={{ backLabel }} className="hidden md:block">
           {row}
         </Link>
       </>
@@ -155,7 +157,7 @@ function RowBody({
   }
 
   return (
-    <Link to={`/item/${item.id}`} className="block">
+    <Link to={`/item/${item.id}`} state={{ backLabel }} className="block">
       {row}
     </Link>
   );
@@ -167,6 +169,13 @@ export function TableItem({
   mobileTapAction = "edit",
   hideStatusDate,
 }: TableItemProps) {
+  const location = useLocation();
+  const backLabel = location.pathname === "/" ? "Home"
+    : location.pathname === "/books" ? "Books"
+    : location.pathname === "/games" ? "Games"
+    : location.pathname === "/search" ? "Search"
+    : location.pathname.startsWith("/lists/") ? "List"
+    : "Collection";
   const [isManageListsOpen, setIsManageListsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const { enrichSingle } = useMetadataEnrich();
@@ -186,6 +195,7 @@ export function TableItem({
           statusText={statusText}
           onEdit={onEdit}
           mobileTapAction={mobileTapAction}
+          backLabel={backLabel}
         />
 
         <div

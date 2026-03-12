@@ -211,7 +211,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
 
   // Handle status change to auto-set dates if empty
   const handleStatusChange = (value: Status) => {
-    form.setValue("status", value);
+    form.setValue("status", value, { shouldDirty: true });
     const now = new Date();
 
     // Only auto-set if currently null

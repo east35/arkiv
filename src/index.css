@@ -131,6 +131,15 @@
   }
 }
 
+/* Poster grid: dim non-hovered items */
+.poster-grid:has([data-hovered]) .poster-item:not([data-hovered]) {
+  opacity: 0.35;
+  transition: opacity 150ms ease;
+}
+.poster-grid .poster-item {
+  transition: opacity 150ms ease;
+}
+
 /* iOS PWA safe area utilities */
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);

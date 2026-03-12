@@ -1,23 +1,19 @@
 import { useEffect, useState } from "react"
-import { useParams, useNavigate, Link } from "react-router-dom"
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom"
 import { formatDateTime } from "@/lib/utils"
 import {
   IconArrowLeft,
   IconCalendar,
   IconBook,
   IconDeviceGamepad2,
-  IconTrash,
   IconSearchOff,
   IconPlaylistAdd,
-  IconSparkles,
-  IconLoader2,
   IconEdit,
 } from "@tabler/icons-react"
 
 import { useShelfStore } from "@/store/useShelfStore"
 import { useItems } from "@/hooks/useItems"
 import { useLists } from "@/hooks/useLists"
-import { useMetadataEnrich } from "@/hooks/useMetadataEnrich"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,17 +22,6 @@ import { Separator } from "@/components/ui/separator"
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { LoadingState } from "@/components/ui/loading-state"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import type { FullItem, GameFields, Status } from "@/types"
 import { statusIcons } from "@/components/status-icons"
 import { cn } from "@/lib/utils"
@@ -63,16 +48,16 @@ function gameCategoryLabel(game: GameFields): string | null {
 export default function ItemDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const backLabel: string = (location.state as any)?.backLabel ?? null
   const { items, lists, preferences } = useShelfStore()
-  const { fetchItems, deleteItem } = useItems()
+  const { fetchItems } = useItems()
   const { fetchItemMemberships, fetchLists } = useLists()
 
-  const { enrichSingle } = useMetadataEnrich()
   const [item, setItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isManageListsOpen, setIsManageListsOpen] = useState(false)
   const [itemListIds, setItemListIds] = useState<string[]>([])
-  const [enriching, setEnriching] = useState(false)
 
   // Find item in store or fetch
   useEffect(() => {
@@ -137,71 +122,40 @@ export default function ItemDetail() {
     dropped: "bg-red-600 hover:bg-red-700 text-white",
   }
 
-  const handleDelete = async () => {
-    await deleteItem(item.id)
-    navigate("/")
-  }
-
   return (
     <>
-      {/* Header — full width */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 px-4 sm:px-6 border-b">
-        <div className="flex items-center justify-between">
-          <Link to={-1 as any} className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
-            <IconArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Link>
+      <div
+        className="flex-1 relative bg-[#f5f5f5] dark:bg-[#171717]"
+      >
+        {/* Cover art background at 10% opacity — fixed so it doesn't scroll */}
+        <div
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+          style={{ backgroundImage: `url(${coverUrl})`, opacity: 0.1 }}
+          aria-hidden="true"
+        />
+        {/* Dither gradient overlay — fixed, light/dark variants */}
+        <div
+          className="fixed inset-0 dark:hidden pointer-events-none"
+          style={{ backgroundImage: "url(/dither-gradient-light.svg)", backgroundRepeat: "repeat", backgroundSize: "auto" }}
+          aria-hidden="true"
+        />
+        <div
+          className="fixed inset-0 hidden dark:block pointer-events-none"
+          style={{ backgroundImage: "url(/dither-gradient.svg)", backgroundRepeat: "repeat", backgroundSize: "auto" }}
+          aria-hidden="true"
+        />
+      <div className="relative max-w-5xl mx-auto flex flex-col w-full">
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden md:inline-flex"
-              disabled={enriching}
-              onClick={async () => {
-                setEnriching(true)
-                try {
-                  await enrichSingle(item)
-                } finally {
-                  setEnriching(false)
-                }
-              }}
-            >
-              {enriching
-                ? <IconLoader2 className="h-4 w-4 mr-2 animate-spin" />
-                : <IconSparkles className="h-4 w-4 mr-2" />}
-              Enrich
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger
-                className={cn(buttonVariants({ variant: "destructive", size: "sm" }), "hidden md:inline-flex")}
-              >
-                <IconTrash className="h-4 w-4 mr-2" />
-                Delete
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete item?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete "{item.title}" and all its history. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
+      {/* Back button */}
+      <div className="px-4 sm:px-6 pt-4 sm:pt-6">
+        <Link to={-1 as any} className="inline-flex items-center gap-2 text-base font-semibold text-black dark:text-white hover:opacity-70 transition-opacity">
+          <IconArrowLeft className="h-5 w-5" />
+          {backLabel ? `Back to ${backLabel}` : "Back"}
+        </Link>
       </div>
 
-      <div className="flex-1 bg-[#f5f5f5] dark:bg-[#171717]">
-      <div className="max-w-5xl mx-auto flex flex-col w-full">
       {/* Mobile: title above cover */}
-      <h1 className="md:hidden text-3xl font-bold tracking-tight px-4 mb-4 text-center">{item.title}</h1>
+      <h1 className="md:hidden text-3xl font-bold tracking-tight px-4 mb-4 text-center mt-4">{item.title}</h1>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8 px-4 sm:px-6 pt-6 pb-24 md:pb-20">
