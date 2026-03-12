@@ -161,7 +161,7 @@ export default function ListDetail() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header — matches other page headers */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2 border-b">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-4 sm:pt-6 sm:pb-6 pb-2 border-b">
         <div className="flex items-center justify-between gap-2">
           <Button
             variant="ghost"

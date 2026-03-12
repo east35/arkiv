@@ -165,7 +165,7 @@ export function SearchUI() {
           scrolled && "border-b",
         )}
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 py-3">
           <h1 className="text-3xl font-bold tracking-tight">
             Add to Collection
           </h1>

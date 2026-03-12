@@ -92,7 +92,8 @@ export default function Settings() {
     { value: "data", label: "Data" },
   ] as const;
 
-  const activeTabLabel = tabs.find((t) => t.value === activeTab)?.label ?? "Account";
+  const activeTabLabel =
+    tabs.find((t) => t.value === activeTab)?.label ?? "Account";
   const [formData, setFormData] = useState<Partial<UserPreferences>>({});
   const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({});
   const [sparseCount, setSparseCount] = useState<number | null>(null);
@@ -211,280 +212,367 @@ export default function Settings() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2 border-b mb-4">
-        <div className="flex items-center justify-between">
-          <div>
+      <Tabs
+        value={activeTab}
+        onValueChange={(tab) =>
+          setSearchParams(tab === "account" ? {} : { tab })
+        }
+      >
+        {/* Sticky header */}
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          {/* Title row */}
+          <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6">
             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
             <p className="text-muted-foreground mt-1">
               Manage your account, preferences, and data.
             </p>
+            {/* Mobile: sheet picker */}
+            <Sheet open={tabSheetOpen} onOpenChange={setTabSheetOpen}>
+              <SheetTrigger className="w-full mt-4 md:hidden">
+                <Button variant="outline" className="w-full justify-between">
+                  {activeTabLabel}
+                  <IconChevronDown className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="pb-safe">
+                <SheetHeader>
+                  <SheetTitle>Settings</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4 flex flex-col gap-1">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.value}
+                      className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-left text-sm font-medium hover:bg-accent transition-colors"
+                      onClick={() => {
+                        setSearchParams(
+                          tab.value === "account" ? {} : { tab: tab.value },
+                        );
+                        setTabSheetOpen(false);
+                      }}
+                    >
+                      {tab.label}
+                      {activeTab === tab.value && (
+                        <IconCheck className="h-4 w-4" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
-        </div>
-      </div>
 
-      <div className="flex-1 px-4 sm:px-6 pb-8">
-        <Tabs
-          value={activeTab}
-          onValueChange={(tab) =>
-            setSearchParams(tab === "account" ? {} : { tab })
-          }
-          className="max-w-5xl"
-        >
-          {/* Mobile: sheet picker */}
-          <Sheet open={tabSheetOpen} onOpenChange={setTabSheetOpen}>
-            <SheetTrigger className="w-full mb-4 md:hidden">
-              <Button variant="outline" className="w-full justify-between">
-                {activeTabLabel}
-                <IconChevronDown className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="pb-safe">
-              <SheetHeader>
-                <SheetTitle>Settings</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4 flex flex-col gap-1">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.value}
-                    className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-left text-sm font-medium hover:bg-accent transition-colors"
-                    onClick={() => {
-                      setSearchParams(tab.value === "account" ? {} : { tab: tab.value });
-                      setTabSheetOpen(false);
-                    }}
-                  >
-                    {tab.label}
-                    {activeTab === tab.value && <IconCheck className="h-4 w-4" />}
-                  </button>
-                ))}
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          {/* Desktop: normal tab list */}
-          <TabsList className="hidden md:flex w-full mb-4">
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="linked">Linked</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-            <TabsTrigger value="statistics">Statistics</TabsTrigger>
-            <TabsTrigger value="data">Data</TabsTrigger>
+          {/* Desktop tab bar: full width, no side/top border, #fbfbfb bg */}
+          <TabsList className="hidden md:flex w-full h-12 rounded-none p-0 gap-0 bg-[#FBFBFB] dark:bg-[#0F0F0F] border-0 border-b border-border">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="flex-1 h-full rounded-none border-0 text-sm font-medium"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
+        </div>
 
-          {/* Account Section */}
-          <TabsContent value="account">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-                <CardDescription>Manage your personal details.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormFieldBlock
-                  id="email"
-                  label="Email"
-                  description="Managed via Supabase Auth."
-                >
-                  <Input id="email" value={user?.email || ""} disabled />
-                </FormFieldBlock>
-                <FormFieldBlock
-                  id="username"
-                  label="Username"
-                  error={fieldErrors.username}
-                >
-                  <Input
+        <div className="flex-1 px-4 sm:px-6 pb-8 pt-6">
+          <div className="max-w-5xl">
+            {/* Account Section */}
+            <TabsContent value="account">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Information</CardTitle>
+                  <CardDescription>
+                    Manage your personal details.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormFieldBlock
+                    id="email"
+                    label="Email"
+                    description="Managed via Supabase Auth."
+                  >
+                    <Input id="email" value={user?.email || ""} disabled />
+                  </FormFieldBlock>
+                  <FormFieldBlock
                     id="username"
-                    value={formData.username || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormData({ ...formData, username: value });
-                      if (fieldErrors.username) {
+                    label="Username"
+                    error={fieldErrors.username}
+                  >
+                    <Input
+                      id="username"
+                      value={formData.username || ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, username: value });
+                        if (fieldErrors.username) {
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            username: undefined,
+                          }));
+                        }
+                      }}
+                      onBlur={() =>
                         setFieldErrors((prev) => ({
                           ...prev,
-                          username: undefined,
-                        }));
+                          username:
+                            getUsernameError(formData.username) || undefined,
+                        }))
                       }
-                    }}
-                    onBlur={() =>
-                      setFieldErrors((prev) => ({
-                        ...prev,
-                        username:
-                          getUsernameError(formData.username) || undefined,
-                      }))
-                    }
-                    placeholder="Set a username"
-                  />
-                </FormFieldBlock>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleSave} disabled={loading}>
-                  {loading && (
-                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Save Changes
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
+                      placeholder="Set a username"
+                    />
+                  </FormFieldBlock>
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={handleSave} disabled={loading}>
+                    {loading && (
+                      <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save Changes
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
 
-          {/* Linked Accounts */}
-          <TabsContent value="linked">
-            <Card>
-              <CardHeader>
-                <CardTitle>Linked Accounts</CardTitle>
-                <CardDescription>
-                  Connect external services for metadata syncing.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormFieldBlock
-                  id="steamId"
-                  label="Steam ID"
-                  description="Used to fetch game playtimes (coming soon)."
-                >
-                  <Input
+            {/* Linked Accounts */}
+            <TabsContent value="linked">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Linked Accounts</CardTitle>
+                  <CardDescription>
+                    Connect external services for metadata syncing.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormFieldBlock
                     id="steamId"
-                    value={formData.steam_id || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, steam_id: e.target.value })
-                    }
-                    placeholder="76561198000000000"
-                  />
-                </FormFieldBlock>
-                <FormFieldBlock
-                  id="calibre"
-                  label="Calibre Library Path"
-                  description="Local path to your Calibre library (coming soon)."
-                >
-                  <Input
+                    label="Steam ID"
+                    description="Used to fetch game playtimes (coming soon)."
+                  >
+                    <Input
+                      id="steamId"
+                      value={formData.steam_id || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, steam_id: e.target.value })
+                      }
+                      placeholder="76561198000000000"
+                    />
+                  </FormFieldBlock>
+                  <FormFieldBlock
                     id="calibre"
-                    value={formData.calibre_path || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, calibre_path: e.target.value })
-                    }
-                    placeholder="/Users/name/Calibre Library"
-                  />
-                </FormFieldBlock>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleSave} disabled={loading}>
-                  {loading && (
-                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Save Changes
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-
-          {/* Preferences */}
-          <TabsContent value="preferences">
-            <Card>
-              <CardHeader>
-                <CardTitle>App Preferences</CardTitle>
-                <CardDescription>Customize your experience.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <FormFieldBlock id="theme" label="Theme">
-                  <NativeSelect
-                    id="theme"
-                    value={formData.theme || "system"}
-                    onValueChange={handleThemeChange}
+                    label="Calibre Library Path"
+                    description="Local path to your Calibre library (coming soon)."
                   >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="system">System</option>
-                  </NativeSelect>
-                </FormFieldBlock>
+                    <Input
+                      id="calibre"
+                      value={formData.calibre_path || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          calibre_path: e.target.value,
+                        })
+                      }
+                      placeholder="/Users/name/Calibre Library"
+                    />
+                  </FormFieldBlock>
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={handleSave} disabled={loading}>
+                    {loading && (
+                      <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save Changes
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
 
-                <FormFieldBlock id="date-format" label="Date Format">
-                  <NativeSelect
-                    id="date-format"
-                    value={formData.date_format || "iso"}
-                    onValueChange={(val) =>
-                      setFormData({
-                        ...formData,
-                        date_format: val as DateFormat,
-                      })
-                    }
-                  >
-                    <option value="iso">ISO (YYYY-MM-DD)</option>
-                    <option value="us">US (MM/DD/YYYY)</option>
-                    <option value="eu">EU (DD/MM/YYYY)</option>
-                    <option value="long">Long (Month D, YYYY)</option>
-                  </NativeSelect>
-                </FormFieldBlock>
+            {/* Preferences */}
+            <TabsContent value="preferences">
+              <Card>
+                <CardHeader>
+                  <CardTitle>App Preferences</CardTitle>
+                  <CardDescription>Customize your experience.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <FormFieldBlock id="theme" label="Theme">
+                    <NativeSelect
+                      id="theme"
+                      value={formData.theme || "system"}
+                      onValueChange={handleThemeChange}
+                    >
+                      <option value="light">Light</option>
+                      <option value="dark">Dark</option>
+                      <option value="system">System</option>
+                    </NativeSelect>
+                  </FormFieldBlock>
 
-                <FormFieldBlock id="time-format" label="Time Format">
-                  <NativeSelect
-                    id="time-format"
-                    value={formData.time_format || "12hr"}
-                    onValueChange={(val) =>
-                      setFormData({
-                        ...formData,
-                        time_format: val as TimeFormat,
-                      })
-                    }
-                  >
-                    <option value="12hr">12-hour (1:00 PM)</option>
-                    <option value="24hr">24-hour (13:00)</option>
-                  </NativeSelect>
-                </FormFieldBlock>
-              </CardContent>
-              <CardFooter>
-                <Button onClick={handleSave} disabled={loading}>
-                  {loading && (
-                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Save Changes
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
+                  <FormFieldBlock id="date-format" label="Date Format">
+                    <NativeSelect
+                      id="date-format"
+                      value={formData.date_format || "iso"}
+                      onValueChange={(val) =>
+                        setFormData({
+                          ...formData,
+                          date_format: val as DateFormat,
+                        })
+                      }
+                    >
+                      <option value="iso">ISO (YYYY-MM-DD)</option>
+                      <option value="us">US (MM/DD/YYYY)</option>
+                      <option value="eu">EU (DD/MM/YYYY)</option>
+                      <option value="long">Long (Month D, YYYY)</option>
+                    </NativeSelect>
+                  </FormFieldBlock>
 
-          <TabsContent value="statistics">
-            <StatisticsDashboard embedded />
-          </TabsContent>
+                  <FormFieldBlock id="time-format" label="Time Format">
+                    <NativeSelect
+                      id="time-format"
+                      value={formData.time_format || "12hr"}
+                      onValueChange={(val) =>
+                        setFormData({
+                          ...formData,
+                          time_format: val as TimeFormat,
+                        })
+                      }
+                    >
+                      <option value="12hr">12-hour (1:00 PM)</option>
+                      <option value="24hr">24-hour (13:00)</option>
+                    </NativeSelect>
+                  </FormFieldBlock>
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={handleSave} disabled={loading}>
+                    {loading && (
+                      <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save Changes
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
 
-          {/* Data Export */}
-          <TabsContent value="data">
-            <Card>
-              <CardHeader>
-                <CardTitle>Data Management</CardTitle>
-                <CardDescription>
-                  Export your collection or manage your data.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Enrich Library */}
-                <div className="bg-muted/50 p-4 rounded-lg border space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Enrich Collection</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Backfill missing metadata (genres, descriptions, etc.)
-                        from IGDB & Hardcover.
-                      </p>
-                    </div>
-                  </div>
+            <TabsContent value="statistics">
+              <StatisticsDashboard embedded />
+            </TabsContent>
 
-                  {/* Scan result — confirm before enriching */}
-                  {sparseCount !== null &&
-                    enrichProgress.phase === "idle" &&
-                    !enrichReport && (
-                      <div className="flex items-center justify-between bg-background p-3 rounded border">
-                        <p className="text-sm">
-                          {sparseCount === 0 ? (
-                            "All items already have full metadata."
-                          ) : (
-                            <>
-                              <strong>{sparseCount}</strong> items need
-                              enrichment.
-                            </>
-                          )}
+            {/* Data Export */}
+            <TabsContent value="data">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Data Management</CardTitle>
+                  <CardDescription>
+                    Export your collection or manage your data.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Enrich Library */}
+                  <div className="bg-muted/50 p-4 rounded-lg border space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Enrich Collection</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Backfill missing metadata (genres, descriptions, etc.)
+                          from IGDB & Hardcover.
                         </p>
-                        {sparseCount > 0 ? (
+                      </div>
+                    </div>
+
+                    {/* Scan result — confirm before enriching */}
+                    {sparseCount !== null &&
+                      enrichProgress.phase === "idle" &&
+                      !enrichReport && (
+                        <div className="flex items-center justify-between bg-background p-3 rounded border">
+                          <p className="text-sm">
+                            {sparseCount === 0 ? (
+                              "All items already have full metadata."
+                            ) : (
+                              <>
+                                <strong>{sparseCount}</strong> items need
+                                enrichment.
+                              </>
+                            )}
+                          </p>
+                          {sparseCount > 0 ? (
+                            <Button size="sm" onClick={() => runEnrich(false)}>
+                              Enrich Now
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => runEnrich(true)}
+                            >
+                              Force Re-enrich
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                    {/* Progress bar */}
+                    {enrichProgress.phase === "enriching" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <IconLoader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm">
+                            Enriching… {enrichProgress.current} /{" "}
+                            {enrichProgress.total}
+                          </span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{
+                              width: `${(enrichProgress.current / enrichProgress.total) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="flex gap-4 text-xs text-muted-foreground">
+                          <span>✓ {enrichProgress.enriched} enriched</span>
+                          <span>⊘ {enrichProgress.skipped} skipped</span>
+                          {enrichProgress.errors.length > 0 && (
+                            <span className="text-destructive">
+                              ✗ {enrichProgress.errors.length} errors
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Report */}
+                    {enrichReport && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-green-600">
+                          <IconCircleCheck className="h-4 w-4" />
+                          <span className="text-sm font-medium">
+                            Enrichment complete
+                          </span>
+                        </div>
+                        <div className="flex gap-4 text-xs text-muted-foreground">
+                          <span>✓ {enrichReport.enriched} enriched</span>
+                          <span>⊘ {enrichReport.skipped} skipped</span>
+                          {enrichReport.errors.length > 0 && (
+                            <span className="text-destructive">
+                              ✗ {enrichReport.errors.length} errors
+                            </span>
+                          )}
+                        </div>
+                        {enrichReport.errors.length > 0 && (
+                          <details className="text-xs text-destructive">
+                            <summary className="cursor-pointer">
+                              View errors
+                            </summary>
+                            <ul className="mt-1 space-y-0.5 pl-4 list-disc">
+                              {enrichReport.errors.map((e, i) => (
+                                <li key={i}>{e}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                        <div className="flex flex-wrap gap-2">
                           <Button size="sm" onClick={() => runEnrich(false)}>
-                            Enrich Now
+                            Run Again
                           </Button>
-                        ) : (
                           <Button
                             size="sm"
                             variant="outline"
@@ -492,156 +580,85 @@ export default function Settings() {
                           >
                             Force Re-enrich
                           </Button>
-                        )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              resetEnrich();
+                              setSparseCount(null);
+                              setEnrichReport(null);
+                            }}
+                          >
+                            Reset
+                          </Button>
+                        </div>
                       </div>
                     )}
-
-                  {/* Progress bar */}
-                  {enrichProgress.phase === "enriching" && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <IconLoader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-sm">
-                          Enriching… {enrichProgress.current} /{" "}
-                          {enrichProgress.total}
-                        </span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-primary h-2 rounded-full transition-all"
-                          style={{
-                            width: `${(enrichProgress.current / enrichProgress.total) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="flex gap-4 text-xs text-muted-foreground">
-                        <span>✓ {enrichProgress.enriched} enriched</span>
-                        <span>⊘ {enrichProgress.skipped} skipped</span>
-                        {enrichProgress.errors.length > 0 && (
-                          <span className="text-destructive">
-                            ✗ {enrichProgress.errors.length} errors
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Report */}
-                  {enrichReport && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-green-600">
-                        <IconCircleCheck className="h-4 w-4" />
-                        <span className="text-sm font-medium">
-                          Enrichment complete
-                        </span>
-                      </div>
-                      <div className="flex gap-4 text-xs text-muted-foreground">
-                        <span>✓ {enrichReport.enriched} enriched</span>
-                        <span>⊘ {enrichReport.skipped} skipped</span>
-                        {enrichReport.errors.length > 0 && (
-                          <span className="text-destructive">
-                            ✗ {enrichReport.errors.length} errors
-                          </span>
-                        )}
-                      </div>
-                      {enrichReport.errors.length > 0 && (
-                        <details className="text-xs text-destructive">
-                          <summary className="cursor-pointer">
-                            View errors
-                          </summary>
-                          <ul className="mt-1 space-y-0.5 pl-4 list-disc">
-                            {enrichReport.errors.map((e, i) => (
-                              <li key={i}>{e}</li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" onClick={() => runEnrich(false)}>
-                          Run Again
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => runEnrich(true)}
-                        >
-                          Force Re-enrich
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            resetEnrich();
-                            setSparseCount(null);
-                            setEnrichReport(null);
-                          }}
-                        >
-                          Reset
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Import Collection</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Import your collection from a Yamtrack CSV export.
-                    </p>
                   </div>
-                  <Button variant="outline" onClick={() => navigate("/import")}>
-                    <IconUpload className="mr-2 h-4 w-4" />
-                    Import CSV
-                  </Button>
-                </div>
 
-                <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Export Collection</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Download a CSV file of all your tracked items.
-                    </p>
+                  <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Import Collection</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Import your collection from a Yamtrack CSV export.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/import")}
+                    >
+                      <IconUpload className="mr-2 h-4 w-4" />
+                      Import CSV
+                    </Button>
                   </div>
-                  <Button variant="outline" onClick={handleExport}>
-                    <IconDownload className="mr-2 h-4 w-4" />
-                    Export CSV
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
 
-        {/* Mobile Sign Out */}
-        <div className="md:hidden mt-8">
-          <AlertDialog>
-            <AlertDialogTrigger className="w-full">
-              <Button variant="destructive" className="w-full">
-                <IconLogout className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Sign Out</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to sign out of Arkiv?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => signOut()}
-                  className="bg-destructive text-white hover:bg-destructive/90"
-                >
+                  <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Export Collection</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Download a CSV file of all your tracked items.
+                      </p>
+                    </div>
+                    <Button variant="outline" onClick={handleExport}>
+                      <IconDownload className="mr-2 h-4 w-4" />
+                      Export CSV
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+
+          {/* Mobile Sign Out */}
+          <div className="md:hidden mt-8">
+            <AlertDialog>
+              <AlertDialogTrigger className="w-full">
+                <Button variant="destructive" className="w-full">
+                  <IconLogout className="mr-2 h-4 w-4" />
                   Sign Out
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Sign Out</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to sign out of Arkiv?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => signOut()}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                  >
+                    Sign Out
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
-      </div>
+      </Tabs>
     </div>
   );
 }

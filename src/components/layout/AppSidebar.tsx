@@ -82,8 +82,8 @@ function NavItem({
         "flex h-12 items-center text-base font-medium transition-colors",
         collapsed ? "justify-center rounded-md" : "justify-start px-5",
         active
-          ? "bg-black/10 text-black dark:bg-white/12 dark:text-white"
-          : "text-black/85 hover:bg-black/6 hover:text-black dark:text-white/90 dark:hover:bg-white/6 dark:hover:text-white",
+          ? "bg-black/6 text-black dark:bg-white/6 dark:text-white"
+          : "text-black/85 hover:bg-black/10 hover:text-black dark:text-white/90 dark:hover:bg-white/12 dark:hover:text-white",
       )}
     >
       <IconComponent className={cn("h-5 w-5", !collapsed && "mr-4")} />
@@ -240,9 +240,7 @@ export function AppSidebar({
             onClick={onNavClick}
           />
 
-          <div className="hidden md:block border-t border-black/10 dark:border-white/10 my-1" />
-
-          <div className="hidden md:block pb-2">
+          <div className="hidden md:block pb-2 border-t">
             <AlertDialog>
               <AlertDialogTrigger
                 className={cn(
