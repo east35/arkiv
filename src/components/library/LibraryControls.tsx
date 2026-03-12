@@ -210,7 +210,7 @@ export function LibraryControls({
                 <DialogTrigger
                   className={cn(
                     buttonVariants({ variant: "outline" }),
-                    "justify-between min-w-[220px] h-11 min-h-[44px] bg-white dark:bg-black border-input border-r-0 hover:bg-white dark:hover:bg-black",
+                    "justify-between min-w-[220px] h-11 min-h-[44px] bg-[#FFFFFF] dark:bg-[#0A0A0A] dark:hover:bg-[#0A0A0A] border-input border-r-0",
                   )}
                 >
                   <span className="flex items-center gap-2">

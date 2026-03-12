@@ -95,7 +95,7 @@ export default function Lists() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2 border-b">
         <div className="flex items-center justify-between gap-2 py-3">
           <h1 className="text-3xl font-bold tracking-tight shrink-0">Lists</h1>
 
@@ -128,6 +128,7 @@ export default function Lists() {
                 onValueChange={(v) => setSortField(v as SortField)}
                 icon={<IconArrowsUpDown />}
                 wrapperClassName="w-[160px]"
+                className="!border-r-0"
               >
                 <option value="name">Name</option>
                 <option value="item_count">Item Count</option>
@@ -162,8 +163,9 @@ export default function Lists() {
                 },
                 { value: "table", icon: IconTable, ariaLabel: "Table View" },
               ]}
-              listClassName="!h-[38px] !p-0.5 !gap-0.5"
-              triggerClassName="!h-[34px] !w-[34px] !px-0 !py-0"
+              className="bg-background"
+              listClassName="!p-0 !gap-0 !h-11"
+              triggerClassName="!w-11 !h-11 px-0"
             />
           </div>
         </div>

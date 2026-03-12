@@ -53,7 +53,7 @@ const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className={cn("sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-4 sm:pt-6 pb-2", scrolled && "border-b")}>
+      <div className={cn("sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2 -mr-3", scrolled && "border-b")}>
         <LibraryControls
           mediaType={mediaType}
           hideSearch={hideSearch}
@@ -63,18 +63,20 @@ const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
 
       <div className="flex-1 bg-[#f5f5f5] dark:bg-[#171717]">
         {!hideSearch && (
-          <div className="relative border-b bg-background">
+          <div className="relative border-b bg-[#FBFBFB] dark:bg-[#0F0F0F]">
             <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder={`Search ${mediaType ? mediaType + "s" : "collection"}...`}
-              className="pl-12 h-11 border-0 focus-visible:ring-0 bg-transparent"
+              className="pl-12 h-11 border-0 focus-visible:ring-0 !bg-transparent dark:!bg-transparent"
               value={filters.search}
               onChange={(e) => setFilters({ search: e.target.value })}
             />
           </div>
         )}
 
-        <div className="p-4">
+        <div data-transition-boundary="content-start" className="h-0" />
+
+        <div className="py-4 pl-4 pr-1">
         {loading ? (
           <LoadingState />
         ) : items.length === 0 ? (

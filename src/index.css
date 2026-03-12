@@ -119,6 +119,9 @@
   * {
     @apply border-border outline-ring/50;
     }
+  body:has(main.app-scroll-area) {
+    overflow: hidden;
+  }
   body {
     @apply bg-background text-foreground;
     }
@@ -128,6 +131,48 @@
   p {
     line-height: 1.75;
   }
+}
+
+/* Main app scrollbars: scoped to the primary scroll container */
+:root {
+  --scrollbar-w: 14px;
+}
+
+main.app-scroll-area {
+  --app-scrollbar-track: color-mix(in srgb, var(--foreground) 9%, transparent);
+  --app-scrollbar-track-border: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --app-scrollbar-thumb: color-mix(in srgb, var(--foreground) 42%, transparent);
+  --app-scrollbar-thumb-hover: color-mix(in srgb, var(--foreground) 58%, transparent);
+  --app-scrollbar-thumb-active: color-mix(in srgb, var(--foreground) 70%, transparent);
+  scrollbar-width: auto;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+}
+
+main.app-scroll-area::-webkit-scrollbar {
+  width: var(--scrollbar-w);
+  height: var(--scrollbar-w);
+}
+
+main.app-scroll-area::-webkit-scrollbar-track {
+  background: var(--app-scrollbar-track);
+  border-left: 1px solid var(--app-scrollbar-track-border);
+}
+
+main.app-scroll-area::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  border: 2px solid var(--app-scrollbar-track);
+  background-clip: content-box;
+  background-color: var(--app-scrollbar-thumb);
+  min-height: 44px;
+}
+
+main.app-scroll-area::-webkit-scrollbar-thumb:hover {
+  background-color: var(--app-scrollbar-thumb-hover);
+}
+
+main.app-scroll-area::-webkit-scrollbar-thumb:active {
+  background-color: var(--app-scrollbar-thumb-active);
 }
 
 /* Poster grid: dim non-hovered items */

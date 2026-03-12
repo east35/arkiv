@@ -16,6 +16,9 @@ export function NativeSelect({
   children,
   ...props
 }: NativeSelectProps) {
+  const baseClassName =
+    "h-11 min-h-[44px] w-full appearance-none border border-input bg-[#FFFFFF] py-2 pr-8 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [color-scheme:light] dark:bg-[#0A0A0A] dark:hover:bg-[#0A0A0A] dark:[color-scheme:dark]"
+
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onValueChange?.(e.target.value)
     onChange?.(e)
@@ -30,7 +33,8 @@ export function NativeSelect({
         <select
           onChange={handleChange}
           className={cn(
-            "h-11 min-h-[44px] w-full appearance-none border border-input bg-white py-2 pr-8 pl-9 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-white/60 disabled:opacity-50 [color-scheme:light] dark:bg-black dark:disabled:bg-black/60 dark:[color-scheme:dark]",
+            baseClassName,
+            "pl-9",
             className
           )}
           {...props}
@@ -49,7 +53,8 @@ export function NativeSelect({
       <select
         onChange={handleChange}
         className={cn(
-          "h-11 min-h-[44px] w-full appearance-none border border-input bg-white py-2 pr-8 pl-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-white/60 disabled:opacity-50 [color-scheme:light] dark:bg-black dark:disabled:bg-black/60 dark:[color-scheme:dark]",
+          baseClassName,
+          "pl-3",
           className
         )}
         {...props}

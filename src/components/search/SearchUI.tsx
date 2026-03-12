@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import {
+  useSearchParams,
+  useNavigate,
+  useOutletContext,
+} from "react-router-dom";
 import {
   IconSearch,
   IconLoader2,
@@ -36,6 +40,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { CollectionTypeSwitcher } from "@/components/library/CollectionTypeSwitcher";
 import { useShelfStore } from "@/store/useShelfStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { cn } from "@/lib/utils";
 
 export function SearchUI() {
   const navigate = useNavigate();
@@ -57,6 +62,7 @@ export function SearchUI() {
   const viewMode = useShelfStore((state) => state.viewMode);
   const setViewMode = useShelfStore((state) => state.setViewMode);
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { scrolled } = useOutletContext<{ scrolled?: boolean }>();
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
   const { results, loading, search, clearResults } = useExternalSearch();
@@ -152,10 +158,14 @@ export function SearchUI() {
   ];
 
   return (
-    <div className="flex flex-col fixed md:relative inset-0 md:inset-auto z-[60] md:z-auto bg-background">
-      {/* Full-width header */}
-      <div className="sticky top-0 z-20 border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6">
-        <div className="flex items-center justify-between gap-4 mb-4">
+    <div className="flex flex-col fixed md:relative inset-0 md:inset-auto z-[60] md:z-auto bg-[#f5f5f5] dark:bg-[#171717]">
+      <div
+        className={cn(
+          "sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2",
+          scrolled && "border-b",
+        )}
+      >
+        <div className="flex items-center justify-between gap-2">
           <h1 className="text-3xl font-bold tracking-tight">
             Add to Collection
           </h1>
@@ -196,24 +206,24 @@ export function SearchUI() {
             </Button>
           </div>
         </div>
+      </div>
 
-        <div className="relative">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            ref={inputRef}
-            autoFocus
-            inputMode="search"
-            placeholder={`Search for ${mediaType}s...`}
-            className="pl-9 text-base"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {loading && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-          )}
-        </div>
+      <div className="relative border-b bg-[#FBFBFB] dark:bg-[#0F0F0F]">
+        <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          ref={inputRef}
+          autoFocus
+          inputMode="search"
+          placeholder={`Search for ${mediaType}s...`}
+          className="pl-12 pr-12 h-11 border-0 focus-visible:ring-0 !bg-transparent dark:!bg-transparent"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {loading && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+            <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto bg-[#f5f5f5] px-4 pb-8 dark:bg-[#171717] sm:px-6">

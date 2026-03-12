@@ -22,7 +22,7 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
           }
         }}
         className={cn(
-          "h-10 w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [color-scheme:light] dark:[color-scheme:dark]",
+          "h-10 w-full border border-input bg-[#FFFFFF] px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [color-scheme:light] dark:bg-[#0A0A0A] dark:[color-scheme:dark]",
           className
         )}
         style={{ WebkitAppearance: "none", boxSizing: "border-box", display: "block" }}

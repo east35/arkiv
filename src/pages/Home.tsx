@@ -84,7 +84,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2 border-b">
         <LibraryControls
           title={
             <>
@@ -110,7 +110,7 @@ export default function Home() {
         />
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col">
         {loading ? (
           <LoadingState />
         ) : filteredItems.length === 0 ? (
@@ -152,7 +152,7 @@ export default function Home() {
             )}
 
             {filteredBooks.length > 0 && (
-              <section className="px-4 sm:px-6 py-6 bg-[#E8E8E8] dark:bg-[#212121]">
+              <section className="flex-1 px-4 sm:px-6 pt-6 pb-24 md:pb-6 bg-[#E8E8E8] dark:bg-[#212121]">
                 <h2 className="text-3xl font-semibold mb-6">Books</h2>
                 {viewMode === "poster" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

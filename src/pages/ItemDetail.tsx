@@ -127,27 +127,10 @@ export default function ItemDetail() {
       <div
         className="flex-1 relative bg-[#f5f5f5] dark:bg-[#171717]"
       >
-        {/* Cover art background at 10% opacity — fixed so it doesn't scroll */}
-        <div
-          className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
-          style={{ backgroundImage: `url(${coverUrl})`, opacity: 0.1 }}
-          aria-hidden="true"
-        />
-        {/* Dither gradient overlay — fixed, light/dark variants */}
-        <div
-          className="fixed inset-0 dark:hidden pointer-events-none"
-          style={{ backgroundImage: "url(/dither-gradient-light.svg)", backgroundRepeat: "repeat", backgroundSize: "auto" }}
-          aria-hidden="true"
-        />
-        <div
-          className="fixed inset-0 hidden dark:block pointer-events-none"
-          style={{ backgroundImage: "url(/dither-gradient.svg)", backgroundRepeat: "repeat", backgroundSize: "auto" }}
-          aria-hidden="true"
-        />
       <div className="relative max-w-5xl mx-auto flex flex-col w-full">
 
       {/* Back button */}
-      <div className="px-4 sm:px-6 pt-4 sm:pt-6">
+      <div className="px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6">
         <Link to={-1 as any} className="inline-flex items-center gap-2 text-base font-semibold text-black dark:text-white hover:opacity-70 transition-opacity">
           <IconArrowLeft className="h-5 w-5" />
           {backLabel ? `Back to ${backLabel}` : "Back"}

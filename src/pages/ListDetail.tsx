@@ -161,7 +161,7 @@ export default function ListDetail() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header — matches other page headers */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 sm:p-6 pb-2 border-b">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2 border-b">
         <div className="flex items-center justify-between gap-2">
           <Button
             variant="ghost"
@@ -210,7 +210,7 @@ export default function ListDetail() {
               <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="Search..."
-                className="pl-9 h-9 w-40 sm:w-48"
+                className="pl-9 h-9 w-40 sm:w-48 bg-[#FBFBFB] dark:bg-[#0F0F0F]"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
