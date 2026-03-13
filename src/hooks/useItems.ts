@@ -36,28 +36,53 @@ function hydrateItem(item: Item, book: BookFields | null, game: GameFields | nul
   }
   // Fallback: return with empty extension (shouldn't happen with valid data)
   if (item.media_type === "book") {
+    const emptyBook: BookFields = {
+      item_id: item.id,
+      author: null,
+      publisher: null,
+      publish_date: null,
+      page_count: null,
+      progress: null,
+      format: null,
+      themes: [],
+      isbn: null,
+      collection: null,
+      series_name: null,
+      series_position: null,
+      tag_categories: null,
+    }
+
     return {
       ...item,
       media_type: "book",
-      book: {
-        item_id: item.id,
-        author: null, publisher: null, publish_date: null,
-        page_count: null, progress: null, format: null,
-        themes: [], isbn: null, collection: null,
-        series_name: null, series_position: null, tag_categories: null,
-      },
+      book: emptyBook,
     } as BookItem
   }
+
+  const emptyGame: GameFields = {
+    item_id: item.id,
+    developer: null,
+    publisher: null,
+    release_date: null,
+    platforms: [],
+    format: null,
+    themes: [],
+    screenshots: [],
+    progress_hours: 0,
+    progress_minutes: 0,
+    collection: null,
+    game_modes: [],
+    player_perspectives: [],
+    game_category: null,
+    steam_id: null,
+    active_platform: null,
+    similar_games: [],
+  }
+
   return {
     ...item,
     media_type: "game",
-    game: {
-      item_id: item.id,
-      developer: null, publisher: null, release_date: null,
-      platforms: [], format: null, themes: [], screenshots: [],
-      progress_hours: 0, progress_minutes: 0, collection: null,
-      game_modes: [], player_perspectives: [], game_category: null, steam_id: null,
-    },
+    game: emptyGame,
   } as GameItem
 }
 
@@ -175,7 +200,7 @@ export function useItems() {
    */
   const editItem = useCallback(async (
     id: string,
-    itemUpdate: Partial<Omit<Item, "id" | "user_id" | "created_at" | "updated_at">>,
+    itemUpdate: Partial<Omit<Item, "id" | "user_id" | "created_at" | "updated_at" | "media_type">>,
     extensionUpdate?: Partial<BookFields> | Partial<GameFields>,
   ) => {
     const existingItem = useShelfStore.getState().items.find((i) => i.id === id)
@@ -202,20 +227,33 @@ export function useItems() {
       if (error) throw error
     }
 
-    const storeUpdate: Partial<FullItem> = { ...itemUpdate } as Partial<FullItem>
-
-    if (extensionUpdate && Object.keys(extensionUpdate).length > 0) {
-      if (existingItem.media_type === "book") {
-        storeUpdate.book = {
-          ...existingItem.book,
-          ...(extensionUpdate as Partial<BookFields>),
-        }
-      } else {
-        storeUpdate.game = {
-          ...existingItem.game,
-          ...(extensionUpdate as Partial<GameFields>),
-        }
+    if (existingItem.media_type === "book") {
+      const storeUpdate: Partial<BookItem> = {
+        ...itemUpdate,
+        ...(extensionUpdate && Object.keys(extensionUpdate).length > 0
+          ? {
+              book: {
+                ...existingItem.book,
+                ...(extensionUpdate as Partial<BookFields>),
+              },
+            }
+          : {}),
       }
+
+      updateItem(id, storeUpdate)
+      return
+    }
+
+    const storeUpdate: Partial<GameItem> = {
+      ...itemUpdate,
+      ...(extensionUpdate && Object.keys(extensionUpdate).length > 0
+        ? {
+            game: {
+              ...existingItem.game,
+              ...(extensionUpdate as Partial<GameFields>),
+            },
+          }
+        : {}),
     }
 
     updateItem(id, storeUpdate)
