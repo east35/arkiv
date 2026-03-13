@@ -14,7 +14,6 @@
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { useItems } from "@/hooks/useItems"
-import { useShelfStore } from "@/store/useShelfStore"
 import type {
   MediaType,
   FullItem,
@@ -59,7 +58,7 @@ function validateDetails(
 
 export function useCommitItem() {
   const [committingId, setCommittingId] = useState<string | number | null>(null)
-  const { createItem } = useItems()
+  const { createItem, fetchItemByExternalId } = useItems()
 
   /**
    * Fetch full details for an external item, map it to our schema,
@@ -166,9 +165,7 @@ export function useCommitItem() {
       // Duplicate constraint — item already exists, return it so callers can navigate
       if (code === "23505" || message.includes("duplicate") || message.includes("unique")) {
         toast.info("Already in your collection.")
-        const existing = useShelfStore.getState().items.find(
-          i => i.external_id === String(id) && i.media_type === mediaType
-        )
+        const existing = await fetchItemByExternalId(String(id), mediaType)
         return existing ?? null
       }
 

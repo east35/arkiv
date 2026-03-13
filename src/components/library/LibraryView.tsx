@@ -76,7 +76,7 @@ const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
 
         <div data-transition-boundary="content-start" className="h-0" />
 
-        <div className="py-4 pl-4 pr-1">
+        <div className={viewMode === "table" ? "pb-8" : "py-4 pl-4 pr-1"}>
         {loading ? (
           <LoadingState />
         ) : items.length === 0 ? (
@@ -100,13 +100,15 @@ const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col gap-2 pb-8">
-                {items.map((item) => (
+              <div className="flex flex-col">
+                {items.map((item, index) => (
                   <TableItem
                     key={item.id}
                     item={item}
                     onEdit={handleEdit}
                     mobileTapAction="details"
+                    stacked
+                    isFirst={index === 0}
                   />
                 ))}
               </div>

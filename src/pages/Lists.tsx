@@ -172,18 +172,27 @@ export default function Lists() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4 sm:p-6 bg-[#f5f5f5] dark:bg-[#171717]">
+      <div
+        className={cn(
+          "flex-1 bg-[#f5f5f5] dark:bg-[#171717]",
+          viewMode === "poster" ? "p-4 sm:p-6" : "pb-8",
+        )}
+      >
         {loading ? (
-          <LoadingState />
+          <div className="p-4 sm:p-6">
+            <LoadingState />
+          </div>
         ) : sorted.length === 0 ? (
-          <EmptyState
-            title="No lists yet"
-            description="Create lists to organize your collection by theme, genre, or reading challenge."
-            className="h-64 border-2 border-dashed rounded-lg bg-muted/10"
-            titleClassName="mb-2"
-            descriptionClassName="mb-4 max-w-sm"
-            action={<CreateListDialog />}
-          />
+          <div className="p-4 sm:p-6">
+            <EmptyState
+              title="No lists yet"
+              description="Create lists to organize your collection by theme, genre, or reading challenge."
+              className="h-64 border-2 border-dashed rounded-lg bg-muted/10"
+              titleClassName="mb-2"
+              descriptionClassName="mb-4 max-w-sm"
+              action={<CreateListDialog />}
+            />
+          </div>
         ) : viewMode === "poster" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {sorted.map((list) => (
@@ -207,9 +216,9 @@ export default function Lists() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            {sorted.map((list) => (
-              <ListTableRow key={list.id} list={list} />
+          <div className="flex flex-col">
+            {sorted.map((list, index) => (
+              <ListTableRow key={list.id} list={list} stacked isFirst={index === 0} />
             ))}
           </div>
         )}

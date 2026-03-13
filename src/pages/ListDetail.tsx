@@ -254,19 +254,25 @@ export default function ListDetail() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col gap-2 pb-8">
-                {displayItems.map((item) => (
+              <div className="-mx-4 flex flex-col pb-8 sm:-mx-6">
+                {displayItems.map((item, index) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-2 group/list-item"
+                    className="group/list-item relative"
                   >
                     <div className="flex-1 min-w-0">
-                      <TableItem item={item} onEdit={handleEdit} />
+                      <TableItem
+                        item={item}
+                        onEdit={handleEdit}
+                        stacked
+                        isFirst={index === 0}
+                        className="pr-10"
+                      />
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover/list-item:opacity-100 focus:opacity-100 transition-opacity"
+                      className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-destructive opacity-0 group-hover/list-item:opacity-100 focus:opacity-100 transition-opacity"
                       title="Remove from list"
                       onClick={() => handleRemoveFromList(item.id)}
                     >

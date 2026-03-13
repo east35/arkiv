@@ -23,12 +23,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { iconActionButtonClassName } from "@/lib/icon-action-button"
+import { cn } from "@/lib/utils"
 
 interface ListTableRowProps {
   list: List
+  stacked?: boolean
+  isFirst?: boolean
 }
 
-export function ListTableRow({ list }: ListTableRowProps) {
+export function ListTableRow({ list, stacked = false, isFirst = false }: ListTableRowProps) {
   const { deleteList } = useLists()
   const items = useShelfStore(s => s.items)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -47,8 +50,14 @@ export function ListTableRow({ list }: ListTableRowProps) {
   }
 
   return (
-    <div className="group flex items-center gap-4 p-2 border bg-card text-card-foreground transition-all hover:bg-accent/50">
-      <Link to={`/lists/${list.id}`} className="flex flex-1 items-center gap-4 min-w-0">
+    <div
+      className={cn(
+        "group flex items-stretch bg-card text-card-foreground transition-colors hover:bg-accent/50",
+        stacked ? "border-x border-b border-border/60" : "border border-border/60",
+        stacked && isFirst && "border-t",
+      )}
+    >
+      <Link to={`/lists/${list.id}`} className="flex flex-1 min-w-0 items-center gap-4 px-4 py-3">
         {/* Cover thumbnail */}
         <div className="h-12 w-8 shrink-0 overflow-hidden bg-muted">
           {coverUrl ? (
@@ -82,7 +91,10 @@ export function ListTableRow({ list }: ListTableRowProps) {
       </Link>
 
       {/* Actions */}
-      <div className="w-8 flex justify-end shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex w-10 shrink-0 items-center justify-center border-l border-border/60"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DropdownMenu>
           <DropdownMenuTrigger className={iconActionButtonClassName()} aria-label="List actions">
             <IconDots className="h-4 w-4" />

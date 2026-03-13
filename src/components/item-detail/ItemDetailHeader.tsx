@@ -8,6 +8,7 @@ interface ItemDetailHeaderProps {
   item: FullItem;
   backLabel: string | null;
   onStatusClick: () => void;
+  scrolled?: boolean;
 }
 
 const statusBg: Record<Status, string> = {
@@ -23,11 +24,17 @@ export function ItemDetailHeader({
   item,
   backLabel,
   onStatusClick,
+  scrolled = false,
 }: ItemDetailHeaderProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-b safe-header-bar">
+    <div
+      className={cn(
+        "sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md safe-header-bar md:border-b",
+        scrolled && "border-b md:border-b",
+      )}
+    >
       {/* Back link */}
       <button
         onClick={() => navigate(-1)}

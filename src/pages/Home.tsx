@@ -69,6 +69,8 @@ export default function Home() {
   const filteredBooks = sortItems(
     filteredItems.filter((i) => i.media_type === "book"),
   );
+  const bottomClearanceClass =
+    "pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-6";
 
   const handleEdit = (item: FullItem) => {
     setSelectedItem(item);
@@ -123,7 +125,13 @@ export default function Home() {
         ) : (
           <>
             {filteredGames.length > 0 && (
-              <section className="px-4 sm:px-6 py-6 bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60">
+              <section
+                className={
+                  filteredBooks.length > 0
+                    ? "px-4 sm:px-6 py-6 bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60"
+                    : `px-4 sm:px-6 pt-6 ${bottomClearanceClass} bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60`
+                }
+              >
                 <h2 className="text-3xl font-semibold mb-6">Video Games</h2>
                 {viewMode === "poster" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -137,13 +145,15 @@ export default function Home() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
-                    {filteredGames.map((item) => (
+                  <div className="-mx-4 flex flex-col sm:-mx-6">
+                    {filteredGames.map((item, index) => (
                       <TableItem
                         key={item.id}
                         item={item}
                         onEdit={handleEdit}
                         hideStatusDate
+                        stacked
+                        isFirst={index === 0}
                       />
                     ))}
                   </div>
@@ -152,7 +162,7 @@ export default function Home() {
             )}
 
             {filteredBooks.length > 0 && (
-              <section className="flex-1 px-4 sm:px-6 pt-6 pb-24 md:pb-6 bg-[#E8E8E8] dark:bg-[#212121]">
+              <section className={`flex-1 px-4 sm:px-6 pt-6 ${bottomClearanceClass} bg-[#E8E8E8] dark:bg-[#212121]`}>
                 <h2 className="text-3xl font-semibold mb-6">Books</h2>
                 {viewMode === "poster" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -166,13 +176,15 @@ export default function Home() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
-                    {filteredBooks.map((item) => (
+                  <div className="-mx-4 flex flex-col sm:-mx-6">
+                    {filteredBooks.map((item, index) => (
                       <TableItem
                         key={item.id}
                         item={item}
                         onEdit={handleEdit}
                         hideStatusDate
+                        stacked
+                        isFirst={index === 0}
                       />
                     ))}
                   </div>

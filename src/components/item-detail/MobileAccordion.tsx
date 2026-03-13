@@ -51,7 +51,11 @@ interface MobileAccordionProps {
 }
 
 export function MobileAccordion({ children }: MobileAccordionProps) {
-  return <div className="mt-6 border-t border-border/60 bg-muted pb-28">{children}</div>
+  return (
+    <div className="mt-6 border-t border-border/60 bg-muted pb-[calc(110px+env(safe-area-inset-bottom,0px)+1rem)]">
+      {children}
+    </div>
+  )
 }
 
 export { AccordionSection }

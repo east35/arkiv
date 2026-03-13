@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useParams, useNavigate, useLocation, Link } from "react-router-dom"
+import { useParams, useNavigate, useLocation, Link, useOutletContext } from "react-router-dom"
 import {
   IconSearchOff,
   IconArrowLeft,
@@ -57,6 +57,7 @@ export default function ItemDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const { scrolled } = useOutletContext<{ scrolled?: boolean }>()
   const backLabel: string = (location.state as any)?.backLabel ?? null
   const { items, lists, preferences } = useShelfStore()
   const { fetchItems } = useItems()
@@ -173,6 +174,7 @@ export default function ItemDetail() {
           item={item}
           backLabel={backLabel}
           onStatusClick={() => setIsSheetOpen(true)}
+          scrolled={scrolled}
         />
 
         {/* ═══════════════ Desktop Layout ═══════════════ */}
@@ -417,7 +419,7 @@ export default function ItemDetail() {
             </div>
           ) : (
             /* Notes tab content */
-            <div className="px-4 pt-6 pb-28">
+            <div className="px-4 pt-6 pb-[calc(110px+env(safe-area-inset-bottom,0px)+1rem)]">
               {item.notes ? (
                 <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground bg-card p-4 rounded-lg border">
                   {item.notes}

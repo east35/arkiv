@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useParams, useNavigate, useLocation } from "react-router-dom"
+import { Link, useParams, useNavigate, useLocation, useOutletContext } from "react-router-dom"
 import {
   IconArrowLeft,
   IconPlus,
@@ -18,7 +18,7 @@ import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { MediaType, IgdbGameDetails, HardcoverBookDetails, IgdbSearchResult } from "@/types"
+import type { MediaType, IgdbGameDetails, HardcoverBookDetails, IgdbSearchResult, BookItem } from "@/types"
 import { toast } from "sonner"
 
 const GAME_COVER_FALLBACK =
@@ -41,6 +41,7 @@ export default function ExternalItemDetail() {
   }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const { scrolled } = useOutletContext<{ scrolled?: boolean }>()
   const backLabel: string = (location.state as any)?.backLabel ?? null
 
   const [details, setDetails] = useState<IgdbGameDetails | HardcoverBookDetails | null>(null)
@@ -163,6 +164,17 @@ export default function ExternalItemDetail() {
   const description = gameDetails?.summary ?? bookDetails?.description ?? null
   const genres = gameDetails?.genres ?? bookDetails?.genres ?? []
   const themes = gameDetails?.themes ?? []
+  const seriesLibraryBooks = !isGame && bookDetails?.seriesName
+    ? items
+      .filter((item): item is BookItem => item.media_type === "book" && item.book.series_name === bookDetails.seriesName)
+      .sort((a, b) => {
+        const posA = a.book.series_position ?? Number.POSITIVE_INFINITY
+        const posB = b.book.series_position ?? Number.POSITIVE_INFINITY
+        if (posA !== posB) return posA - posB
+        return a.title.localeCompare(b.title)
+      })
+      .slice(0, 9)
+    : []
 
   /* Metadata segments */
   const meta: { icon: React.ComponentType<{ className?: string }>; text: string }[] = []
@@ -175,11 +187,56 @@ export default function ExternalItemDetail() {
 
   const sourceScore = gameDetails?.sourceScore ?? (bookDetails?.rating ? Math.round(bookDetails.rating * 10) : null)
   const ratingsCount = gameDetails?.ratingsCount ?? bookDetails?.ratingsCount ?? null
+  const renderRecommendationCards = (maxItems: number, gridClassName: string) => (
+    <div className={gridClassName}>
+      {gameDetails?.similarGames.slice(0, maxItems).map((sg) => {
+        const isResolvingRecommendation = resolvingRecommendationName === sg.name
+
+        return (
+          <button
+            key={`${sg.id ?? "search"}-${sg.name}`}
+            type="button"
+            className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col text-left group"
+            onClick={() => void handleRecommendationClick(sg)}
+          >
+            <div className="relative aspect-[2/3] w-full overflow-hidden">
+              <img
+                src={sg.cover || GAME_COVER_FALLBACK}
+                alt={sg.name}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+              <div
+                className={cn(
+                  "absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center",
+                  isResolvingRecommendation ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                )}
+              >
+                {isResolvingRecommendation ? (
+                  <IconLoader2 className="h-4 w-4 animate-spin text-white" />
+                ) : (
+                  <span className="text-white text-xs font-semibold">View Details</span>
+                )}
+              </div>
+            </div>
+            <div className="px-2.5 pt-2 pb-1.5">
+              <h4 className="font-bold text-sm leading-tight line-clamp-1" title={sg.name}>{sg.name}</h4>
+            </div>
+          </button>
+        )
+      })}
+    </div>
+  )
 
   return (
     <div className="flex-1 relative bg-background">
       {/* ═══════════════ Sticky Header ═══════════════ */}
-      <div className="sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-b border-border/40 safe-header-bar">
+      <div
+        className={cn(
+          "sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-border/40 safe-header-bar md:border-b",
+          scrolled && "border-b",
+        )}
+      >
         {/* Back link */}
         <button
           onClick={() => navigate(-1)}
@@ -299,44 +356,7 @@ export default function ExternalItemDetail() {
               {gameDetails?.similarGames && gameDetails.similarGames.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold mb-3">Recommendations</h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {gameDetails.similarGames.slice(0, 10).map((sg) => {
-                      const isResolvingRecommendation = resolvingRecommendationName === sg.name
-
-                      return (
-                        <button
-                          key={`${sg.id ?? "search"}-${sg.name}`}
-                          type="button"
-                          className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col text-left group"
-                          onClick={() => void handleRecommendationClick(sg)}
-                        >
-                          <div className="relative aspect-[2/3] w-full overflow-hidden">
-                            <img
-                              src={sg.cover || GAME_COVER_FALLBACK}
-                              alt={sg.name}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                            <div
-                              className={cn(
-                                "absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center",
-                                isResolvingRecommendation ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                              )}
-                            >
-                              {isResolvingRecommendation ? (
-                                <IconLoader2 className="h-4 w-4 animate-spin text-white" />
-                              ) : (
-                                <span className="text-white text-xs font-semibold">View Details</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="px-2.5 pt-2 pb-1.5">
-                            <h4 className="font-bold text-sm leading-tight line-clamp-1" title={sg.name}>{sg.name}</h4>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
+                  {renderRecommendationCards(10, "grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3")}
                 </div>
               )}
             </div>
@@ -405,6 +425,54 @@ export default function ExternalItemDetail() {
               </div>
               {ratingsCount != null && ratingsCount > 0 && (
                 <div className="text-xs text-muted-foreground">{ratingsCount.toLocaleString()} Votes</div>
+              )}
+            </div>
+          )}
+
+          {gameDetails?.similarGames && gameDetails.similarGames.length > 0 && (
+            <div className="pt-2">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase mb-3">Recommendations</h4>
+              {renderRecommendationCards(9, "grid grid-cols-3 gap-3")}
+            </div>
+          )}
+
+          {!isGame && bookDetails?.seriesName && (
+            <div className="pt-2">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase mb-3">Series</h4>
+              {seriesLibraryBooks.length > 0 ? (
+                <div className="grid grid-cols-3 gap-3">
+                  {seriesLibraryBooks.map((book) => (
+                    <Link
+                      key={book.id}
+                      to={`/item/${book.id}`}
+                      state={{ backLabel: title }}
+                      className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col"
+                    >
+                      <div className="relative aspect-[2/3] w-full overflow-hidden">
+                        <img
+                          src={book.cover_url || BOOK_COVER_FALLBACK}
+                          alt={book.title}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="px-2.5 pt-2 pb-1.5">
+                        <h4 className="font-bold text-sm leading-tight line-clamp-1" title={book.title}>
+                          {book.title}
+                        </h4>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border/60 bg-card px-4 py-3 dark:bg-[#0A0A0A]">
+                  <div className="text-sm font-semibold">{bookDetails.seriesName}</div>
+                  {bookDetails.seriesPosition != null && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Book {bookDetails.seriesPosition}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}

@@ -195,6 +195,58 @@ export function useItems() {
   }, [addItem])
 
   /**
+   * Fetch a single item by external source id.
+   * Falls back to Supabase when the local store has not been hydrated yet.
+   */
+  const fetchItemByExternalId = useCallback(async (
+    externalId: string,
+    mediaType: MediaType,
+  ): Promise<FullItem | null> => {
+    const storeItem = useShelfStore
+      .getState()
+      .items
+      .find((item) => item.external_id === externalId && item.media_type === mediaType)
+
+    if (storeItem) return storeItem
+
+    const { data: item, error: itemError } = await supabase
+      .from("items")
+      .select("*")
+      .eq("external_id", externalId)
+      .eq("media_type", mediaType)
+      .maybeSingle()
+
+    if (itemError) throw itemError
+    if (!item) return null
+
+    if (mediaType === "book") {
+      const { data: book, error: bookError } = await supabase
+        .from("books")
+        .select("*")
+        .eq("item_id", item.id)
+        .maybeSingle()
+
+      if (bookError) throw bookError
+
+      const hydrated = hydrateItem(item as Item, (book as BookFields | null) ?? null, null)
+      addItem(hydrated)
+      return hydrated
+    }
+
+    const { data: game, error: gameError } = await supabase
+      .from("games")
+      .select("*")
+      .eq("item_id", item.id)
+      .maybeSingle()
+
+    if (gameError) throw gameError
+
+    const hydrated = hydrateItem(item as Item, null, (game as GameFields | null) ?? null)
+    addItem(hydrated)
+    return hydrated
+  }, [addItem])
+
+  /**
    * Update an existing item's core fields and/or extension fields.
    * Pass `extensionUpdate` to update book/game-specific fields.
    */
@@ -326,6 +378,7 @@ export function useItems() {
   return {
     fetchItems,
     createItem,
+    fetchItemByExternalId,
     editItem,
     updateStatus,
     deleteItem,

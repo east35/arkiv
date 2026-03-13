@@ -28,6 +28,9 @@ interface TableItemProps {
   onEdit: (item: FullItem) => void;
   mobileTapAction?: "edit" | "details";
   hideStatusDate?: boolean;
+  stacked?: boolean;
+  isFirst?: boolean;
+  className?: string;
 }
 
 const STATUS_BLOCK: Record<Status, string> = {
@@ -124,7 +127,7 @@ function RowBody({
       </div>
 
       {/* Progress */}
-      <div className="w-24 px-4 shrink-0 border-r border-border flex items-center justify-center text-xs font-semibold">
+      <div className="w-20 px-1 shrink-0 border-r border-border flex items-center justify-center text-xs font-semibold">
         <span className="text-muted-foreground">{progressDisplay}</span>
       </div>
 
@@ -149,7 +152,11 @@ function RowBody({
         <div className="cursor-pointer md:hidden" onClick={() => onEdit(item)}>
           {row}
         </div>
-        <Link to={`/item/${item.id}`} state={{ backLabel }} className="hidden md:block">
+        <Link
+          to={`/item/${item.id}`}
+          state={{ backLabel }}
+          className="hidden md:block"
+        >
           {row}
         </Link>
       </>
@@ -168,14 +175,23 @@ export function TableItem({
   onEdit,
   mobileTapAction = "edit",
   hideStatusDate,
+  stacked = false,
+  isFirst = false,
+  className,
 }: TableItemProps) {
   const location = useLocation();
-  const backLabel = location.pathname === "/" ? "Home"
-    : location.pathname === "/books" ? "Books"
-    : location.pathname === "/games" ? "Games"
-    : location.pathname === "/search" ? "Search"
-    : location.pathname.startsWith("/lists/") ? "List"
-    : "Collection";
+  const backLabel =
+    location.pathname === "/"
+      ? "Home"
+      : location.pathname === "/books"
+        ? "Books"
+        : location.pathname === "/games"
+          ? "Games"
+          : location.pathname === "/search"
+            ? "Search"
+            : location.pathname.startsWith("/lists/")
+              ? "List"
+              : "Collection";
   const [isManageListsOpen, setIsManageListsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const { enrichSingle } = useMetadataEnrich();
@@ -189,7 +205,16 @@ export function TableItem({
 
   return (
     <>
-      <div className="group relative overflow-hidden border bg-card text-card-foreground dark:bg-[#0A0A0A]">
+      <div
+        className={cn(
+          "group relative overflow-hidden bg-card text-card-foreground dark:bg-[#0A0A0A]",
+          stacked
+            ? "border-x border-b border-border/60"
+            : "border border-border/60",
+          stacked && isFirst && "border-t",
+          className,
+        )}
+      >
         <RowBody
           item={item}
           statusText={statusText}
