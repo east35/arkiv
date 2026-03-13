@@ -16,7 +16,7 @@ interface RecommendationsRowProps {
 
 /* Status bar colours — mirrors PosterItem */
 const STATUS_BAR: Record<Status, string> = {
-  in_collection: "bg-zinc-300 text-zinc-950",
+  in_library: "bg-zinc-300 text-zinc-950",
   backlog: "bg-purple-500 text-purple-950",
   in_progress: "bg-primary text-primary-foreground",
   completed: "bg-green-500 text-green-950",
@@ -30,8 +30,8 @@ const COVER_FALLBACK =
 /**
  * Displays recommended similar games using PosterItem-style cards.
  * - All cards show "View Details" on hover and link to the detail page.
- * - Library cards show status bar; external cards show "Add to Collection" tag.
- * - Clicking the "Add to Collection" tag quick-adds the game without navigating.
+ * - Library cards show status bar; external cards show "Add to Library" tag.
+ * - Clicking the "Add to Library" tag quick-adds the game without navigating.
  * - "Back to" label shows the current game's title.
  */
 export function RecommendationsRow({ item, maxItems = 10 }: RecommendationsRowProps) {

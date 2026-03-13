@@ -9,7 +9,7 @@ import { create } from "zustand"
 import Fuse, { type IFuseOptions } from "fuse.js"
 import type {
   FullItem,
-  List,
+  Collection,
   UserPreferences,
   LibraryFilters,
   LibrarySort,
@@ -42,7 +42,7 @@ const FUSE_OPTIONS: IFuseOptions<FullItem> = {
 interface ShelfState {
   // --- Data ---
   items: FullItem[]
-  lists: List[]
+  collections: Collection[]
   preferences: UserPreferences | null
 
   // --- UI State ---
@@ -58,7 +58,7 @@ interface ShelfState {
   addItem: (item: FullItem) => void
   updateItem: (id: string, partial: Partial<FullItem>) => void
   removeItem: (id: string) => void
-  setLists: (lists: List[]) => void
+  setCollections: (collections: Collection[]) => void
   setPreferences: (prefs: UserPreferences) => void
 
   // --- Actions: UI ---
@@ -77,7 +77,7 @@ interface ShelfState {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Rebuild the Fuse index from the current item list */
+/** Rebuild the Fuse index from the current item library */
 function buildFuse(items: FullItem[]): Fuse<FullItem> {
   return new Fuse(items, FUSE_OPTIONS)
 }
@@ -93,7 +93,7 @@ function getProgressValue(item: FullItem): number {
 /** Get the status-specific date for an item */
 function getStatusDate(item: FullItem): string | null {
   const dateMap: Record<Status, string | null> = {
-    in_collection: item.created_at,
+    in_library: item.created_at,
     backlog: item.created_at,
     in_progress: item.started_at,
     paused: item.paused_at,
@@ -136,7 +136,7 @@ function compareItems(a: FullItem, b: FullItem, field: LibrarySort["field"]): nu
 export const useShelfStore = create<ShelfState>((set, get) => ({
   // --- Data ---
   items: [],
-  lists: [],
+  collections: [],
   preferences: null,
 
   // --- UI State ---
@@ -179,7 +179,7 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
       return { items, _fuse: buildFuse(items) }
     }),
 
-  setLists: (lists) => set({ lists }),
+  setCollections: (collections) => set({ collections }),
 
   setPreferences: (preferences) => set({ preferences }),
 

@@ -7,7 +7,7 @@ interface StatusDistributionChartProps {
 }
 
 const COLORS: Record<Status, string> = {
-  in_collection: "#94a3b8", // slate-400
+  in_library: "#94a3b8", // slate-400
   backlog: "#64748b", // slate-500
   in_progress: "#3b82f6", // blue-500
   completed: "#22c55e", // green-500

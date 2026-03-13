@@ -56,7 +56,7 @@ import { cn } from "@/lib/utils";
 // ---------------------------------------------------------------------------
 
 const statusSchema = z.enum([
-  "in_collection",
+  "in_library",
   "backlog",
   "in_progress",
   "paused",
@@ -267,7 +267,7 @@ export function StatusSheet({
                   onValueChange={(val) => handleStatusChange(val as Status)}
                   wrapperClassName="w-full"
                 >
-                  <option value="in_collection">In Collection</option>
+                  <option value="in_library">In Library</option>
                   <option value="backlog">Backlog</option>
                   <option value="in_progress">In Progress</option>
                   <option value="paused">Paused</option>

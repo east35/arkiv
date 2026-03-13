@@ -28,7 +28,7 @@ const BOOK_COVER_FALLBACK =
   "https://books.google.com/googlebooks/images/no_cover_thumb.gif"
 
 const STATUS_BAR: Record<Status, string> = {
-  in_collection: "bg-zinc-300 text-zinc-950",
+  in_library: "bg-zinc-300 text-zinc-950",
   backlog: "bg-purple-500 text-purple-950",
   in_progress: "bg-primary text-primary-foreground",
   completed: "bg-green-500 text-green-950",
@@ -37,9 +37,9 @@ const STATUS_BAR: Record<Status, string> = {
 }
 
 /**
- * Detail page for external items not yet in the user's collection.
+ * Detail page for external items not yet in the user's library.
  * Fetches full details from IGDB/Hardcover proxy, displays a read-only
- * detail view, and offers an "Add to Collection" action that commits
+ * detail view, and offers an "Add to Library" action that commits
  * the item then redirects to the real item detail page.
  *
  * Route: /item/external/:mediaType/:externalId
@@ -51,7 +51,7 @@ export default function ExternalItemDetail() {
   }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const { scrolled } = useOutletContext<{ scrolled?: boolean }>()
+  useOutletContext<{ scrolled?: boolean }>()
   const backLabel: string = (location.state as any)?.backLabel ?? null
 
   const [details, setDetails] = useState<IgdbGameDetails | HardcoverBookDetails | null>(null)
@@ -98,8 +98,8 @@ export default function ExternalItemDetail() {
     return () => { cancelled = true }
   }, [detailKey, externalId, isGame, validMediaType])
 
-  /** Commit item to collection, then navigate to the real detail page */
-  const handleAddToCollection = async () => {
+  /** Commit item to library, then navigate to the real detail page */
+  const handleAddToLibrary = async () => {
     if (!externalId || !validMediaType) return
     const newItem = await commit(Number(externalId), mediaType as MediaType)
     if (newItem) {
@@ -178,8 +178,7 @@ export default function ExternalItemDetail() {
   const header = (
     <div
       className={cn(
-        "sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-border/40 safe-header-bar md:border-b",
-        scrolled && "border-b",
+        "sticky top-0 z-20 flex items-center justify-between bg-background safe-header-bar",
       )}
     >
       <button
@@ -195,7 +194,7 @@ export default function ExternalItemDetail() {
       </button>
 
       <button
-        onClick={handleAddToCollection}
+        onClick={handleAddToLibrary}
         disabled={isCommitting || isContentLoading}
         className="hidden md:flex items-center self-stretch px-5 gap-3 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-opacity disabled:opacity-60"
       >
@@ -204,7 +203,7 @@ export default function ExternalItemDetail() {
         ) : (
           <IconPlus className="h-4 w-4" />
         )}
-        <span>{isCommitting ? "Adding…" : "Add to Collection"}</span>
+        <span>{isCommitting ? "Adding…" : "Add to Library"}</span>
       </button>
     </div>
   )
@@ -265,7 +264,7 @@ export default function ExternalItemDetail() {
   if (bookDetails?.authors?.[0]) meta.push({ icon: IconUser, text: bookDetails.authors[0] })
   const dateStr = gameDetails?.releaseDate ?? bookDetails?.releaseDate ?? null
   if (dateStr) meta.push({ icon: IconCalendar, text: String(new Date(dateStr).getFullYear()) })
-  if (gameDetails?.collection) meta.push({ icon: IconStack2, text: gameDetails.collection })
+  if (gameDetails?.library) meta.push({ icon: IconStack2, text: gameDetails.library })
   if (gameDetails?.platforms?.[0]) meta.push({ icon: IconDeviceGamepad2, text: gameDetails.platforms[0] })
 
   const sourceScore = gameDetails?.sourceScore ?? (bookDetails?.rating ? Math.round(bookDetails.rating * 10) : null)
@@ -576,10 +575,10 @@ export default function ExternalItemDetail() {
         </div>
       </div>
 
-      {/* ═══════════════ Mobile Bottom Bar — Add to Collection ═══════════════ */}
+      {/* ═══════════════ Mobile Bottom Bar — Add to Library ═══════════════ */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 pb-safe">
         <button
-          onClick={handleAddToCollection}
+          onClick={handleAddToLibrary}
           disabled={isCommitting}
           className={cn(
             "w-full h-[55px] flex items-center justify-center gap-2 text-sm font-semibold",
@@ -591,7 +590,7 @@ export default function ExternalItemDetail() {
           ) : (
             <IconPlus className="h-4 w-4" />
           )}
-          <span>{isCommitting ? "Adding…" : "Add to Collection"}</span>
+          <span>{isCommitting ? "Adding…" : "Add to Library"}</span>
         </button>
       </div>
     </div>

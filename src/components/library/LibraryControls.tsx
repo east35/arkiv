@@ -32,9 +32,26 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useShelfStore } from "@/store/useShelfStore";
 import { cn } from "@/lib/utils";
-import type { Status, SortField } from "@/types";
+import type { Status, SortDirection, SortField, ViewMode } from "@/types";
 
 import { statusLabels } from "@/components/status-icons";
+
+const STATUS_OPTIONS: Status[] = [
+  "in_library",
+  "backlog",
+  "in_progress",
+  "paused",
+  "completed",
+  "dropped",
+];
+
+const DEFAULT_SORT_OPTIONS = [
+  { value: "title", label: "Title" },
+  { value: "rating", label: "My Rating" },
+  { value: "progress", label: "Progress" },
+  { value: "started_at", label: "Date Started" },
+  { value: "completed_at", label: "Date Completed" },
+];
 
 interface LibraryControlsProps {
   mediaType?: "game" | "book";
@@ -43,45 +60,44 @@ interface LibraryControlsProps {
   statusFilterMode?: "single" | "multi";
   selectedStatuses?: Status[];
   onSelectedStatusesChange?: (statuses: Status[]) => void;
+  hideStatusFilter?: boolean;
+  sortOptions?: Array<{ value: string; label: string }>;
+  sortValue?: string;
+  onSortValueChange?: (value: string) => void;
+  sortDirection?: SortDirection;
+  onSortDirectionChange?: (direction: SortDirection) => void;
+  viewModeValue?: ViewMode;
+  onViewModeValueChange?: (mode: ViewMode) => void;
 }
 
-const STATUS_OPTIONS: Status[] = [
-  "in_collection",
-  "backlog",
-  "in_progress",
-  "paused",
-  "completed",
-  "dropped",
-];
+interface LibraryMobileFilterSheetProps {
+  statusFilterMode?: "single" | "multi";
+  selectedStatuses?: Status[];
+  onSelectedStatusesChange?: (statuses: Status[]) => void;
+  hideStatusFilter?: boolean;
+  sortOptions?: Array<{ value: string; label: string }>;
+  sortValue?: string;
+  onSortValueChange?: (value: string) => void;
+  sortDirection?: SortDirection;
+  onSortDirectionChange?: (direction: SortDirection) => void;
+}
 
-export function LibraryControls({
-  mediaType: _mediaType,
-  hideSearch: _hideSearch,
-  title,
+export function LibraryMobileFilterSheet({
   statusFilterMode = "single",
   selectedStatuses,
   onSelectedStatusesChange,
-}: LibraryControlsProps) {
-  const { filters, sort, viewMode, setFilters, setSort, setViewMode } =
-    useShelfStore();
+  hideStatusFilter = false,
+  sortOptions,
+  sortValue,
+  onSortValueChange,
+  sortDirection,
+  onSortDirectionChange,
+}: LibraryMobileFilterSheetProps) {
+  const { filters, sort, setFilters, setSort } = useShelfStore();
 
-  const StatusFilter = (
-    <NativeSelect
-      value={filters.status}
-      onValueChange={(value) => setFilters({ status: value as Status | "all" })}
-      icon={<IconFilter />}
-      wrapperClassName="w-full"
-    >
-      <option value="all">All Status</option>
-      {Object.keys(statusLabels)
-        .filter((s) => s !== "all")
-        .map((status) => (
-          <option key={status} value={status}>
-            {statusLabels[status]}
-          </option>
-        ))}
-    </NativeSelect>
-  );
+  const activeSortValue = sortValue ?? sort.field;
+  const activeSortDirection = sortDirection ?? sort.direction;
+  const activeSortOptions = sortOptions ?? DEFAULT_SORT_OPTIONS;
 
   const isMultiStatus =
     statusFilterMode === "multi" &&
@@ -110,36 +126,186 @@ export function LibraryControls({
     onSelectedStatusesChange([...selectedStatuses, status]);
   };
 
-  const SortControl = (
+  const handleSortValueChange = (value: string) => {
+    if (onSortValueChange) {
+      onSortValueChange(value);
+      return;
+    }
+    setSort({ field: value as SortField });
+  };
+
+  const handleSortDirectionToggle = () => {
+    const nextDirection: SortDirection =
+      activeSortDirection === "asc" ? "desc" : "asc";
+    if (onSortDirectionChange) {
+      onSortDirectionChange(nextDirection);
+      return;
+    }
+    setSort({ direction: nextDirection });
+  };
+
+  const StatusFilter = (
     <NativeSelect
-      value={sort.field}
-      onValueChange={(value) => setSort({ field: value as SortField })}
-      icon={<IconArrowsUpDown />}
+      value={filters.status}
+      onValueChange={(value) => setFilters({ status: value as Status | "all" })}
+      icon={<IconFilter />}
       wrapperClassName="w-full"
     >
-      <option value="title">Title</option>
-      <option value="rating">My Rating</option>
-      <option value="progress">Progress</option>
-      <option value="started_at">Date Started</option>
-      <option value="completed_at">Date Completed</option>
-      <option value="created_at">Date Added</option>
+      <option value="all">All Status</option>
+      {Object.keys(statusLabels)
+        .filter((s) => s !== "all")
+        .map((status) => (
+          <option key={status} value={status}>
+            {statusLabels[status]}
+          </option>
+        ))}
     </NativeSelect>
   );
 
-  const SortDirection = (
+  const SortControl = (
+    <NativeSelect
+      value={activeSortValue}
+      onValueChange={handleSortValueChange}
+      icon={<IconArrowsUpDown />}
+      wrapperClassName="w-full"
+    >
+      {activeSortOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </NativeSelect>
+  );
+
+  const SortDirectionButton = (
     <Button
       variant="outline"
       className="w-full justify-start gap-2"
-      onClick={() =>
-        setSort({ direction: sort.direction === "asc" ? "desc" : "asc" })
-      }
+      onClick={handleSortDirectionToggle}
     >
       <IconArrowsUpDown
-        className={`h-4 w-4 transition-transform ${sort.direction === "desc" ? "rotate-180" : ""}`}
+        className={`h-4 w-4 transition-transform ${activeSortDirection === "desc" ? "rotate-180" : ""}`}
       />
-      {sort.direction === "asc" ? "Ascending" : "Descending"}
+      {activeSortDirection === "asc" ? "Ascending" : "Descending"}
     </Button>
   );
+
+  return (
+    <Sheet>
+      <SheetTrigger className="h-11 w-11 inline-flex items-center justify-center bg-[#F1F1F1] hover:bg-[#D5D5D5] dark:bg-[#171717] dark:hover:bg-[#252525] transition-colors">
+        <IconAdjustmentsHorizontal className="h-4 w-4" />
+      </SheetTrigger>
+      <SheetContent side="bottom" className="px-4 pb-8">
+        <SheetHeader className="text-left mb-4">
+          <SheetTitle>
+            {isMultiStatus
+              ? "Customize Homepage"
+              : hideStatusFilter
+                ? "Sort & View"
+                : "Filter & Sort"}
+          </SheetTitle>
+          {isMultiStatus && (
+            <p className="text-sm text-muted-foreground">
+              Choose which status types you want to see
+            </p>
+          )}
+        </SheetHeader>
+        <div className="space-y-3">
+          {isMultiStatus ? (
+            <div className="space-y-2">
+              {STATUS_OPTIONS.map((status) => {
+                const checked = selectedStatuses?.includes(status);
+                return (
+                  <div
+                    key={status}
+                    className="flex items-center justify-between border border-border px-3 py-2"
+                  >
+                    <span className="text-sm font-medium">
+                      {statusLabels[status]}
+                    </span>
+                    <Switch
+                      checked={checked}
+                      onCheckedChange={() => toggleStatus(status)}
+                      aria-label={statusLabels[status]}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : !hideStatusFilter ? (
+            StatusFilter
+          ) : null}
+          {SortControl}
+          {SortDirectionButton}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+export function LibraryControls({
+  mediaType: _mediaType,
+  hideSearch: _hideSearch,
+  title,
+  statusFilterMode = "single",
+  selectedStatuses,
+  onSelectedStatusesChange,
+  hideStatusFilter = false,
+  sortOptions,
+  sortValue,
+  onSortValueChange,
+  sortDirection,
+  onSortDirectionChange,
+  viewModeValue,
+  onViewModeValueChange,
+}: LibraryControlsProps) {
+  const { filters, sort, viewMode, setFilters, setSort, setViewMode } =
+    useShelfStore();
+
+  const activeSortValue = sortValue ?? sort.field;
+  const activeSortDirection = sortDirection ?? sort.direction;
+  const activeViewMode = viewModeValue ?? viewMode;
+  const activeSortOptions = sortOptions ?? DEFAULT_SORT_OPTIONS;
+
+  const handleSortValueChange = (value: string) => {
+    if (onSortValueChange) {
+      onSortValueChange(value);
+      return;
+    }
+    setSort({ field: value as SortField });
+  };
+
+  const handleSortDirectionToggle = () => {
+    const nextDirection: SortDirection =
+      activeSortDirection === "asc" ? "desc" : "asc";
+    if (onSortDirectionChange) {
+      onSortDirectionChange(nextDirection);
+      return;
+    }
+    setSort({ direction: nextDirection });
+  };
+
+  const handleViewModeChange = (value: string) => {
+    const nextMode = value as ViewMode;
+    if (onViewModeValueChange) {
+      onViewModeValueChange(nextMode);
+      return;
+    }
+    setViewMode(nextMode);
+  };
+
+  const isMultiStatus =
+    statusFilterMode === "multi" &&
+    Array.isArray(selectedStatuses) &&
+    !!onSelectedStatusesChange;
+
+  const multiStatusLabel = useMemo(() => {
+    if (!isMultiStatus || !selectedStatuses) return "All Status";
+    if (selectedStatuses.length === 0) return "No Status";
+    if (selectedStatuses.length === STATUS_OPTIONS.length) return "All Status";
+    if (selectedStatuses.length === 1) return statusLabels[selectedStatuses[0]];
+    return `${selectedStatuses.length} statuses`;
+  }, [isMultiStatus, selectedStatuses]);
 
   return (
     <div className="flex flex-col gap-3 py-3">
@@ -151,56 +317,19 @@ export function LibraryControls({
         )}
 
         <div className="flex flex-wrap items-center gap-2 ml-auto">
-          {/* Mobile: single "Filter & Sort" sheet */}
+          {/* Mobile: Filter & Sort sheet — always in title row */}
           <div className="md:hidden">
-            <Sheet>
-              <SheetTrigger
-                className={cn(buttonVariants({ variant: "outline" }))}
-              >
-                <IconAdjustmentsHorizontal className="h-4 w-4 mr-2" />
-                Filter & Sort
-              </SheetTrigger>
-              <SheetContent side="bottom" className="px-4 pb-8">
-                <SheetHeader className="text-left mb-4">
-                  <SheetTitle>
-                    {isMultiStatus ? "Customize Homepage" : "Filter & Sort"}
-                  </SheetTitle>
-                  {isMultiStatus && (
-                    <p className="text-sm text-muted-foreground">
-                      Choose which status types you want to see
-                    </p>
-                  )}
-                </SheetHeader>
-                <div className="space-y-3">
-                  {isMultiStatus ? (
-                    <div className="space-y-2">
-                      {STATUS_OPTIONS.map((status) => {
-                        const checked = selectedStatuses?.includes(status);
-                        return (
-                          <div
-                            key={status}
-                            className="flex items-center justify-between border border-border px-3 py-2"
-                          >
-                            <span className="text-sm font-medium">
-                              {statusLabels[status]}
-                            </span>
-                            <Switch
-                              checked={checked}
-                              onCheckedChange={() => toggleStatus(status)}
-                              aria-label={statusLabels[status]}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    StatusFilter
-                  )}
-                  {SortControl}
-                  {SortDirection}
-                </div>
-              </SheetContent>
-            </Sheet>
+            <LibraryMobileFilterSheet
+              statusFilterMode={statusFilterMode}
+              selectedStatuses={selectedStatuses}
+              onSelectedStatusesChange={onSelectedStatusesChange}
+              hideStatusFilter={hideStatusFilter}
+              sortOptions={sortOptions}
+              sortValue={sortValue}
+              onSortValueChange={onSortValueChange}
+              sortDirection={sortDirection}
+              onSortDirectionChange={onSortDirectionChange}
+            />
           </div>
 
           {/* Desktop: inline controls */}
@@ -209,8 +338,8 @@ export function LibraryControls({
               <Dialog>
                 <DialogTrigger
                   className={cn(
-                    buttonVariants({ variant: "outline" }),
-                    "justify-between min-w-[220px] h-11 min-h-[44px] bg-[#FFFFFF] dark:bg-[#0A0A0A] dark:hover:bg-[#0A0A0A] border-input border-r-0",
+                    buttonVariants({ variant: "ghost" }),
+                    "justify-between min-w-[220px] h-11 min-h-[44px] bg-[#F1F1F1] hover:bg-[#D5D5D5] dark:bg-[#171717] dark:hover:bg-[#252525] border-0",
                   )}
                 >
                   <span className="flex items-center gap-2">
@@ -239,7 +368,30 @@ export function LibraryControls({
                           </span>
                           <Switch
                             checked={checked}
-                            onCheckedChange={() => toggleStatus(status)}
+                            onCheckedChange={() => {
+                              if (
+                                !isMultiStatus ||
+                                !selectedStatuses ||
+                                !onSelectedStatusesChange
+                              )
+                                return;
+                              if (selectedStatuses.includes(status)) {
+                                if (selectedStatuses.length === 1) {
+                                  toast.info(
+                                    "At least one status must stay selected on Home.",
+                                  );
+                                  return;
+                                }
+                                onSelectedStatusesChange(
+                                  selectedStatuses.filter((s) => s !== status),
+                                );
+                                return;
+                              }
+                              onSelectedStatusesChange([
+                                ...selectedStatuses,
+                                status,
+                              ]);
+                            }}
                             aria-label={statusLabels[status]}
                           />
                         </div>
@@ -248,7 +400,7 @@ export function LibraryControls({
                   </div>
                 </DialogContent>
               </Dialog>
-            ) : (
+            ) : !hideStatusFilter ? (
               <NativeSelect
                 value={filters.status}
                 onValueChange={(value) =>
@@ -256,7 +408,6 @@ export function LibraryControls({
                 }
                 icon={<IconFilter />}
                 wrapperClassName="w-[160px]"
-                className="!border-r-0"
               >
                 <option value="all">All Status</option>
                 {Object.keys(statusLabels)
@@ -267,40 +418,36 @@ export function LibraryControls({
                     </option>
                   ))}
               </NativeSelect>
-            )}
+            ) : null}
 
             <NativeSelect
-              value={sort.field}
-              onValueChange={(value) => setSort({ field: value as SortField })}
+              value={activeSortValue}
+              onValueChange={handleSortValueChange}
               icon={<IconArrowsUpDown />}
-              className="!border-r-0"
             >
-              <option value="title">Title</option>
-              <option value="rating">My Rating</option>
-              <option value="progress">Progress</option>
-              <option value="started_at">Date Started</option>
-              <option value="completed_at">Date Completed</option>
+              {activeSortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </NativeSelect>
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              onClick={() =>
-                setSort({
-                  direction: sort.direction === "asc" ? "desc" : "asc",
-                })
-              }
-              title={sort.direction === "asc" ? "Ascending" : "Descending"}
+              onClick={handleSortDirectionToggle}
+              title={activeSortDirection === "asc" ? "Ascending" : "Descending"}
+              className="h-11 w-11 !border-0 bg-[#F1F1F1] hover:bg-[#D5D5D5] dark:bg-[#171717] dark:hover:bg-[#252525]"
             >
               <IconArrowsUpDown
-                className={`h-4 w-4 transition-transform ${sort.direction === "desc" ? "rotate-180" : ""}`}
+                className={`h-4 w-4 transition-transform ${activeSortDirection === "desc" ? "rotate-180" : ""}`}
               />
             </Button>
           </div>
 
           <SegmentedControl
-            value={viewMode}
-            onValueChange={(value) => setViewMode(value as "poster" | "table")}
+            value={activeViewMode}
+            onValueChange={handleViewModeChange}
             items={[
               {
                 value: "poster",
@@ -315,15 +462,13 @@ export function LibraryControls({
                 ariaLabel: "Table View",
               },
             ]}
-            className="bg-background"
-            listClassName="!p-0 !gap-0 !h-11"
+            listClassName="!p-0 !gap-0 !h-11 bg-[#F1F1F1] dark:bg-[#171717] !border-0"
             triggerClassName="!w-11 !h-11 px-0"
           />
         </div>
         {/* end controls */}
       </div>
       {/* end title+controls row */}
-
     </div>
   );
 }

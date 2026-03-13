@@ -13,7 +13,18 @@ import { cn, formatDate } from "@/lib/utils";
 import { statusIcons, statusLabels } from "@/components/status-icons";
 import { getStatusDate, useShelfStore } from "@/store/useShelfStore";
 import { useMetadataEnrich } from "@/hooks/useMetadataEnrich";
-import { ManageListsDialog } from "@/components/lists/ManageListsDialog";
+import { ManageCollectionsDialog } from "@/components/collections/ManageCollectionsDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useItems } from "@/hooks/useItems";
 
 interface PosterItemProps {
   item: FullItem;
@@ -23,7 +34,7 @@ interface PosterItemProps {
 }
 
 const STATUS_BAR: Record<Status, string> = {
-  in_collection: "bg-zinc-300 text-zinc-950",
+  in_library: "bg-zinc-300 text-zinc-950",
   backlog: "bg-purple-500 text-purple-950",
   in_progress: "bg-primary text-primary-foreground",
   completed: "bg-green-500 text-green-950",
@@ -137,8 +148,8 @@ function pathToLabel(pathname: string): string {
   if (pathname === "/books") return "Books";
   if (pathname === "/games") return "Games";
   if (pathname === "/search") return "Search";
-  if (pathname.startsWith("/lists/")) return "List";
-  return "Collection";
+  if (pathname.startsWith("/collections/")) return "Collection";
+  return "Library";
 }
 
 export function PosterItem({
@@ -149,8 +160,10 @@ export function PosterItem({
 }: PosterItemProps) {
   const location = useLocation();
   const backLabel = pathToLabel(location.pathname);
-  const [isManageListsOpen, setIsManageListsOpen] = useState(false);
+  const [isManageCollectionsOpen, setIsManageCollectionsOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const { deleteItem } = useItems();
   const [isHovered, setIsHovered] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { enrichSingle } = useMetadataEnrich();
@@ -251,15 +264,15 @@ export function PosterItem({
 
           <button
             className={overlayActionClassName}
-            onClick={() => { setIsHovered(false); setIsManageListsOpen(true); }}
+            onClick={() => { setIsHovered(false); setIsManageCollectionsOpen(true); }}
           >
             <IconPlaylistAdd className="h-4 w-4 shrink-0" />
-            <span className="text-sm font-semibold whitespace-nowrap">Add to List…</span>
+            <span className="text-sm font-semibold whitespace-nowrap">Add to Collection…</span>
           </button>
 
           <button
             className="flex items-center gap-3 px-3 flex-1 bg-destructive text-destructive-foreground text-left w-full transition-colors hover:bg-destructive/90"
-            onClick={() => { setIsHovered(false); onEdit(item); }}
+            onClick={() => { setIsHovered(false); setIsDeleteOpen(true); }}
           >
             <IconTrash className="h-4 w-4 shrink-0" />
             <span className="text-sm font-semibold whitespace-nowrap">Delete</span>
@@ -267,11 +280,31 @@ export function PosterItem({
         </div>
       </div>
 
-      <ManageListsDialog
+      <ManageCollectionsDialog
         itemId={item.id}
-        open={isManageListsOpen}
-        onOpenChange={setIsManageListsOpen}
+        open={isManageCollectionsOpen}
+        onOpenChange={setIsManageCollectionsOpen}
       />
+
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{item.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove it from your library. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteItem(item.id)}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

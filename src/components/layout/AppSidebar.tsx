@@ -130,10 +130,10 @@ export function AppSidebar({
       label: "Games",
     },
     {
-      to: "/lists",
+      to: "/collections",
       icon: IconListDetails,
       iconFilled: IconListDetailsFilled,
-      label: "Lists",
+      label: "Collections",
     },
   ];
 
@@ -173,7 +173,7 @@ export function AppSidebar({
               className="mt-4 mb-4 inline-flex items-center text-lg leading-none font-medium text-white hover:text-white/90 transition-colors"
             >
               <IconPlus className="h-5 w-5 mr-3" />
-              <span>Add to Collection</span>
+              <span>Add to Library</span>
             </Link>
           )}
         </div>
@@ -183,7 +183,7 @@ export function AppSidebar({
             <Link
               to="/search"
               onClick={onNavClick}
-              title="Add to Collection"
+              title="Add to Library"
               className="flex h-12 items-center justify-center rounded-md text-black/85 hover:bg-black/6 hover:text-black dark:text-white/90 dark:hover:bg-white/6 dark:hover:text-white"
             >
               <IconPlus className="h-5 w-5" />
@@ -245,7 +245,7 @@ export function AppSidebar({
               <AlertDialogTrigger
                 className={cn(
                   buttonVariants({ variant: "ghost" }),
-                  "w-full text-black/80 hover:text-black hover:bg-black/6 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/6",
+                  "w-full h-12 text-base font-medium gap-0 text-black/80 hover:text-black hover:bg-black/6 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/6",
                   collapsed ? "justify-center px-0" : "justify-start px-5",
                 )}
                 title={collapsed ? "Sign Out" : undefined}

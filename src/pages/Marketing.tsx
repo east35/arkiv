@@ -40,7 +40,7 @@ export default function Marketing() {
                 The home for your games and books.
               </h1>
               <p className="mt-6 max-w-2xl text-lg text-white/70 md:text-2xl">
-                Track status, progress, and notes in one clean collection. Arkiv gives you a fast,
+                Track status, progress, and notes in one clean library. Arkiv gives you a fast,
                 visual way to stay on top of everything you are playing and reading.
               </p>
               <div className="mt-10 flex flex-row gap-3">
@@ -98,7 +98,7 @@ export default function Marketing() {
           <section className="py-20 text-center">
             <h2 className="text-3xl font-bold text-white md:text-4xl">Ready to organize everything?</h2>
             <p className="mt-4 text-lg text-white/70">
-              Move from scattered trackers to one clean, focused collection.
+              Move from scattered trackers to one clean, focused library.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
               <Link to="/register">

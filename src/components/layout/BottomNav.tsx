@@ -11,7 +11,7 @@ import {
   IconPlus,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { CollectionTypeSwitcher } from "@/components/library/CollectionTypeSwitcher";
+import { LibraryTypeSwitcher } from "@/components/library/LibraryTypeSwitcher";
 import type { MediaType } from "@/types";
 
 const collectionRoutes = ["/books", "/games"];
@@ -27,7 +27,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
 
   const isCollectionActive = collectionRoutes.includes(location.pathname);
 
-  // Persist the last visited collection route
+  // Persist the last visited library route
   useEffect(() => {
     if (isCollectionActive) {
       localStorage.setItem(LAST_COLLECTION_KEY, location.pathname);
@@ -47,7 +47,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
       )}
     >
       {isCollectionActive && (
-        <CollectionTypeSwitcher
+        <LibraryTypeSwitcher
           value={location.pathname === "/books" ? "book" : "game" as MediaType}
         />
       )}
@@ -70,7 +70,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
           <span className="text-[10px] font-medium">Home</span>
         </Link>
 
-        {/* Collection — navigates to last visited, defaults to /games */}
+        {/* Library — navigates to last visited, defaults to /games */}
         <button
           onClick={handleCollectionTap}
           className={cn(
@@ -81,7 +81,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
           )}
         >
           <IconBooks className="h-5 w-5" />
-          <span className="text-[10px] font-medium">Collection</span>
+          <span className="text-[10px] font-medium">Library</span>
         </button>
 
         <Link
@@ -93,13 +93,13 @@ export function BottomNav({ visible = true }: BottomNavProps) {
           <IconPlus className="h-5 w-5" />
         </Link>
 
-        {/* Lists, Settings */}
+        {/* Collections, Settings */}
         {[
           {
-            to: "/lists",
+            to: "/collections",
             icon: IconListDetails,
             iconFilled: IconListDetailsFilled,
-            label: "Lists",
+            label: "Collections",
           },
           {
             to: "/settings",

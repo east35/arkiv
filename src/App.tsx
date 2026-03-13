@@ -5,8 +5,8 @@ import Home from "@/pages/Home"
 import Search from "@/pages/Search"
 import Games from "@/pages/Games"
 import Books from "@/pages/Books"
-import Lists from "@/pages/Lists"
-import ListDetail from "@/pages/ListDetail"
+import Collections from "@/pages/Collections"
+import CollectionDetail from "@/pages/CollectionDetail"
 import Settings from "@/pages/Settings"
 import Import from "@/pages/Import"
 import ItemDetail from "@/pages/ItemDetail"
@@ -40,8 +40,8 @@ function App() {
           <Route path="/games" element={<Games />} />
           <Route path="/books" element={<Books />} />
           <Route path="/statistics" element={<Navigate to="/settings?tab=statistics" replace />} />
-          <Route path="/lists" element={<Lists />} />
-          <Route path="/lists/:id" element={<ListDetail />} />
+          <Route path="/collections" element={<Collections />} />
+          <Route path="/collections/:id" element={<CollectionDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/import" element={<Import />} />
         </Route>

@@ -93,7 +93,7 @@ export function useCommitItem() {
         cover_url: gameDetails?.cover ?? bookDetails!.image ?? null,
         genres: gameDetails?.genres ?? bookDetails!.genres ?? [],
         description: gameDetails?.summary ?? bookDetails!.description ?? null,
-        status: "in_collection",
+        status: "in_library",
         user_score: null,
         source_score: isGame
           ? (gameDetails!.sourceScore ?? null)
@@ -121,7 +121,7 @@ export function useCommitItem() {
           format: "digital",
           themes: [],
           isbn: bookDetails.isbn ?? null,
-          collection: null,
+          library: null,
           series_name: bookDetails.seriesName ?? null,
           series_position: bookDetails.seriesPosition ?? null,
           tag_categories: Object.keys(bookDetails.tagCategories ?? {}).length
@@ -138,8 +138,8 @@ export function useCommitItem() {
           screenshots: gameDetails!.screenshots ?? [],
           progress_hours: 0,
           progress_minutes: 0,
-          // Prefer the more specific collections name, fall back to franchise
-          collection: gameDetails!.collection ?? gameDetails!.franchise ?? null,
+          // Prefer the more specific library name, fall back to franchise
+          library: gameDetails!.library ?? gameDetails!.franchise ?? null,
           game_modes: gameDetails!.gameModes ?? [],
           player_perspectives: gameDetails!.playerPerspectives ?? [],
           game_category: gameDetails!.gameCategory ?? null,
@@ -164,7 +164,7 @@ export function useCommitItem() {
 
       // Duplicate constraint — item already exists, return it so callers can navigate
       if (code === "23505" || message.includes("duplicate") || message.includes("unique")) {
-        toast.info("Already in your collection.")
+        toast.info("Already in your library.")
         const existing = await fetchItemByExternalId(String(id), mediaType)
         return existing ?? null
       }

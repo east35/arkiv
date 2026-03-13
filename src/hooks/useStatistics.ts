@@ -23,7 +23,7 @@ import type { FullItem, Status, MediaType, ActivityLogEntry } from "@/types"
 
 /** Count of items per status */
 export interface StatusCounts {
-  in_collection: number
+  in_library: number
   backlog: number
   in_progress: number
   completed: number
@@ -82,7 +82,7 @@ export interface Statistics {
 /** Count items grouped by status */
 function computeStatusCounts(items: FullItem[]): StatusCounts {
   const counts: StatusCounts = {
-    in_collection: 0,
+    in_library: 0,
     backlog: 0,
     in_progress: 0,
     completed: 0,
@@ -161,7 +161,7 @@ function computeScoreDistributionByMediaType(items: FullItem[]): ScoreByMediaTyp
 function computeStatusByMediaType(
   items: FullItem[],
 ): { status: Status; games: number; books: number }[] {
-  const statuses: Status[] = ["in_collection", "backlog", "in_progress", "completed", "paused", "dropped"]
+  const statuses: Status[] = ["in_library", "backlog", "in_progress", "completed", "paused", "dropped"]
   return statuses.map((status) => {
     const matching = items.filter((i) => i.status === status)
     return {

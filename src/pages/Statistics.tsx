@@ -149,7 +149,7 @@ export function StatisticsDashboard({ embedded = false }: StatisticsDashboardPro
         )}
         <EmptyState
           title="No stats available"
-          description="Add items to your collection to see your statistics."
+          description="Add items to your library to see your statistics."
           icon={<IconTrophy className="h-10 w-10" />}
           className={embedded ? "h-64" : "flex-1 px-4"}
         />
@@ -209,7 +209,7 @@ export function StatisticsDashboard({ embedded = false }: StatisticsDashboardPro
   return (
     <div className={embedded ? "space-y-6" : "flex flex-col h-full overflow-hidden"}>
       {!embedded ? (
-        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 safe-header-padding pb-4 flex-shrink-0">
+        <div className="bg-background px-4 sm:px-6 safe-header-padding pb-4 flex-shrink-0">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
             {rangeControls}

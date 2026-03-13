@@ -66,7 +66,7 @@ export interface MappedBookExt {
   format: null
   themes: string[]
   isbn: null
-  collection: null
+  library: null
 }
 
 /** Game extension fields mapped from a Yamtrack row */
@@ -80,7 +80,7 @@ export interface MappedGameExt {
   screenshots: string[]
   progress_hours: number
   progress_minutes: number
-  collection: null
+  library: null
 }
 
 /** A fully mapped row ready for batch insert */
@@ -309,7 +309,7 @@ export function mapRow(row: YamtrackRow): MappedRow | null {
       format: null,
       themes: [],
       isbn: null,
-      collection: null,
+      library: null,
     }
     return { item, extension }
   }
@@ -326,7 +326,7 @@ export function mapRow(row: YamtrackRow): MappedRow | null {
     screenshots: [],
     progress_hours: hours,
     progress_minutes: minutes,
-    collection: null,
+    library: null,
   }
   return { item, extension }
 }

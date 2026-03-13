@@ -8,22 +8,22 @@ import { statusIcons, statusLabels } from "@/components/status-icons"
 import { cn } from "@/lib/utils"
 import type { FullItem, Status } from "@/types"
 
-/** Shape returned by the igdb-proxy `collection-games` action */
-interface CollectionGame {
+/** Shape returned by the igdb-proxy `library-games` action */
+interface LibraryGame {
   id: number
   name: string
   cover: string | null
   releaseDate: string | null
 }
 
-interface CollectionRowProps {
+interface LibraryRowProps {
   item: FullItem
   maxItems?: number
 }
 
 /* Status bar colours — mirrors PosterItem */
 const STATUS_BAR: Record<Status, string> = {
-  in_collection: "bg-zinc-300 text-zinc-950",
+  in_library: "bg-zinc-300 text-zinc-950",
   backlog: "bg-purple-500 text-purple-950",
   in_progress: "bg-primary text-primary-foreground",
   completed: "bg-green-500 text-green-950",
@@ -35,36 +35,36 @@ const COVER_FALLBACK =
   "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
 
 /**
- * Displays all games in the same IGDB collection as the current game.
+ * Displays all games in the same IGDB library as the current game.
  * Uses the same poster card style as PosterItem.
  * - Games already in the user's library link directly to their detail page.
  * - External games are committed silently, then navigated to their new detail page.
  * - "Back to" label shows the current game's title.
  */
-export function CollectionRow({ item, maxItems = 10 }: CollectionRowProps) {
-  const [games, setGames] = useState<CollectionGame[]>([])
+export function LibraryRow({ item, maxItems = 10 }: LibraryRowProps) {
+  const [games, setGames] = useState<LibraryGame[]>([])
   const [loading, setLoading] = useState(false)
   const items = useShelfStore((s) => s.items)
   const { commit, committingId } = useCommitItem()
   const navigate = useNavigate()
 
-  const collectionName =
-    item.media_type === "game" ? item.game.collection : null
+  const libraryName =
+    item.media_type === "game" ? item.game.library : null
 
   useEffect(() => {
-    if (!collectionName) return
+    if (!libraryName) return
 
     let cancelled = false
     setLoading(true)
 
     supabase.functions
       .invoke("igdb-proxy", {
-        body: { action: "collection-games", query: collectionName },
+        body: { action: "library-games", query: libraryName },
       })
       .then(({ data, error }) => {
         if (cancelled) return
         if (!error && Array.isArray(data)) {
-          setGames(data.filter((g: CollectionGame) => g.name !== item.title))
+          setGames(data.filter((g: LibraryGame) => g.name !== item.title))
         }
       })
       .finally(() => {
@@ -74,7 +74,7 @@ export function CollectionRow({ item, maxItems = 10 }: CollectionRowProps) {
     return () => {
       cancelled = true
     }
-  }, [collectionName, item.title])
+  }, [libraryName, item.title])
 
   // Build a map of external IGDB IDs → library items for quick lookup
   const libraryByExternalId = new Map(
@@ -93,12 +93,12 @@ export function CollectionRow({ item, maxItems = 10 }: CollectionRowProps) {
     }
   }
 
-  if (!collectionName || (!loading && games.length === 0)) return null
+  if (!libraryName || (!loading && games.length === 0)) return null
 
   return (
     <div>
       <h3 className="text-sm font-semibold mb-3 hidden md:block">
-        More in {collectionName}
+        More in {libraryName}
       </h3>
 
       {loading ? (

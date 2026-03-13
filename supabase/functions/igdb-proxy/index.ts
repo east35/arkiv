@@ -359,7 +359,7 @@ async function getGameDetails(id: number) {
     sourceScore: game.total_rating != null ? Number((game.total_rating as number).toFixed(1)) : null,
     ratingsCount: (game.total_rating_count as number) ?? null,
     franchise: ((game.franchises as Array<{ name: string }>) ?? [])[0]?.name ?? null,
-    collection: game.collection ? (game.collection as { name: string }).name : null,
+    library: game.collection ? (game.collection as { name: string }).name : null,
     gameModes: ((game.game_modes as Array<{ name: string }>) || []).map((m) => m.name),
     playerPerspectives: ((game.player_perspectives as Array<{ name: string }>) || []).map((p) => p.name),
     gameCategory: game.category != null ? (game.category as number) : null,
@@ -382,27 +382,27 @@ async function getGameDetails(id: number) {
 }
 
 // ---------------------------------------------------------------------------
-// Collection Games: returns all games in a named collection
+// Library Games: returns all games in a named IGDB collection
 // ---------------------------------------------------------------------------
-async function getCollectionGames(collectionName: string) {
-  // Step 1: Find the collection ID by name (exact match, case-insensitive)
+async function getLibraryGames(libraryName: string) {
+  // Step 1: Find the IGDB collection ID by name (exact match, case-insensitive)
   const searchBody = `
-    search "${collectionName.replace(/"/g, '\\"')}";
+    search "${libraryName.replace(/"/g, '\\"')}";
     fields id, name, games;
     limit 5;
   `
-  const collections = await igdbFetch("collections", searchBody) as Array<Record<string, unknown>>
-  if (!collections.length) return []
+  const igdbCollections = await igdbFetch("collections", searchBody) as Array<Record<string, unknown>>
+  if (!igdbCollections.length) return []
 
   // Pick the best match (prefer exact name match)
-  const exact = collections.find(
-    (c) => (c.name as string).toLowerCase() === collectionName.toLowerCase()
+  const exact = igdbCollections.find(
+    (c) => (c.name as string).toLowerCase() === libraryName.toLowerCase()
   )
-  const collection = exact || collections[0]
-  const gameIds = (collection.games as number[]) || []
+  const igdbCollection = exact || igdbCollections[0]
+  const gameIds = (igdbCollection.games as number[]) || []
   if (!gameIds.length) return []
 
-  // Step 2: Fetch game details for all games in the collection (up to 50)
+  // Step 2: Fetch game details for all games in the matched IGDB collection (up to 50)
   const idsClause = gameIds.slice(0, 50).join(",")
   const gamesBody = `
     where id = (${idsClause});
@@ -471,12 +471,12 @@ serve(async (req: Request) => {
         data = await getGameDetails(validateGameId(id))
         break
 
-      case "collection-games":
-        data = await getCollectionGames(validateSearchQuery(query))
+      case "library-games":
+        data = await getLibraryGames(validateSearchQuery(query))
         break
 
       default:
-        throw new HttpError(400, 'Invalid action. Use "search", "details", or "collection-games".')
+        throw new HttpError(400, 'Invalid action. Use "search", "details", or "library-games".')
     }
 
     return jsonResponse(req, data)

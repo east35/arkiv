@@ -7,8 +7,6 @@ import {
 import {
   IconSearch,
   IconLoader2,
-  IconDeviceGamepad2,
-  IconBook,
   IconX,
   IconLayoutGrid,
   IconTable,
@@ -37,9 +35,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { MediaType, FullItem } from "@/types";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { CollectionTypeSwitcher } from "@/components/library/CollectionTypeSwitcher";
+import { LibraryTypeSwitcher } from "@/components/library/LibraryTypeSwitcher";
 import { useShelfStore } from "@/store/useShelfStore";
-import { cn } from "@/lib/utils";
 
 export function SearchUI() {
   const navigate = useNavigate();
@@ -61,7 +58,7 @@ export function SearchUI() {
   const statusChoiceMade = useRef(false);
   const viewMode = useShelfStore((state) => state.viewMode);
   const setViewMode = useShelfStore((state) => state.setViewMode);
-  const { scrolled } = useOutletContext<{ scrolled?: boolean }>();
+  useOutletContext<{ scrolled?: boolean }>();
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
   const { results, loading, loadingMore, hasMore, search, loadMore, clearResults } = useExternalSearch();
@@ -166,8 +163,8 @@ export function SearchUI() {
   };
 
   const typeItems = [
-    { value: "game" as MediaType, label: "Games", icon: IconDeviceGamepad2 },
-    { value: "book" as MediaType, label: "Books", icon: IconBook },
+    { value: "game" as MediaType, label: "Games" },
+    { value: "book" as MediaType, label: "Books" },
   ];
   const viewModeItems = [
     { value: "poster", icon: IconLayoutGrid, ariaLabel: "Poster View" },
@@ -177,29 +174,24 @@ export function SearchUI() {
   return (
     <div className="flex flex-col fixed md:relative inset-0 md:inset-auto z-[60] md:z-auto bg-[#f5f5f5] dark:bg-[#171717]">
       <div
-        className={cn(
-          "sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2",
-          scrolled && "border-b",
-        )}
+        className="sticky top-0 z-20 bg-background px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2"
       >
         <div className="flex items-center justify-between gap-2 py-3">
           <h1 className="text-3xl font-bold tracking-tight">
-            Add to Collection
+            Add to Library
           </h1>
           <div className="flex items-center gap-2">
             <SegmentedControl
               value={mediaType}
               onValueChange={(value) => setMediaType(value as MediaType)}
-              items={typeItems.map(({ value, label, icon }) => ({
+              items={typeItems.map(({ value, label }) => ({
                 value,
                 label,
-                icon,
                 ariaLabel: label,
               }))}
-              size="sm"
               className="hidden md:block"
-              listClassName="!h-[38px] !p-0.5 !gap-0.5"
-              triggerClassName="!h-[34px] !px-4 !py-0 !leading-none"
+              listClassName="!p-0 !gap-0 !h-11 bg-[#F1F1F1] dark:bg-[#171717] !border-0"
+              triggerClassName="!h-11 px-4"
             />
             <SegmentedControl
               value={viewMode}
@@ -207,10 +199,9 @@ export function SearchUI() {
                 setViewMode(value as "poster" | "table")
               }
               items={viewModeItems}
-              size="sm"
               className="hidden md:block"
-              listClassName="!h-[38px] !p-0.5 !gap-0.5"
-              triggerClassName="!h-[34px] !w-9 !px-0 !py-0"
+              listClassName="!p-0 !gap-0 !h-11 bg-[#F1F1F1] dark:bg-[#171717] !border-0"
+              triggerClassName="!w-11 !h-11 px-0"
             />
             {/* Mobile close */}
             <Button
@@ -225,7 +216,7 @@ export function SearchUI() {
         </div>
       </div>
 
-      <div className="relative border-b bg-[#FBFBFB] dark:bg-[#0F0F0F]">
+      <div className="relative bg-background">
         <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           ref={inputRef}
@@ -303,13 +294,13 @@ export function SearchUI() {
           <AlertDialogHeader>
             <AlertDialogTitle>Update status?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{pendingItem?.title}" was added to your collection. Would you
+              "{pendingItem?.title}" was added to your library. Would you
               like to update its status now?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleJustAdd}>
-              No, just add to collection
+              No, just add to library
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleUpdateStatus}>
               Yes, update status
@@ -322,9 +313,9 @@ export function SearchUI() {
       <AlertDialog open={alertPhase === "cancel"}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel adding to collection?</AlertDialogTitle>
+            <AlertDialogTitle>Cancel adding to library?</AlertDialogTitle>
             <AlertDialogDescription>
-              Remove "{pendingItem?.title}" from your collection?
+              Remove "{pendingItem?.title}" from your library?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -343,7 +334,7 @@ export function SearchUI() {
 
       {/* Mobile type picker — pinned to bottom of full-screen overlay */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-background pb-safe">
-        <CollectionTypeSwitcher
+        <LibraryTypeSwitcher
           value={mediaType}
           onValueChange={setMediaType}
           className="w-full"

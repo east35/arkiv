@@ -46,7 +46,7 @@ function hydrateItem(item: Item, book: BookFields | null, game: GameFields | nul
       format: null,
       themes: [],
       isbn: null,
-      collection: null,
+      library: null,
       series_name: null,
       series_position: null,
       tag_categories: null,
@@ -70,7 +70,7 @@ function hydrateItem(item: Item, book: BookFields | null, game: GameFields | nul
     screenshots: [],
     progress_hours: 0,
     progress_minutes: 0,
-    collection: null,
+    library: null,
     game_modes: [],
     player_perspectives: [],
     game_category: null,
@@ -362,7 +362,7 @@ export function useItems() {
   }, [updateItem])
 
   /**
-   * Delete an item (cascades to extension + list_items + activity_log via FK).
+   * Delete an item (cascades to extension + collection_items + activity_log via FK).
    */
   const deleteItem = useCallback(async (id: string) => {
     const { error } = await supabase

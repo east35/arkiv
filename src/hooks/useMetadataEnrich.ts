@@ -302,9 +302,9 @@ function buildGameUpdate(details: IgdbGameDetails) {
   if (details.platforms?.length) extUpdate.platforms = details.platforms
   if (details.themes?.length) extUpdate.themes = details.themes
   if (details.screenshots?.length) extUpdate.screenshots = details.screenshots
-  // Prefer the more specific collections name, fall back to franchise
-  const collectionName = details.collection ?? details.franchise
-  if (collectionName) extUpdate.collection = collectionName
+  // Prefer the more specific library name, fall back to franchise
+  const libraryName = details.library ?? details.franchise
+  if (libraryName) extUpdate.library = libraryName
   if (details.gameModes?.length) extUpdate.game_modes = details.gameModes
   if (details.playerPerspectives?.length) extUpdate.player_perspectives = details.playerPerspectives
   if (details.gameCategory != null) extUpdate.game_category = details.gameCategory

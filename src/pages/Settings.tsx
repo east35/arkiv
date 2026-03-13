@@ -219,7 +219,7 @@ export default function Settings() {
         }
       >
         {/* Sticky header */}
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="sticky top-0 z-20 bg-background">
           {/* Title row */}
           <div className="px-4 sm:px-6 safe-header-padding pb-4 sm:pb-6">
             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
@@ -262,7 +262,7 @@ export default function Settings() {
           </div>
 
           {/* Desktop tab bar: full width, no side/top border, #fbfbfb bg */}
-          <TabsList className="hidden md:flex w-full h-12 rounded-none p-0 gap-0 bg-[#FBFBFB] dark:bg-[#0F0F0F] border-0 border-b border-border">
+          <TabsList className="hidden md:flex w-full h-12 rounded-none p-0 gap-0 bg-[#FBFBFB] dark:bg-[#0F0F0F] border-0">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -462,7 +462,7 @@ export default function Settings() {
                 <CardHeader>
                   <CardTitle>Data Management</CardTitle>
                   <CardDescription>
-                    Export your collection or manage your data.
+                    Export your library or manage your data.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -470,7 +470,7 @@ export default function Settings() {
                   <div className="bg-muted/50 p-4 rounded-lg border space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">Enrich Collection</h4>
+                        <h4 className="font-medium">Enrich Library</h4>
                         <p className="text-sm text-muted-foreground">
                           Backfill missing metadata (genres, descriptions, etc.)
                           from IGDB & Hardcover.
@@ -598,9 +598,9 @@ export default function Settings() {
 
                   <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Import Collection</h4>
+                      <h4 className="font-medium">Import Library</h4>
                       <p className="text-sm text-muted-foreground">
-                        Import your collection from a Yamtrack CSV export.
+                        Import your library from a Yamtrack CSV export.
                       </p>
                     </div>
                     <Button
@@ -614,7 +614,7 @@ export default function Settings() {
 
                   <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Export Collection</h4>
+                      <h4 className="font-medium">Export Library</h4>
                       <p className="text-sm text-muted-foreground">
                         Download a CSV file of all your tracked items.
                       </p>

@@ -13,7 +13,7 @@
 export type MediaType = "game" | "book"
 
 /** Item tracking statuses */
-export type Status = "in_collection" | "backlog" | "in_progress" | "paused" | "completed" | "dropped"
+export type Status = "in_library" | "backlog" | "in_progress" | "paused" | "completed" | "dropped"
 
 /** Data source for an item */
 export type Source = "igdb" | "google_books" | "hardcover" | "manual"
@@ -72,7 +72,7 @@ export interface BookFields {
   format: string | null
   themes: string[]
   isbn: string | null
-  collection: string | null
+  library: string | null
   series_name: string | null
   series_position: number | null
   tag_categories: Record<string, string[]> | null
@@ -90,7 +90,7 @@ export interface GameFields {
   screenshots: string[]
   progress_hours: number
   progress_minutes: number
-  collection: string | null
+  library: string | null
   game_modes: string[]
   player_perspectives: string[]
   game_category: number | null
@@ -115,11 +115,11 @@ export interface GameItem extends Item {
 export type FullItem = BookItem | GameItem
 
 // ---------------------------------------------------------------------------
-// Lists
+// Collections
 // ---------------------------------------------------------------------------
 
-/** User-created list */
-export interface List {
+/** User-created collection */
+export interface Collection {
   id: string
   user_id: string
   name: string
@@ -132,10 +132,10 @@ export interface List {
   preview_item_ids?: string[]
 }
 
-/** Junction row: item membership in a list */
-export interface ListItem {
+/** Junction row: item membership in a collection */
+export interface CollectionItem {
   id: string
-  list_id: string
+  collection_id: string
   item_id: string
   added_at: string
 }
@@ -219,7 +219,7 @@ export interface IgdbGameDetails {
   sourceScore: number | null
   ratingsCount: number | null
   franchise: string | null
-  collection: string | null
+  library: string | null
   gameModes: string[]
   playerPerspectives: string[]
   gameCategory: number | null

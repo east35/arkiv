@@ -2,22 +2,22 @@ import { useNavigate } from "react-router-dom";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { MediaType } from "@/types";
 
-const collectionTabs: { type: MediaType; label: string; href: string }[] = [
+const libraryTabs: { type: MediaType; label: string; href: string }[] = [
   { type: "game", label: "Games", href: "/games" },
   { type: "book", label: "Books", href: "/books" },
 ];
 
-interface CollectionTypeSwitcherProps {
+interface LibraryTypeSwitcherProps {
   value: MediaType;
   className?: string;
   onValueChange?: (value: MediaType) => void;
 }
 
-export function CollectionTypeSwitcher({
+export function LibraryTypeSwitcher({
   value,
   className,
   onValueChange,
-}: CollectionTypeSwitcherProps) {
+}: LibraryTypeSwitcherProps) {
   const navigate = useNavigate();
 
   return (
@@ -29,10 +29,10 @@ export function CollectionTypeSwitcher({
           onValueChange(nextType);
           return;
         }
-        const next = collectionTabs.find((tab) => tab.type === nextType);
+        const next = libraryTabs.find((tab) => tab.type === nextType);
         if (next) navigate(next.href);
       }}
-      items={collectionTabs.map((tab) => ({
+      items={libraryTabs.map((tab) => ({
         value: tab.type,
         label: tab.label,
         ariaLabel: tab.label,

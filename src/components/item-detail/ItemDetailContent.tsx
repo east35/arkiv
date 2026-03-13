@@ -16,18 +16,18 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { RecommendationsRow } from "./RecommendationsRow";
-import { CollectionRow } from "./CollectionRow";
+import { LibraryRow } from "./LibraryRow";
 import { SeriesRow } from "./SeriesRow";
-import { getListCoverUrl } from "./list-cover";
+import { getCollectionCoverUrl } from "./collection-cover";
 import { useShelfStore } from "@/store/useShelfStore";
-import type { FullItem, List } from "@/types";
+import type { FullItem, Collection } from "@/types";
 
 interface ItemDetailContentProps {
   item: FullItem;
-  itemLists: List[];
+  itemCollections: Collection[];
 }
 
-export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
+export function ItemDetailContent({ item, itemCollections }: ItemDetailContentProps) {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isClamped, setIsClamped] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
@@ -56,8 +56,8 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
       icon: IconCalendar,
       text: String(new Date(dateStr).getFullYear()),
     });
-  if (isGame && item.game.collection)
-    meta.push({ icon: IconStack2, text: item.game.collection });
+  if (isGame && item.game.library)
+    meta.push({ icon: IconStack2, text: item.game.library });
   if (!isGame && item.book.series_name)
     meta.push({ icon: IconStack2, text: item.book.series_name });
   const selectedPlatformText = isGame
@@ -119,7 +119,7 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
         )}
       </div>
 
-      {/* ── Group 2: Tags, lists, recommendations ── */}
+      {/* ── Group 2: Tags, collections, recommendations ── */}
       <div className="bg-[#e6e6e6] p-6 space-y-6 dark:bg-card">
         {/* Genres & Themes */}
         <div className="flex flex-wrap gap-x-12 gap-y-6">
@@ -157,24 +157,24 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
           )}
         </div>
 
-        {/* Lists */}
-        {itemLists.length > 0 && (
+        {/* Collections */}
+        {itemCollections.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold mb-3">Lists</h3>
+            <h3 className="text-sm font-semibold mb-3">Collections</h3>
             <div className="space-y-2">
-              {itemLists.map((list) => {
-                const coverUrl = getListCoverUrl(list, items);
+              {itemCollections.map((collection) => {
+                const coverUrl = getCollectionCoverUrl(collection, items);
 
                 return (
                   <div
-                    key={list.id}
+                    key={collection.id}
                     className="flex overflow-hidden border bg-background/50"
                   >
                     <div className="h-[88px] w-[72px] shrink-0 overflow-hidden bg-secondary/50">
                       {coverUrl ? (
                         <img
                           src={coverUrl}
-                          alt={list.name}
+                          alt={collection.name}
                           className="h-full w-full object-cover"
                           loading="lazy"
                         />
@@ -186,17 +186,17 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-center px-5 py-4">
                       <h4 className="font-semibold text-sm truncate">
-                        {list.name}
+                        {collection.name}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        {list.item_count ? `${list.item_count} Items` : "List"}
+                        {collection.item_count ? `${collection.item_count} Items` : "Collection"}
                       </p>
                     </div>
                     <Link
-                      to={`/lists/${list.id}`}
+                      to={`/collections/${collection.id}`}
                       className="flex shrink-0 items-center border-l border-border/60 px-5 text-sm font-semibold transition-colors hover:bg-accent/40"
                     >
-                      View List
+                      View Collection
                     </Link>
                   </div>
                 );
@@ -205,8 +205,8 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
           </div>
         )}
 
-        {/* Collection / Series */}
-        <CollectionRow item={item} maxItems={10} />
+        {/* Library / Series */}
+        <LibraryRow item={item} maxItems={10} />
         <SeriesRow item={item} maxItems={10} />
 
         {/* Recommendations */}

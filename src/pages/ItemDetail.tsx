@@ -20,11 +20,11 @@ import {
 
 import { useShelfStore } from "@/store/useShelfStore"
 import { useItems } from "@/hooks/useItems"
-import { useLists } from "@/hooks/useLists"
+import { useCollections } from "@/hooks/useCollections"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
+import { ManageCollectionsDialog } from "@/components/collections/ManageCollectionsDialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { LoadingState } from "@/components/ui/loading-state"
 import type { FullItem, Status } from "@/types"
@@ -39,13 +39,13 @@ import { ItemDetailContent } from "@/components/item-detail/ItemDetailContent"
 import { MobileAccordion, AccordionSection } from "@/components/item-detail/MobileAccordion"
 import { NotesPanel } from "@/components/item-detail/NotesPanel"
 import { RecommendationsRow } from "@/components/item-detail/RecommendationsRow"
-import { CollectionRow } from "@/components/item-detail/CollectionRow"
+import { LibraryRow } from "@/components/item-detail/LibraryRow"
 import { SeriesRow } from "@/components/item-detail/SeriesRow"
-import { getListCoverUrl } from "@/components/item-detail/list-cover"
+import { getCollectionCoverUrl } from "@/components/item-detail/collection-cover"
 
 /* ── Status colour map (matches PosterItem STATUS_BAR) ── */
 const statusBg: Record<Status, string> = {
-  in_collection: "bg-zinc-300 text-zinc-950",
+  in_library: "bg-zinc-300 text-zinc-950",
   backlog: "bg-purple-500 text-purple-950",
   in_progress: "bg-primary text-primary-foreground",
   completed: "bg-green-500 text-green-950",
@@ -57,16 +57,16 @@ export default function ItemDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const { scrolled } = useOutletContext<{ scrolled?: boolean }>()
+  useOutletContext<{ scrolled?: boolean }>()
   const backLabel: string = (location.state as any)?.backLabel ?? null
-  const { items, lists, preferences } = useShelfStore()
+  const { items, collections, preferences } = useShelfStore()
   const { fetchItems } = useItems()
-  const { fetchItemMemberships, fetchLists } = useLists()
+  const { fetchItemMemberships, fetchCollections } = useCollections()
 
   const [item, setItem] = useState<FullItem | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
-  const [isManageListsOpen, setIsManageListsOpen] = useState(false)
-  const [itemListIds, setItemListIds] = useState<string[]>([])
+  const [isManageCollectionsOpen, setIsManageCollectionsOpen] = useState(false)
+  const [itemCollectionIds, setItemCollectionIds] = useState<string[]>([])
   const [isNotesOpen, setIsNotesOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<"overview" | "notes">("overview")
   const [scrollbarW, setScrollbarW] = useState(0)
@@ -109,16 +109,16 @@ export default function ItemDetail() {
     }
   }, [id, items, fetchItems])
 
-  // Fetch list memberships
+  // Fetch collection memberships
   useEffect(() => {
     if (!id) return
-    if (lists.length === 0) fetchLists().catch(() => {})
+    if (collections.length === 0) fetchCollections().catch(() => {})
     fetchItemMemberships(id).then(memberships => {
-      setItemListIds(memberships.map(m => m.list_id))
+      setItemCollectionIds(memberships.map((membership) => membership.collection_id))
     }).catch(() => {})
-  }, [id, fetchItemMemberships, fetchLists, lists.length])
+  }, [id, fetchItemMemberships, fetchCollections, collections.length])
 
-  const itemLists = lists.filter(l => itemListIds.includes(l.id))
+  const itemCollections = collections.filter((collection) => itemCollectionIds.includes(collection.id))
 
   /* ── Loading / 404 ── */
   if (!item && !items.length) return <LoadingState className="h-full" />
@@ -133,7 +133,7 @@ export default function ItemDetail() {
         action={
           <Button variant="outline" onClick={() => navigate("/")}>
             <IconArrowLeft className="h-4 w-4 mr-2" />
-            Back to Collection
+            Back to Library
           </Button>
         }
       />
@@ -154,7 +154,7 @@ export default function ItemDetail() {
   }
   const dateStr = isGame ? item.game.release_date : item.book.publish_date
   if (dateStr) mobileMeta.push({ icon: IconCalendar, text: String(new Date(dateStr).getFullYear()) })
-  if (isGame && item.game.collection) mobileMeta.push({ icon: IconStack2, text: item.game.collection })
+  if (isGame && item.game.library) mobileMeta.push({ icon: IconStack2, text: item.game.library })
   if (!isGame && item.book.series_name) mobileMeta.push({ icon: IconStack2, text: item.book.series_name })
   const selectedPlatformText = isGame
     ? item.game.active_platform || item.game.platforms[0] || null
@@ -174,7 +174,6 @@ export default function ItemDetail() {
           item={item}
           backLabel={backLabel}
           onStatusClick={() => setIsSheetOpen(true)}
-          scrolled={scrolled}
         />
 
         {/* ═══════════════ Desktop Layout ═══════════════ */}
@@ -190,7 +189,7 @@ export default function ItemDetail() {
             {/* Right column — content */}
             <ItemDetailContent
               item={item}
-              itemLists={itemLists}
+              itemCollections={itemCollections}
             />
           </div>
 
@@ -344,20 +343,20 @@ export default function ItemDetail() {
                   </div>
                 </AccordionSection>
 
-                {/* Lists */}
-                <AccordionSection title="Lists" icon={IconList}>
+                {/* Collections */}
+                <AccordionSection title="Collections" icon={IconList}>
                   <div className="space-y-3">
-                    {itemLists.length > 0 ? (
-                      itemLists.map(list => {
-                        const coverUrl = getListCoverUrl(list, items)
+                    {itemCollections.length > 0 ? (
+                      itemCollections.map(collection => {
+                        const coverUrl = getCollectionCoverUrl(collection, items)
 
                         return (
-                          <div key={list.id} className="flex overflow-hidden border bg-card">
+                          <div key={collection.id} className="flex overflow-hidden border bg-card">
                             <div className="h-[78px] w-[62px] shrink-0 overflow-hidden bg-secondary/50">
                               {coverUrl ? (
                                 <img
                                   src={coverUrl}
-                                  alt={list.name}
+                                  alt={collection.name}
                                   className="h-full w-full object-cover"
                                   loading="lazy"
                                 />
@@ -368,32 +367,32 @@ export default function ItemDetail() {
                               )}
                             </div>
                             <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
-                              <span className="font-medium text-sm truncate block">{list.name}</span>
-                              <span className="text-xs text-muted-foreground">{list.item_count ? `${list.item_count} Items` : ""}</span>
+                              <span className="font-medium text-sm truncate block">{collection.name}</span>
+                              <span className="text-xs text-muted-foreground">{collection.item_count ? `${collection.item_count} Items` : ""}</span>
                             </div>
                             <Link
-                              to={`/lists/${list.id}`}
+                              to={`/collections/${collection.id}`}
                               className="flex shrink-0 items-center border-l border-border/60 px-4 text-xs font-semibold transition-colors hover:bg-accent/40"
                             >
-                              View List
+                              View Collection
                             </Link>
                           </div>
                         )
                       })
                     ) : (
                       <div className="text-center py-4 text-muted-foreground text-sm">
-                        Not in any lists.
-                        <Button variant="link" onClick={() => setIsManageListsOpen(true)} className="px-1 h-auto">Add to list</Button>
+                        Not in any collections.
+                        <Button variant="link" onClick={() => setIsManageCollectionsOpen(true)} className="px-1 h-auto">Add to collection</Button>
                       </div>
                     )}
                   </div>
                 </AccordionSection>
 
-                {/* Collection / Series (games only) */}
-                {isGame && item.game.collection && (
-                  <AccordionSection title={`More in ${item.game.collection}`} icon={IconStack2}>
+                {/* Library / Series (games only) */}
+                {isGame && item.game.library && (
+                  <AccordionSection title={`More in ${item.game.library}`} icon={IconStack2}>
                     <div>
-                      <CollectionRow item={item} maxItems={9} />
+                      <LibraryRow item={item} maxItems={9} />
                     </div>
                   </AccordionSection>
                 )}
@@ -456,7 +455,7 @@ export default function ItemDetail() {
             </span>
           </button>
 
-          {/* Tab bar — reuses SegmentedControl like CollectionTypeSwitcher */}
+          {/* Tab bar — reuses SegmentedControl like LibraryTypeSwitcher */}
           <SegmentedControl
             value={mobileTab}
             onValueChange={(v) => setMobileTab(v as "overview" | "notes")}
@@ -477,7 +476,7 @@ export default function ItemDetail() {
           onOpenChange={setIsSheetOpen}
           onDeleteSuccess={handleDeleteSuccess}
         />
-        <ManageListsDialog itemId={item.id} open={isManageListsOpen} onOpenChange={setIsManageListsOpen} />
+        <ManageCollectionsDialog itemId={item.id} open={isManageCollectionsOpen} onOpenChange={setIsManageCollectionsOpen} />
         <NotesPanel
           open={isNotesOpen}
           onOpenChange={setIsNotesOpen}

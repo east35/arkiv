@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ManageListsDialog } from "@/components/lists/ManageListsDialog";
+import { ManageCollectionsDialog } from "@/components/collections/ManageCollectionsDialog";
 import { iconActionButtonClassName } from "@/lib/icon-action-button";
 
 interface TableItemProps {
@@ -34,7 +34,7 @@ interface TableItemProps {
 }
 
 const STATUS_BLOCK: Record<Status, string> = {
-  in_collection: "bg-zinc-300 text-zinc-950",
+  in_library: "bg-zinc-300 text-zinc-950",
   backlog: "bg-purple-500 text-purple-950",
   in_progress: "bg-primary text-primary-foreground",
   completed: "bg-green-500 text-green-950",
@@ -43,7 +43,7 @@ const STATUS_BLOCK: Record<Status, string> = {
 };
 
 const STATUS_STRIP: Record<Status, string> = {
-  in_collection: "bg-zinc-300",
+  in_library: "bg-zinc-300",
   backlog: "bg-purple-500",
   in_progress: "bg-primary",
   completed: "bg-green-500",
@@ -189,10 +189,10 @@ export function TableItem({
           ? "Games"
           : location.pathname === "/search"
             ? "Search"
-            : location.pathname.startsWith("/lists/")
-              ? "List"
-              : "Collection";
-  const [isManageListsOpen, setIsManageListsOpen] = useState(false);
+            : location.pathname.startsWith("/collections/")
+              ? "Collection"
+              : "Library";
+  const [isManageCollectionsOpen, setIsManageCollectionsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const { enrichSingle } = useMetadataEnrich();
   const statusDate = getStatusDate(item);
@@ -208,9 +208,7 @@ export function TableItem({
       <div
         className={cn(
           "group relative overflow-hidden bg-card text-card-foreground dark:bg-[#0A0A0A]",
-          stacked
-            ? "border-x border-b border-border/60"
-            : "border border-border/60",
+          stacked ? "border-b border-border/60" : "border border-border/60",
           stacked && isFirst && "border-t",
           className,
         )}
@@ -255,9 +253,11 @@ export function TableItem({
                 />
                 {syncing ? "Syncing..." : "Sync"}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsManageListsOpen(true)}>
+              <DropdownMenuItem
+                onClick={() => setIsManageCollectionsOpen(true)}
+              >
                 <IconPlaylistAdd className="h-4 w-4 mr-2" />
-                Add to List...
+                Add to Collection...
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -272,10 +272,10 @@ export function TableItem({
         </div>
       </div>
 
-      <ManageListsDialog
+      <ManageCollectionsDialog
         itemId={item.id}
-        open={isManageListsOpen}
-        onOpenChange={setIsManageListsOpen}
+        open={isManageCollectionsOpen}
+        onOpenChange={setIsManageCollectionsOpen}
       />
     </>
   );

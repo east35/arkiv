@@ -11,7 +11,7 @@ interface SeriesRowProps {
 
 /* Status bar colours — mirrors PosterItem */
 const STATUS_BAR: Record<Status, string> = {
-  in_collection: "bg-zinc-300 text-zinc-950",
+  in_library: "bg-zinc-300 text-zinc-950",
   backlog: "bg-purple-500 text-purple-950",
   in_progress: "bg-primary text-primary-foreground",
   completed: "bg-green-500 text-green-950",

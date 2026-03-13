@@ -134,7 +134,7 @@ const logoAssets = [
 ]
 
 const statusOrder: Status[] = [
-  "in_collection",
+  "in_library",
   "backlog",
   "in_progress",
   "completed",

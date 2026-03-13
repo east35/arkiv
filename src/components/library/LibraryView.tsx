@@ -11,7 +11,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { IconSearch } from "@tabler/icons-react";
 import { useOutletContext } from "react-router-dom";
-import { cn } from "@/lib/utils";
 
 interface LibraryViewProps {
   mediaType?: MediaType;
@@ -24,8 +23,8 @@ export default function LibraryView({
 }: LibraryViewProps) {
   const { viewMode, getFilteredItems, filters, setFilters } = useShelfStore();
   const { fetchItems } = useItems();
-  const { scrolled } = useOutletContext<{ scrolled?: boolean }>();
-const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
+  useOutletContext<{ scrolled?: boolean }>();
+  const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(
     !useShelfStore.getState().items.length,
@@ -51,22 +50,48 @@ const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
     }
   };
 
+  // Logo icon title for Home (no mediaType): mobile shows icon, desktop shows text
+  const titleNode = !mediaType ? (
+    <>
+      <span className="md:hidden flex items-center justify-center h-9 w-9 bg-primary rounded-sm shrink-0">
+        <img src="/logo/arkiv-icon-white.svg" alt="arkiv" className="h-5 w-5" />
+      </span>
+      <span className="hidden md:inline">Library</span>
+    </>
+  ) : (
+    mediaType + "s"
+  );
+
   return (
     <div className="flex flex-col min-h-full">
-      <div className={cn("sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 safe-header-padding sm:pb-6 pb-2 -mr-3", scrolled && "border-b")}>
+      <div className="sticky top-0 z-20 bg-background px-4 sm:px-6 safe-header-padding sm:pb-6">
         <LibraryControls
           mediaType={mediaType}
           hideSearch={hideSearch}
-          title={mediaType ? mediaType + "s" : "Collection"}
+          title={titleNode}
         />
+
+        {/* Mobile: search + Filter & Sort on same row (only for Books/Games, not Home) */}
+        {!hideSearch && !!mediaType && (
+          <div className="flex md:hidden items-center bg-background -mx-4 px-4">
+            <IconSearch className="h-4 w-4 text-muted-foreground pointer-events-none shrink-0" />
+            <Input
+              placeholder={`Search ${mediaType}s...`}
+              className="flex-1 h-11 border-0 focus-visible:ring-0 !bg-transparent dark:!bg-transparent"
+              value={filters.search}
+              onChange={(e) => setFilters({ search: e.target.value })}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex-1 bg-[#f5f5f5] dark:bg-[#171717]">
+        {/* Desktop: search below sticky header */}
         {!hideSearch && (
-          <div className="relative border-b bg-[#FBFBFB] dark:bg-[#0F0F0F]">
+          <div className="hidden md:block relative bg-background">
             <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder={`Search ${mediaType ? mediaType + "s" : "collection"}...`}
+              placeholder={`Search ${mediaType ? mediaType + "s" : "library"}...`}
               className="pl-12 h-11 border-0 focus-visible:ring-0 !bg-transparent dark:!bg-transparent"
               value={filters.search}
               onChange={(e) => setFilters({ search: e.target.value })}
@@ -76,45 +101,45 @@ const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
 
         <div data-transition-boundary="content-start" className="h-0" />
 
-        <div className={viewMode === "table" ? "pb-8" : "py-4 pl-4 pr-1"}>
-        {loading ? (
-          <LoadingState />
-        ) : items.length === 0 ? (
-          <EmptyState
-            title="No items found"
-            description="Try adjusting your filters or add some new items."
-            className="h-64"
-            titleClassName="mb-2"
-          />
-        ) : (
-          <>
-            {viewMode === "poster" ? (
-              <div className="poster-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {items.map((item) => (
-                  <PosterItem
-                    key={item.id}
-                    item={item}
-                    onEdit={handleEdit}
-                    mobileTapAction="details"
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col">
-                {items.map((item, index) => (
-                  <TableItem
-                    key={item.id}
-                    item={item}
-                    onEdit={handleEdit}
-                    mobileTapAction="details"
-                    stacked
-                    isFirst={index === 0}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        )}
+        <div className={viewMode === "table" ? "pb-8" : "p-4"}>
+          {loading ? (
+            <LoadingState />
+          ) : items.length === 0 ? (
+            <EmptyState
+              title="No items found"
+              description="Try adjusting your filters or add some new items."
+              className="h-64"
+              titleClassName="mb-2"
+            />
+          ) : (
+            <>
+              {viewMode === "poster" ? (
+                <div className="poster-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {items.map((item) => (
+                    <PosterItem
+                      key={item.id}
+                      item={item}
+                      onEdit={handleEdit}
+                      mobileTapAction="details"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  {items.map((item, index) => (
+                    <TableItem
+                      key={item.id}
+                      item={item}
+                      onEdit={handleEdit}
+                      mobileTapAction="details"
+                      stacked
+                      isFirst={index === 0}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
@@ -123,7 +148,6 @@ const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
         open={isSheetOpen}
         onOpenChange={handleSheetOpenChange}
       />
-
     </div>
   );
 }

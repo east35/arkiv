@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useLists } from "@/hooks/useLists"
+import { useCollections } from "@/hooks/useCollections"
 import { cn } from "@/lib/utils"
 
 const formSchema = z.object({
@@ -33,17 +33,17 @@ const formSchema = z.object({
   description: z.string().max(200, "Description is too long").optional(),
 })
 
-interface CreateListDialogProps {
+interface CreateCollectionDialogProps {
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  onCreated?: (listId: string) => void
+  onCreated?: (collectionId: string) => void
 }
 
-export function CreateListDialog({ open: controlledOpen, onOpenChange, onCreated }: CreateListDialogProps = {}) {
+export function CreateCollectionDialog({ open: controlledOpen, onOpenChange, onCreated }: CreateCollectionDialogProps = {}) {
   const [internalOpen, setInternalOpen] = useState(false)
   const open = controlledOpen ?? internalOpen
   const setOpen = onOpenChange ?? setInternalOpen
-  const { createList } = useLists()
+  const { createCollection } = useCollections()
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,14 +55,14 @@ export function CreateListDialog({ open: controlledOpen, onOpenChange, onCreated
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const list = await createList(values.name, values.description)
-      toast.success("List created")
+      const collection = await createCollection(values.name, values.description)
+      toast.success("Collection created")
       setOpen(false)
       form.reset()
-      onCreated?.(list.id)
+      onCreated?.(collection.id)
     } catch (error) {
       console.error(error)
-      toast.error("Failed to create list")
+      toast.error("Failed to create collection")
     }
   }
 
@@ -71,12 +71,12 @@ export function CreateListDialog({ open: controlledOpen, onOpenChange, onCreated
       {controlledOpen === undefined && (
         <DialogTrigger className={cn(buttonVariants({ variant: "default" }))}>
           <IconPlus className="mr-2 h-4 w-4" />
-          New List
+          New Collection
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create List</DialogTitle>
+          <DialogTitle>Create Collection</DialogTitle>
           <DialogDescription>
             Create a new collection to organize your games and books.
           </DialogDescription>

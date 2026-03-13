@@ -9,28 +9,28 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { useLists } from "@/hooks/useLists"
+import { useCollections } from "@/hooks/useCollections"
 import { useShelfStore } from "@/store/useShelfStore"
-import { CreateListDialog } from "@/components/lists/CreateListDialog"
+import { CreateCollectionDialog } from "@/components/collections/CreateCollectionDialog"
 import { cn } from "@/lib/utils"
-import type { List } from "@/types"
+import type { Collection } from "@/types"
 
-interface ManageListsDialogProps {
+interface ManageCollectionsDialogProps {
   itemId: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-function ListRow({ list, isMember, isToggling, onToggle, items }: {
-  list: List
+function CollectionRow({ collection, isMember, isToggling, onToggle, items }: {
+  collection: Collection
   isMember: boolean
   isToggling: boolean
   onToggle: () => void
   items: ReturnType<typeof useShelfStore.getState>["items"]
 }) {
-  const coverItemId = list.cover_item_id ?? list.first_item_id ?? null
+  const coverItemId = collection.cover_item_id ?? collection.first_item_id ?? null
   const coverUrl = coverItemId ? (items.find(i => i.id === coverItemId)?.cover_url ?? null) : null
-  const itemCount = list.item_count ?? 0
+  const itemCount = collection.item_count ?? 0
 
   return (
     <button
@@ -44,19 +44,19 @@ function ListRow({ list, isMember, isToggling, onToggle, items }: {
       {/* Cover thumbnail */}
       <div className="h-10 w-7 shrink-0 overflow-hidden rounded bg-muted">
         {coverUrl ? (
-          <img src={coverUrl} alt={list.name} className="h-full w-full object-cover" loading="lazy" />
+          <img src={coverUrl} alt={collection.name} className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-xs font-bold text-muted-foreground/30">
-            {list.name.charAt(0)}
+            {collection.name.charAt(0)}
           </div>
         )}
       </div>
 
       {/* Name & count */}
       <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{list.name}</p>
-        {list.description && (
-          <p className="text-xs text-muted-foreground truncate">{list.description}</p>
+        <p className="font-medium truncate">{collection.name}</p>
+        {collection.description && (
+          <p className="text-xs text-muted-foreground truncate">{collection.description}</p>
         )}
       </div>
 
@@ -75,18 +75,18 @@ function ListRow({ list, isMember, isToggling, onToggle, items }: {
   )
 }
 
-export function ManageListsDialog({ itemId, open, onOpenChange }: ManageListsDialogProps) {
-  const { lists, items } = useShelfStore()
-  const { fetchLists, fetchItemMemberships, addItemToList, removeItemFromList } = useLists()
+export function ManageCollectionsDialog({ itemId, open, onOpenChange }: ManageCollectionsDialogProps) {
+  const { collections, items } = useShelfStore()
+  const { fetchCollections, fetchItemMemberships, addItemToCollection, removeItemFromCollection } = useCollections()
 
-  const [memberListIds, setMemberListIds] = useState<Set<string>>(new Set())
+  const [memberCollectionIds, setMemberCollectionIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
 
   const refreshMemberships = async () => {
     const memberships = await fetchItemMemberships(itemId)
-    setMemberListIds(new Set(memberships.map(m => m.list_id)))
+    setMemberCollectionIds(new Set(memberships.map((membership) => membership.collection_id)))
   }
 
   useEffect(() => {
@@ -94,11 +94,11 @@ export function ManageListsDialog({ itemId, open, onOpenChange }: ManageListsDia
       const loadData = async () => {
         setLoading(true)
         try {
-          if (lists.length === 0) await fetchLists()
+          if (collections.length === 0) await fetchCollections()
           await refreshMemberships()
         } catch (err) {
           console.error(err)
-          toast.error("Failed to load list memberships")
+          toast.error("Failed to load collection memberships")
         } finally {
           setLoading(false)
         }
@@ -107,35 +107,39 @@ export function ManageListsDialog({ itemId, open, onOpenChange }: ManageListsDia
     }
   }, [open, itemId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const toggleList = async (listId: string) => {
-    const isMember = memberListIds.has(listId)
-    setTogglingId(listId)
+  const toggleCollection = async (collectionId: string) => {
+    const isMember = memberCollectionIds.has(collectionId)
+    setTogglingId(collectionId)
     try {
       if (isMember) {
-        await removeItemFromList(listId, itemId)
-        setMemberListIds(prev => { const next = new Set(prev); next.delete(listId); return next })
-        toast.success("Removed from list")
+        await removeItemFromCollection(collectionId, itemId)
+        setMemberCollectionIds((prev) => {
+          const next = new Set(prev)
+          next.delete(collectionId)
+          return next
+        })
+        toast.success("Removed from collection")
       } else {
-        await addItemToList(listId, itemId)
-        setMemberListIds(prev => new Set(prev).add(listId))
-        toast.success("Added to list")
+        await addItemToCollection(collectionId, itemId)
+        setMemberCollectionIds((prev) => new Set(prev).add(collectionId))
+        toast.success("Added to collection")
       }
-      fetchLists()
+      fetchCollections()
     } catch (err) {
       console.error(err)
-      toast.error(isMember ? "Failed to remove from list" : "Failed to add to list")
+      toast.error(isMember ? "Failed to remove from collection" : "Failed to add to collection")
     } finally {
       setTogglingId(null)
     }
   }
 
-  const handleListCreated = async (listId: string) => {
+  const handleCollectionCreated = async (collectionId: string) => {
     try {
-      await addItemToList(listId, itemId)
-      await Promise.all([refreshMemberships(), fetchLists()])
-      toast.success("Added to new list")
+      await addItemToCollection(collectionId, itemId)
+      await Promise.all([refreshMemberships(), fetchCollections()])
+      toast.success("Added to new collection")
     } catch {
-      toast.error("List created but failed to add item")
+      toast.error("Collection created but failed to add item")
     }
   }
 
@@ -144,8 +148,8 @@ export function ManageListsDialog({ itemId, open, onOpenChange }: ManageListsDia
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Manage Lists</DialogTitle>
-            <DialogDescription>Select lists to add this item to.</DialogDescription>
+            <DialogTitle>Manage Collections</DialogTitle>
+            <DialogDescription>Select collections to add this item to.</DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto py-1">
@@ -153,16 +157,16 @@ export function ManageListsDialog({ itemId, open, onOpenChange }: ManageListsDia
               <div className="flex justify-center py-8">
                 <IconLoader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : lists.length === 0 ? (
-              <p className="text-sm text-center text-muted-foreground py-4">No lists yet.</p>
+            ) : collections.length === 0 ? (
+              <p className="text-sm text-center text-muted-foreground py-4">No collections yet.</p>
             ) : (
-              lists.map(list => (
-                <ListRow
-                  key={list.id}
-                  list={list}
-                  isMember={memberListIds.has(list.id)}
-                  isToggling={togglingId === list.id}
-                  onToggle={() => toggleList(list.id)}
+              collections.map(collection => (
+                <CollectionRow
+                  key={collection.id}
+                  collection={collection}
+                  isMember={memberCollectionIds.has(collection.id)}
+                  isToggling={togglingId === collection.id}
+                  onToggle={() => toggleCollection(collection.id)}
                   items={items}
                 />
               ))
@@ -175,16 +179,16 @@ export function ManageListsDialog({ itemId, open, onOpenChange }: ManageListsDia
               className="flex items-center gap-2 w-full px-2 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               <IconPlus className="h-4 w-4" />
-              New list — add item automatically
+              New collection — add item automatically
             </button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <CreateListDialog
+      <CreateCollectionDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={handleListCreated}
+        onCreated={handleCollectionCreated}
       />
     </>
   )

@@ -9,7 +9,7 @@ import {
 import type { Status } from "@/types"
 
 export const statusIcons: Record<Status, React.ReactNode> = {
-  in_collection: <IconDeviceFloppyFilled className="h-4 w-4" />,
+  in_library: <IconDeviceFloppyFilled className="h-4 w-4" />,
   backlog: <IconBookmarkFilled className="h-4 w-4" />,
   in_progress: <IconPlayerPlayFilled className="h-4 w-4" />,
   completed: <IconFlagFilled className="h-4 w-4" />,
@@ -19,7 +19,7 @@ export const statusIcons: Record<Status, React.ReactNode> = {
 
 export const statusLabels: Record<string, string> = {
   all: "All Status",
-  in_collection: "In Collection",
+  in_library: "In Library",
   backlog: "Backlog",
   in_progress: "In Progress",
   paused: "Paused",
@@ -33,7 +33,7 @@ export const mediaTypeColors = {
 } as const
 
 export const statusColors: Record<Status, string> = {
-  in_collection: "bg-slate-500 text-white border-slate-600",
+  in_library: "bg-slate-500 text-white border-slate-600",
   backlog: "bg-purple-600 text-white border-purple-700",
   in_progress: "bg-primary text-primary-foreground border-primary",
   completed: "bg-green-600 text-white border-green-700",

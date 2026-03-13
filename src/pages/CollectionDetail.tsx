@@ -1,25 +1,19 @@
 import { useEffect, useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import {
   IconArrowLeft,
   IconTrash,
-  IconDots,
   IconQuestionMark,
   IconSearch,
 } from "@tabler/icons-react";
 
 import { useShelfStore } from "@/store/useShelfStore";
-import { useLists } from "@/hooks/useLists";
+import { useCollections } from "@/hooks/useCollections";
 import { useItems } from "@/hooks/useItems";
 import { LibraryControls } from "@/components/library/LibraryControls";
+import { ItemDetailHeader } from "@/components/item-detail/ItemDetailHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,19 +30,20 @@ import { StatusSheet } from "@/components/status-sheet/StatusSheet";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { toast } from "sonner";
-import type { FullItem, ListItem } from "@/types";
-import { iconActionButtonClassName } from "@/lib/icon-action-button";
+import type { FullItem, CollectionItem } from "@/types";
+import { cn } from "@/lib/utils";
 
-export default function ListDetail() {
+export default function CollectionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  useOutletContext<{ scrolled?: boolean }>();
 
-  const { lists, items: allItems, viewMode } = useShelfStore();
-  const { fetchLists, fetchListItems, deleteList, removeItemFromList } =
-    useLists();
+  const { collections, items: allItems, viewMode } = useShelfStore();
+  const { fetchCollections, fetchCollectionItems, deleteCollection, removeItemFromCollection } =
+    useCollections();
   const { fetchItems } = useItems(); // To ensure we have items loaded
 
-  const [listItems, setListItems] = useState<ListItem[]>([]);
+  const [collectionItems, setCollectionItems] = useState<CollectionItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
@@ -56,8 +51,8 @@ export default function ListDetail() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  // Get list metadata from store
-  const list = lists.find((l) => l.id === id);
+  // Get collection metadata from store
+  const collection = collections.find((entry) => entry.id === id);
 
   // Fetch data
   useEffect(() => {
@@ -67,15 +62,15 @@ export default function ListDetail() {
       setLoading(true);
       try {
         // Ensure basics are loaded
-        if (lists.length === 0) await fetchLists();
+        if (collections.length === 0) await fetchCollections();
         if (allItems.length === 0) await fetchItems();
 
-        // Fetch list members
-        const members = await fetchListItems(id);
-        setListItems(members);
+        // Fetch collection members
+        const members = await fetchCollectionItems(id);
+        setCollectionItems(members);
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load list details");
+        toast.error("Failed to load collection details");
       } finally {
         setLoading(false);
       }
@@ -84,41 +79,57 @@ export default function ListDetail() {
     loadData();
   }, [
     id,
-    lists.length,
+    collections.length,
     allItems.length,
-    fetchLists,
+    fetchCollections,
     fetchItems,
-    fetchListItems,
+    fetchCollectionItems,
   ]);
+
+  const hydratedItems = useMemo(
+    () =>
+      collectionItems
+      .map((membership) => allItems.find((item) => item.id === membership.item_id))
+      .filter((item): item is FullItem => !!item),
+    [collectionItems, allItems],
+  );
 
   // Hydrate + filter items
   const displayItems = useMemo(() => {
-    const hydrated = listItems
-      .map((li) => allItems.find((i) => i.id === li.item_id))
-      .filter((i): i is FullItem => !!i);
-    if (!search.trim()) return hydrated;
+    if (!search.trim()) return hydratedItems;
     const q = search.toLowerCase();
-    return hydrated.filter((i) => i.title.toLowerCase().includes(q));
-  }, [listItems, allItems, search]);
+    return hydratedItems.filter((i) => i.title.toLowerCase().includes(q));
+  }, [hydratedItems, search]);
 
-  const handleDeleteList = async () => {
-    if (!list) return;
+  const gameCount = hydratedItems.filter((item) => item.media_type === "game").length;
+  const bookCount = hydratedItems.filter((item) => item.media_type === "book").length;
+  const collectionMetaParts = collection
+    ? [
+        collection.description,
+        ...(gameCount > 0 ? [`${gameCount} ${gameCount === 1 ? "game" : "games"}`] : []),
+        ...(bookCount > 0 ? [`${bookCount} ${bookCount === 1 ? "book" : "books"}`] : []),
+      ]
+        .filter(Boolean)
+    : [];
+
+  const handleDeleteCollection = async () => {
+    if (!collection) return;
     try {
-      await deleteList(list.id);
-      toast.success("List deleted");
-      navigate("/lists");
+      await deleteCollection(collection.id);
+      toast.success("Collection deleted");
+      navigate("/collections");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete list");
+      toast.error("Failed to delete collection");
     }
   };
 
-  const handleRemoveFromList = async (itemId: string) => {
-    if (!list) return;
+  const handleRemoveFromCollection = async (itemId: string) => {
+    if (!collection) return;
     try {
-      await removeItemFromList(list.id, itemId);
-      setListItems((prev) => prev.filter((li) => li.item_id !== itemId));
-      toast.success("Item removed from list");
+      await removeItemFromCollection(collection.id, itemId);
+      setCollectionItems((prev) => prev.filter((membership) => membership.item_id !== itemId));
+      toast.success("Item removed from collection");
     } catch (error) {
       console.error(error);
       toast.error("Failed to remove item");
@@ -137,14 +148,14 @@ export default function ListDetail() {
     }
   };
 
-  if (loading && !list) {
+  if (loading && !collection) {
     return <LoadingState className="h-full" />;
   }
 
-  if (!list) {
+  if (!collection) {
     return (
       <EmptyState
-        title="List not found"
+        title="Collection not found"
         description="It may have been deleted or the link is invalid."
         icon={<IconQuestionMark className="h-12 w-12" />}
         className="h-full"
@@ -161,72 +172,58 @@ export default function ListDetail() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header bar — matches ItemDetailHeader styling */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/40 safe-header-bar">
-        <div className="flex items-center justify-between">
+      <ItemDetailHeader
+        backLabel="Collections"
+desktopAction={
           <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            type="button"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="flex items-center self-stretch px-3 md:px-5 text-sm font-semibold text-white bg-destructive hover:bg-destructive/90 transition-colors"
           >
-            <IconArrowLeft className="h-5 w-5" />
-            <span className="hidden sm:inline">Back to Lists</span>
-            <span className="sm:hidden">Back</span>
+            Delete Collection
           </button>
+        }
+      />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className={iconActionButtonClassName({ size: "lg" })}
-            >
-              <IconDots className="h-4 w-4 mr-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={() => setIsDeleteDialogOpen(true)}
-              >
-                <IconTrash className="h-4 w-4 mr-2" />
-                Delete List
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* List info + controls */}
-      <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{list.name}</h1>
-            {list.description && (
-              <p className="text-muted-foreground text-sm mt-0.5">
-                {list.description}
-              </p>
+      <div className="bg-background px-4 sm:px-6 py-5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-3xl font-bold tracking-tight">{collection.name}</h1>
+            {collectionMetaParts.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-y-1 text-sm text-muted-foreground">
+                {collectionMetaParts.map((part, index) => (
+                  <div key={`${part}-${index}`} className="flex items-center">
+                    {index > 0 && (
+                      <span className="mx-3 text-border/60">|</span>
+                    )}
+                    <span>{part}</span>
+                  </div>
+                ))}
+              </div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">
-              {displayItems.length}{" "}
-              {displayItems.length === 1 ? "item" : "items"}
-            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder="Search..."
-                className="pl-9 h-9 w-40 sm:w-48 bg-[#FBFBFB] dark:bg-[#0F0F0F]"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+          <div className={cn("lg:min-w-[520px] lg:max-w-[620px] lg:w-auto")}>
             <LibraryControls hideSearch />
           </div>
         </div>
       </div>
 
+      <div className="relative bg-background">
+        <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Search collection..."
+          className="pl-12 h-11 border-0 focus-visible:ring-0 !bg-transparent dark:!bg-transparent"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
       <div className="flex-1 px-4 sm:px-6 pt-6 pb-8 bg-[#f5f5f5] dark:bg-[#171717]">
         {displayItems.length === 0 ? (
           <EmptyState
-            title="Empty List"
-            description="Add items from your collection or search."
+            title="Empty Collection"
+            description="Add items from your library or search."
             className="h-64 border-2 border-dashed rounded-lg bg-muted/10 mx-4 sm:mx-0"
             titleClassName="mb-2"
           />
@@ -235,17 +232,17 @@ export default function ListDetail() {
             {viewMode === "poster" ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-8">
                 {displayItems.map((item) => (
-                  <div key={item.id} className="relative group/list-item">
+                  <div key={item.id} className="relative group/collection-item">
                     <PosterItem item={item} onEdit={handleEdit} />
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="absolute top-2 left-2 h-6 w-6 opacity-0 group-hover/list-item:opacity-100 focus:opacity-100 transition-opacity z-10"
-                      title="Remove from list"
+                      className="absolute top-2 left-2 h-6 w-6 opacity-0 group-hover/collection-item:opacity-100 focus:opacity-100 transition-opacity z-10"
+                      title="Remove from collection"
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        handleRemoveFromList(item.id);
+                        handleRemoveFromCollection(item.id);
                       }}
                     >
                       <IconTrash className="h-3 w-3" />
@@ -258,7 +255,7 @@ export default function ListDetail() {
                 {displayItems.map((item, index) => (
                   <div
                     key={item.id}
-                    className="group/list-item relative"
+                    className="group/collection-item relative"
                   >
                     <div className="flex-1 min-w-0">
                       <TableItem
@@ -272,9 +269,9 @@ export default function ListDetail() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-destructive opacity-0 group-hover/list-item:opacity-100 focus:opacity-100 transition-opacity"
-                      title="Remove from list"
-                      onClick={() => handleRemoveFromList(item.id)}
+                      className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-destructive opacity-0 group-hover/collection-item:opacity-100 focus:opacity-100 transition-opacity"
+                      title="Remove from collection"
+                      onClick={() => handleRemoveFromCollection(item.id)}
                     >
                       <IconTrash className="h-4 w-4" />
                     </Button>
@@ -298,16 +295,16 @@ export default function ListDetail() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete list?</AlertDialogTitle>
+            <AlertDialogTitle>Delete collection?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{list.name}". This action cannot be
+              This will permanently delete "{collection.name}". This action cannot be
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteList}
+              onClick={handleDeleteCollection}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
               Delete

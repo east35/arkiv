@@ -6,7 +6,7 @@ import { PageTransitionReveal } from "./PageTransitionReveal";
 import { cn } from "@/lib/utils";
 
 // Routes where the mobile bottom nav should be hidden entirely
-const hideNavPattern = /^\/(lists\/|item\/)/;
+const hideNavPattern = /^\/(collections\/|item\/)/;
 const collectionRoutes = ["/books", "/games"];
 const AUTO_COLLAPSE_BREAKPOINT = 1100;
 
@@ -16,10 +16,10 @@ export default function AppLayout() {
   const isCollectionRoute = collectionRoutes.includes(location.pathname);
   const isHomeRoute = location.pathname === "/";
   const isSearchRoute = location.pathname === "/search";
-  const isListsRoute = location.pathname === "/lists";
+  const isCollectionsRoute = location.pathname === "/collections";
   const isSettingsRoute = location.pathname === "/settings";
   const isSurfaceRoute =
-    isCollectionRoute || isHomeRoute || isSearchRoute || isListsRoute || isSettingsRoute;
+    isCollectionRoute || isHomeRoute || isSearchRoute || isCollectionsRoute || isSettingsRoute;
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem("sidebar-collapsed") === "true";

@@ -86,7 +86,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 safe-header-padding sm:pb-6 pb-2 border-b">
+      <div className="sticky top-0 z-20 bg-background px-4 sm:px-6 safe-header-padding sm:pb-6 pb-2">
         <LibraryControls
           title={
             <>
