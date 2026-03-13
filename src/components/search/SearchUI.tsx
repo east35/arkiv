@@ -39,7 +39,6 @@ import type { MediaType, FullItem } from "@/types";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { CollectionTypeSwitcher } from "@/components/library/CollectionTypeSwitcher";
 import { useShelfStore } from "@/store/useShelfStore";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 export function SearchUI() {
@@ -57,11 +56,9 @@ export function SearchUI() {
   );
   const [pendingItem, setPendingItem] = useState<FullItem | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [confirmResult, setConfirmResult] = useState<SearchResult | null>(null);
   const statusChoiceMade = useRef(false);
   const viewMode = useShelfStore((state) => state.viewMode);
   const setViewMode = useShelfStore((state) => state.setViewMode);
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   const { scrolled } = useOutletContext<{ scrolled?: boolean }>();
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
@@ -94,19 +91,12 @@ export function SearchUI() {
   }, [debouncedQuery, mediaType, search, clearResults]);
 
   const handleAdd = async (result: SearchResult) => {
-    const item = await commit(result.id, mediaType);
+    const item = await commit(result.id, result.mediaType);
     if (item) {
       setPendingItem(item);
       statusChoiceMade.current = false;
       setAlertPhase("status");
     }
-  };
-
-  const handleConfirmAdd = async () => {
-    if (!confirmResult) return;
-    const result = confirmResult;
-    setConfirmResult(null);
-    await handleAdd(result);
   };
 
   // Status alert handlers
@@ -239,9 +229,7 @@ export function SearchUI() {
                   key={result.id}
                   result={result}
                   viewMode={viewMode}
-                  isDesktop={isDesktop}
                   onAdd={handleAdd}
-                  onMobileTap={setConfirmResult}
                   isAdding={committingId === result.id}
                 />
               ))}
@@ -253,9 +241,7 @@ export function SearchUI() {
                   key={result.id}
                   result={result}
                   viewMode={viewMode}
-                  isDesktop={isDesktop}
                   onAdd={handleAdd}
-                  onMobileTap={setConfirmResult}
                   isAdding={committingId === result.id}
                 />
               ))}
@@ -269,28 +255,6 @@ export function SearchUI() {
         open={isSheetOpen}
         onOpenChange={handleSheetOpenChange}
       />
-
-      <AlertDialog
-        open={!!confirmResult}
-        onOpenChange={(open) => {
-          if (!open) setConfirmResult(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Add to collection?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Add "{confirmResult?.title}" to your collection?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmAdd}>
-              Add to Collection
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Alert 1: offer to update status */}
       <AlertDialog
