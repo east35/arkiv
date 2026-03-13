@@ -291,7 +291,7 @@ async function getGameDetails(id: number) {
            category,
            external_games.category, external_games.uid,
            remasters.name, standalone_expansions.name,
-           similar_games.name, similar_games.cover.image_id;
+           similar_games.id, similar_games.name, similar_games.cover.image_id;
     limit 1;
   `
   const results = await igdbFetch("games", body) as Array<Record<string, unknown>>
@@ -341,13 +341,57 @@ async function getGameDetails(id: number) {
     parentGame: game.parent_game ? (game.parent_game as { name: string }).name : null,
     remasters: ((game.remasters as Array<{ name: string }>) || []).map((r) => r.name),
     standaloneExpansions: ((game.standalone_expansions as Array<{ name: string }>) || []).map((e) => e.name),
-    similarGames: ((game.similar_games as Array<{ name: string; cover?: { image_id: string } }>) || []).map((g) => ({
+    similarGames: ((game.similar_games as Array<{ id: number; name: string; cover?: { image_id: string } }>) || []).map((g) => ({
+      id: g.id,
       name: g.name,
       cover: g.cover
-        ? `https://images.igdb.com/igdb/image/upload/t_cover_small/${g.cover.image_id}.jpg`
+        ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${g.cover.image_id}.jpg`
         : null,
     })),
   }
+}
+
+// ---------------------------------------------------------------------------
+// Collection Games: returns all games in a named collection
+// ---------------------------------------------------------------------------
+async function getCollectionGames(collectionName: string) {
+  // Step 1: Find the collection ID by name (exact match, case-insensitive)
+  const searchBody = `
+    search "${collectionName.replace(/"/g, '\\"')}";
+    fields id, name, games;
+    limit 5;
+  `
+  const collections = await igdbFetch("collections", searchBody) as Array<Record<string, unknown>>
+  if (!collections.length) return []
+
+  // Pick the best match (prefer exact name match)
+  const exact = collections.find(
+    (c) => (c.name as string).toLowerCase() === collectionName.toLowerCase()
+  )
+  const collection = exact || collections[0]
+  const gameIds = (collection.games as number[]) || []
+  if (!gameIds.length) return []
+
+  // Step 2: Fetch game details for all games in the collection (up to 50)
+  const idsClause = gameIds.slice(0, 50).join(",")
+  const gamesBody = `
+    where id = (${idsClause});
+    fields id, name, cover.image_id, first_release_date;
+    sort first_release_date asc;
+    limit 50;
+  `
+  const games = await igdbFetch("games", gamesBody) as Array<Record<string, unknown>>
+
+  return games.map((game) => ({
+    id: game.id,
+    name: game.name,
+    cover: game.cover
+      ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${(game.cover as Record<string, string>).image_id}.jpg`
+      : null,
+    releaseDate: game.first_release_date
+      ? new Date((game.first_release_date as number) * 1000).toISOString().split("T")[0]
+      : null,
+  }))
 }
 
 // ---------------------------------------------------------------------------
@@ -392,8 +436,12 @@ serve(async (req: Request) => {
         data = await getGameDetails(validateGameId(id))
         break
 
+      case "collection-games":
+        data = await getCollectionGames(validateSearchQuery(query))
+        break
+
       default:
-        throw new HttpError(400, 'Invalid action. Use "search" or "details".')
+        throw new HttpError(400, 'Invalid action. Use "search", "details", or "collection-games".')
     }
 
     return jsonResponse(req, data)

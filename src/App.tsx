@@ -10,6 +10,7 @@ import ListDetail from "@/pages/ListDetail"
 import Settings from "@/pages/Settings"
 import Import from "@/pages/Import"
 import ItemDetail from "@/pages/ItemDetail"
+import ExternalItemDetail from "@/pages/ExternalItemDetail"
 import Login from "@/pages/Login"
 import Register from "@/pages/Register"
 import Marketing from "@/pages/Marketing"
@@ -35,6 +36,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
           <Route path="/item/:id" element={<ItemDetail />} />
+          <Route path="/item/external/:mediaType/:externalId" element={<ExternalItemDetail />} />
           <Route path="/games" element={<Games />} />
           <Route path="/books" element={<Books />} />
           <Route path="/statistics" element={<Navigate to="/settings?tab=statistics" replace />} />

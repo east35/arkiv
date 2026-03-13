@@ -152,7 +152,6 @@ export function PosterItem({
   const [isManageListsOpen, setIsManageListsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [flyoutSide, setFlyoutSide] = useState<"right" | "left">("right");
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { enrichSingle } = useMetadataEnrich();
   const preferences = useShelfStore((s) => s.preferences);
@@ -162,6 +161,8 @@ export function PosterItem({
     : statusDate
       ? formatDate(statusDate, preferences?.date_format)
       : statusLabels[item.status];
+  const overlayActionClassName =
+    "flex items-center gap-3 px-3 flex-1 text-left w-full transition-colors hover:bg-black/10 dark:hover:bg-white/10";
 
   // Cancel hover on scroll
   useEffect(() => {
@@ -173,10 +174,6 @@ export function PosterItem({
 
   const handleMouseEnter = () => {
     if (window.innerWidth < 768) return;
-    if (wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      setFlyoutSide(rect.right + rect.width > window.innerWidth ? "left" : "right");
-    }
     setIsHovered(true);
   };
 
@@ -211,25 +208,21 @@ export function PosterItem({
           </Link>
         </div>
 
-        {/* Hover flyout — desktop only */}
+        {/* Hover flyout — desktop only, overlays the poster */}
         <div
           className={cn(
-            "absolute top-0 inset-y-0 w-full z-10 bg-zinc-900 text-white flex-col hidden md:flex",
-            flyoutSide === "right" ? "left-full" : "right-full",
-            "transition-[opacity,transform] duration-150",
+            "absolute inset-0 z-10 hidden md:flex flex-col border border-border/60 bg-background/95 text-foreground shadow-xl backdrop-blur-sm dark:bg-zinc-900/95 dark:text-white",
+            "transition-opacity duration-150",
             isHovered
-              ? "opacity-100 translate-x-0 pointer-events-auto"
-              : cn(
-                  "opacity-0 pointer-events-none",
-                  flyoutSide === "right" ? "-translate-x-2" : "translate-x-2",
-                ),
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none",
           )}
           onClick={(e) => e.stopPropagation()}
         >
           <Link
             to={`/item/${item.id}`}
             state={{ backLabel }}
-            className="flex items-center gap-3 px-3 flex-1 hover:bg-white/10 w-full"
+            className={overlayActionClassName}
             onClick={() => setIsHovered(false)}
           >
             <IconEye className="h-4 w-4 shrink-0" />
@@ -237,7 +230,7 @@ export function PosterItem({
           </Link>
 
           <button
-            className="flex items-center gap-3 px-3 flex-1 hover:bg-white/10 text-left w-full"
+            className={overlayActionClassName}
             onClick={() => { setIsHovered(false); onEdit(item); }}
           >
             <IconPencil className="h-4 w-4 shrink-0" />
@@ -245,7 +238,7 @@ export function PosterItem({
           </button>
 
           <button
-            className="flex items-center gap-3 px-3 flex-1 hover:bg-white/10 text-left w-full disabled:opacity-50"
+            className={cn(overlayActionClassName, "disabled:opacity-50")}
             disabled={syncing}
             onClick={async () => {
               setSyncing(true);
@@ -257,7 +250,7 @@ export function PosterItem({
           </button>
 
           <button
-            className="flex items-center gap-3 px-3 flex-1 hover:bg-white/10 text-left w-full"
+            className={overlayActionClassName}
             onClick={() => { setIsHovered(false); setIsManageListsOpen(true); }}
           >
             <IconPlaylistAdd className="h-4 w-4 shrink-0" />
@@ -265,7 +258,7 @@ export function PosterItem({
           </button>
 
           <button
-            className="flex items-center gap-3 px-3 flex-1 bg-red-600 hover:bg-red-700 text-left w-full"
+            className="flex items-center gap-3 px-3 flex-1 bg-destructive text-destructive-foreground text-left w-full transition-colors hover:bg-destructive/90"
             onClick={() => { setIsHovered(false); onEdit(item); }}
           >
             <IconTrash className="h-4 w-4 shrink-0" />

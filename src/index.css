@@ -145,7 +145,6 @@ main.app-scroll-area {
   --app-scrollbar-thumb-hover: color-mix(in srgb, var(--foreground) 58%, transparent);
   --app-scrollbar-thumb-active: color-mix(in srgb, var(--foreground) 70%, transparent);
   scrollbar-width: auto;
-  scrollbar-gutter: stable;
   scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
 }
 
@@ -173,15 +172,6 @@ main.app-scroll-area::-webkit-scrollbar-thumb:hover {
 
 main.app-scroll-area::-webkit-scrollbar-thumb:active {
   background-color: var(--app-scrollbar-thumb-active);
-}
-
-/* Poster grid: dim non-hovered items */
-.poster-grid:has([data-hovered]) .poster-item:not([data-hovered]) {
-  opacity: 0.35;
-  transition: opacity 150ms ease;
-}
-.poster-grid .poster-item {
-  transition: opacity 150ms ease;
 }
 
 /* iOS PWA safe area utilities */
