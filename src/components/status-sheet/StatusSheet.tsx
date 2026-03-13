@@ -71,6 +71,8 @@ const formSchema = z.object({
   progress: z.union([z.string(), z.number(), z.null()]).optional(),
   progress_hours: z.union([z.string(), z.number(), z.null()]).optional(),
   progress_minutes: z.union([z.string(), z.number(), z.null()]).optional(),
+  active_platform: z.string().nullable().optional(),
+  format: z.string().nullable().optional(),
   started_at: z.date().nullable().optional(),
   completed_at: z.date().nullable().optional(),
   paused_at: z.date().nullable().optional(),
@@ -88,13 +90,19 @@ interface StatusSheetProps {
   item: FullItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleteSuccess?: (item: FullItem) => void;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
+export function StatusSheet({
+  item,
+  open,
+  onOpenChange,
+  onDeleteSuccess,
+}: StatusSheetProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const { editItem, deleteItem } = useItems();
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -111,6 +119,8 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
       progress: "",
       progress_hours: "",
       progress_minutes: "",
+      active_platform: null,
+      format: null,
       started_at: null,
       completed_at: null,
       paused_at: null,
@@ -130,6 +140,10 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
           item.media_type === "game" ? (item.game.progress_hours ?? "") : "",
         progress_minutes:
           item.media_type === "game" ? (item.game.progress_minutes ?? "") : "",
+        active_platform:
+          item.media_type === "game" ? (item.game.active_platform ?? null) : null,
+        format:
+          item.media_type === "book" ? (item.book.format ?? null) : null,
         started_at: item.started_at ? new Date(item.started_at) : null,
         completed_at: item.completed_at ? new Date(item.completed_at) : null,
         paused_at: item.paused_at ? new Date(item.paused_at) : null,
@@ -176,11 +190,13 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
       if (item.media_type === "book") {
         extensionUpdates = {
           progress: cleanNumber(values.progress, 0),
+          format: values.format || null,
         };
       } else {
         extensionUpdates = {
           progress_hours: cleanNumber(values.progress_hours, 0) || 0,
           progress_minutes: cleanNumber(values.progress_minutes, 0, 59) || 0,
+          active_platform: values.active_platform || null,
         };
       }
 
@@ -201,6 +217,7 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
       await deleteItem(item.id);
       toast.success("Item deleted");
       onOpenChange(false);
+      onDeleteSuccess?.(item);
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete item");
@@ -373,7 +390,59 @@ export function StatusSheet({ item, open, onOpenChange }: StatusSheetProps) {
           )}
         </div>
 
-        {/* Row 3: Dates — always show Started, plus the status-specific date */}
+        {/* Row 3: Platform (games) / Format (books) */}
+        {item.media_type === "game" && item.game.platforms.length > 0 && (
+          <FormField
+            control={form.control}
+            name="active_platform"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Platform</FormLabel>
+                <FormControl>
+                  <NativeSelect
+                    value={field.value ?? ""}
+                    onValueChange={(val) => field.onChange(val || null)}
+                    wrapperClassName="w-full"
+                  >
+                    <option value="">Select platform…</option>
+                    {item.game.platforms.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {item.media_type === "book" && (
+          <FormField
+            control={form.control}
+            name="format"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Format</FormLabel>
+                <FormControl>
+                  <NativeSelect
+                    value={field.value ?? ""}
+                    onValueChange={(val) => field.onChange(val || null)}
+                    wrapperClassName="w-full"
+                  >
+                    <option value="">Select format…</option>
+                    <option value="physical">Physical</option>
+                    <option value="digital">Digital</option>
+                  </NativeSelect>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* Row 4: Dates — always show Started, plus the status-specific date */}
         <div className="space-y-4 border p-4 bg-muted/20">
           <h4 className="text-sm font-medium leading-none mb-4">Dates</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -14,6 +14,7 @@ export function ItemDetailSidebar({
   onEditClick,
 }: ItemDetailSidebarProps) {
   const isGame = item.media_type === "game";
+  const platformLabel = isGame ? "Platform" : "Format";
   const coverUrl =
     item.cover_url ||
     (isGame
@@ -52,10 +53,10 @@ export function ItemDetailSidebar({
 
       {/* Platform / Format row */}
       <div className="flex items-center justify-between py-3  px-4 border-t border-border/60">
-        <span className="text-sm text-muted-foreground">Platform</span>
+        <span className="text-sm text-muted-foreground">{platformLabel}</span>
         <span className="flex items-center gap-2 text-sm font-medium">
           {isGame
-            ? item.game.platforms[0] || "—"
+            ? item.game.active_platform || item.game.platforms[0] || "—"
             : item.book.format || "Digital"}
           <button
             onClick={onEditClick}

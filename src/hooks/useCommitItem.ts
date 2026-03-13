@@ -145,6 +145,7 @@ export function useCommitItem() {
           player_perspectives: gameDetails!.playerPerspectives ?? [],
           game_category: gameDetails!.gameCategory ?? null,
           steam_id: gameDetails!.steamId ?? null,
+          active_platform: null,
           similar_games: gameDetails!.similarGames ?? [],
         } satisfies Omit<GameFields, "item_id">
       }

@@ -95,7 +95,8 @@ export interface GameFields {
   player_perspectives: string[]
   game_category: number | null
   steam_id: string | null
-  similar_games: Array<{ name: string; cover: string | null }>
+  active_platform: string | null
+  similar_games: Array<{ id?: number; name: string; cover: string | null }>
 }
 
 /** Full book: core item + book-specific fields */
@@ -226,7 +227,7 @@ export interface IgdbGameDetails {
   parentGame: string | null
   remasters: string[]
   standaloneExpansions: string[]
-  similarGames: Array<{ name: string; cover: string | null }>
+  similarGames: Array<{ id: number; name: string; cover: string | null }>
 }
 
 /** Hardcover search result (compact) */

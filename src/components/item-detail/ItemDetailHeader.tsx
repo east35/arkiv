@@ -1,13 +1,13 @@
-import { useNavigate } from "react-router-dom"
-import { IconArrowLeft, IconEdit, IconFlag } from "@tabler/icons-react"
-import { cn } from "@/lib/utils"
-import { statusIcons } from "@/components/status-icons"
-import type { FullItem, Status } from "@/types"
+import { useNavigate } from "react-router-dom";
+import { IconArrowLeft, IconEdit, IconFlag } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
+import { statusIcons } from "@/components/status-icons";
+import type { FullItem, Status } from "@/types";
 
 interface ItemDetailHeaderProps {
-  item: FullItem
-  backLabel: string | null
-  onStatusClick: () => void
+  item: FullItem;
+  backLabel: string | null;
+  onStatusClick: () => void;
 }
 
 const statusBg: Record<Status, string> = {
@@ -17,17 +17,22 @@ const statusBg: Record<Status, string> = {
   completed: "bg-green-500 text-green-950",
   paused: "bg-yellow-400 text-yellow-950",
   dropped: "bg-red-500 text-red-950",
-}
+};
 
-export function ItemDetailHeader({ item, backLabel, onStatusClick }: ItemDetailHeaderProps) {
-  const navigate = useNavigate()
+export function ItemDetailHeader({
+  item,
+  backLabel,
+  onStatusClick,
+}: ItemDetailHeaderProps) {
+  const navigate = useNavigate();
 
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-b border-border/40">
+    <div className="sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-b">
       {/* Back link */}
       <button
         onClick={() => navigate(-1)}
         className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+        style={{ height: "55px" }}
       >
         <IconArrowLeft className="h-5 w-5" />
         <span className="hidden sm:inline">
@@ -41,7 +46,7 @@ export function ItemDetailHeader({ item, backLabel, onStatusClick }: ItemDetailH
         onClick={onStatusClick}
         className={cn(
           "hidden md:flex items-center self-stretch px-5 gap-3 text-sm font-semibold transition-opacity hover:opacity-90",
-          statusBg[item.status]
+          statusBg[item.status],
         )}
       >
         {item.status === "completed" ? (
@@ -49,10 +54,14 @@ export function ItemDetailHeader({ item, backLabel, onStatusClick }: ItemDetailH
         ) : (
           statusIcons[item.status]
         )}
-        <span>{item.status.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}</span>
+        <span>
+          {item.status
+            .replace("_", " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase())}
+        </span>
         <div className="h-5 w-px bg-white/30" />
         <IconEdit className="h-4 w-4" />
       </button>
     </div>
-  )
+  );
 }

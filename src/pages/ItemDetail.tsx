@@ -39,6 +39,9 @@ import { ItemDetailContent } from "@/components/item-detail/ItemDetailContent"
 import { MobileAccordion, AccordionSection } from "@/components/item-detail/MobileAccordion"
 import { NotesPanel } from "@/components/item-detail/NotesPanel"
 import { RecommendationsRow } from "@/components/item-detail/RecommendationsRow"
+import { CollectionRow } from "@/components/item-detail/CollectionRow"
+import { SeriesRow } from "@/components/item-detail/SeriesRow"
+import { getListCoverUrl } from "@/components/item-detail/list-cover"
 
 /* ── Status colour map (matches PosterItem STATUS_BAR) ── */
 const statusBg: Record<Status, string> = {
@@ -66,6 +69,19 @@ export default function ItemDetail() {
   const [isNotesOpen, setIsNotesOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<"overview" | "notes">("overview")
   const [scrollbarW, setScrollbarW] = useState(0)
+
+  const handleDeleteSuccess = (deletedItem: FullItem) => {
+    setItem(current => current?.id === deletedItem.id ? null : current)
+    setIsSheetOpen(false)
+    setIsNotesOpen(false)
+
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+
+    navigate("/")
+  }
 
   // Track scrollbar width of the main scroll container so the Notes tab can dodge it
   useEffect(() => {
@@ -139,7 +155,15 @@ export default function ItemDetail() {
   if (dateStr) mobileMeta.push({ icon: IconCalendar, text: String(new Date(dateStr).getFullYear()) })
   if (isGame && item.game.collection) mobileMeta.push({ icon: IconStack2, text: item.game.collection })
   if (!isGame && item.book.series_name) mobileMeta.push({ icon: IconStack2, text: item.book.series_name })
-  if (isGame && item.game.platforms.length > 0) mobileMeta.push({ icon: IconDeviceGamepad2, text: item.game.platforms[0] })
+  const selectedPlatformText = isGame
+    ? item.game.active_platform || item.game.platforms[0] || null
+    : item.book.format || null
+  if (selectedPlatformText) mobileMeta.push({ icon: IconDeviceGamepad2, text: selectedPlatformText })
+
+  const mobileDetailLabelClass = "text-sm font-medium leading-tight text-muted-foreground/75"
+  const mobileDetailRowValueClass = "max-w-[62%] text-right text-sm font-medium leading-tight text-foreground"
+  const mobileBadgeClassName = "bg-gray-600 p-3"
+  const platformLabel = isGame ? "Platform" : "Format"
 
   return (
     <>
@@ -171,7 +195,7 @@ export default function ItemDetail() {
           {/* Floating "Notes" tab — fixed to right viewport edge */}
           <button
             onClick={() => setIsNotesOpen(true)}
-            className="fixed top-1/2 -translate-y-1/2 z-10 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white pl-3 pr-6 py-2.5 rounded-l-lg shadow-lg transition-all duration-150"
+            className="fixed top-1/2 -translate-y-1/2 z-10 flex items-center gap-2 bg-primary hover:bg-primary/90 text-white pl-3 pr-6 py-2.5 rounded-l-lg shadow-lg transition-all duration-150"
             style={{ right: scrollbarW }}
           >
             <IconArrowNarrowLeft className="h-4 w-4" />
@@ -180,7 +204,7 @@ export default function ItemDetail() {
         </div>
 
         {/* ═══════════════ Mobile Layout ═══════════════ */}
-        <div className="md:hidden pb-40">
+        <div className="md:hidden">
           {/* Cover — centered, large */}
           <div className="flex justify-center px-8 pt-4">
             <div className="w-[200px] aspect-[2/3] overflow-hidden rounded-lg">
@@ -208,13 +232,13 @@ export default function ItemDetail() {
             <div className="pt-4">
               <MobileAccordion>
                 {/* Your Details */}
-                <AccordionSection title="Your Details" icon={IconBookmark}>
-                  <div className="space-y-4 px-1 pb-3 pt-1">
+                <AccordionSection title="Your Details" icon={IconBookmark} contentClassName="pb-0">
+                  <div className="space-y-0">
                     {/* Progress */}
-                    <div>
-                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Your Progress</div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold">
+                    <div className="space-y-2 pb-4">
+                      <div className={mobileDetailLabelClass}>Your Progress</div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[2rem] font-bold tracking-tight leading-none">
                           {isGame
                             ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
                             : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`}
@@ -226,53 +250,65 @@ export default function ItemDetail() {
                     </div>
 
                     {/* Platform */}
-                    <div className="flex items-center justify-between py-2 border-t text-sm">
-                      <span className="text-muted-foreground">Platform</span>
-                      <span className="flex items-center gap-2 font-medium">
-                        {isGame ? (item.game.platforms[0] || "—") : (item.book.format || "Digital")}
+                    <div className="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+                      <span className={mobileDetailLabelClass}>{platformLabel}</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsSheetOpen(true)}
+                        className="flex items-center gap-2 text-right text-sm font-semibold leading-tight text-foreground transition-colors hover:text-foreground/80"
+                      >
+                        {isGame ? (item.game.active_platform || item.game.platforms[0] || "—") : (item.book.format || "Digital")}
                         <IconPencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      </span>
+                      </button>
                     </div>
 
                     {/* Scores */}
-                    <div className="grid grid-cols-2 gap-4 py-2 border-t">
-                      <div>
-                        <div className="text-xs text-muted-foreground uppercase mb-0.5">Your Score</div>
-                        <div className="text-2xl font-bold">
+                    <div className="grid grid-cols-2 gap-6 border-t border-border/60 py-4">
+                      <div className="space-y-1.5">
+                        <div className={mobileDetailLabelClass}>Your Score</div>
+                        <div className="text-[2rem] font-bold tracking-tight leading-none">
                           {item.user_score ? (
-                            <>{item.user_score}<span className="text-sm text-muted-foreground font-normal">/10</span></>
-                          ) : "—"}
+                            <>{item.user_score}<span className="text-sm font-normal text-muted-foreground">/10</span></>
+                          ) : <span className="text-muted-foreground/30">—</span>}
                         </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground uppercase mb-0.5">Community Score</div>
-                        <div className="text-2xl font-bold">
+                      <div className="space-y-1.5">
+                        <div className={mobileDetailLabelClass}>Community Score</div>
+                        <div className="text-[2rem] font-bold tracking-tight leading-none">
                           {item.source_score ? (
-                            <>{Math.round(item.source_score / 10)}<span className="text-sm text-muted-foreground font-normal">/10</span></>
-                          ) : "—"}
+                            <>{Math.round(item.source_score / 10)}<span className="text-sm font-normal text-muted-foreground">/10</span></>
+                          ) : <span className="text-muted-foreground/30">—</span>}
                         </div>
                         {item.source_votes != null && item.source_votes > 0 && (
-                          <div className="text-xs text-muted-foreground">{item.source_votes.toLocaleString()} Votes</div>
+                          <div className="text-[11px] font-medium leading-none text-muted-foreground/75">
+                            {item.source_votes.toLocaleString()} votes
+                          </div>
                         )}
                       </div>
                     </div>
 
                     {/* Dates */}
-                    <div className="divide-y text-sm">
-                      <div className="flex justify-between py-2">
-                        <span className="text-muted-foreground">Added</span>
-                        <span>{formatDateTime(item.created_at, preferences?.date_format, preferences?.time_format)}</span>
+                    <div className="border-t border-border/60 divide-y divide-border/60">
+                      <div className="flex items-start justify-between gap-4 py-3.5">
+                        <span className={mobileDetailLabelClass}>Added</span>
+                        <span className={mobileDetailRowValueClass}>
+                          {formatDateTime(item.created_at, preferences?.date_format, preferences?.time_format)}
+                        </span>
                       </div>
                       {item.started_at && (
-                        <div className="flex justify-between py-2">
-                          <span className="text-muted-foreground">Started</span>
-                          <span>{formatDateTime(item.started_at, preferences?.date_format, preferences?.time_format)}</span>
+                        <div className="flex items-start justify-between gap-4 py-3.5">
+                          <span className={mobileDetailLabelClass}>Started</span>
+                          <span className={mobileDetailRowValueClass}>
+                            {formatDateTime(item.started_at, preferences?.date_format, preferences?.time_format)}
+                          </span>
                         </div>
                       )}
                       {item.completed_at && (
-                        <div className="flex justify-between py-2">
-                          <span className="text-muted-foreground">Completed</span>
-                          <span>{formatDateTime(item.completed_at, preferences?.date_format, preferences?.time_format)}</span>
+                        <div className="flex items-start justify-between gap-4 py-3.5">
+                          <span className={mobileDetailLabelClass}>Completed</span>
+                          <span className={mobileDetailRowValueClass}>
+                            {formatDateTime(item.completed_at, preferences?.date_format, preferences?.time_format)}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -281,7 +317,7 @@ export default function ItemDetail() {
 
                 {/* Game / Book Details */}
                 <AccordionSection title={isGame ? "Game Details" : "Book Details"} icon={IconInfoCircle}>
-                  <div className="space-y-4 px-1 pb-3 pt-1">
+                  <div className="space-y-5">
                     {item.description && (
                       <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                         {item.description}
@@ -289,17 +325,17 @@ export default function ItemDetail() {
                     )}
                     {item.genres.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">Genres</h4>
+                        <h4 className={`${mobileDetailLabelClass} mb-2`}>Genres</h4>
                         <div className="flex flex-wrap gap-2">
-                          {item.genres.map(g => <Badge key={g} variant="secondary">{g}</Badge>)}
+                          {item.genres.map(g => <Badge key={g} variant="secondary" className={mobileBadgeClassName}>{g}</Badge>)}
                         </div>
                       </div>
                     )}
                     {isGame && item.game.themes.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">Themes</h4>
+                        <h4 className={`${mobileDetailLabelClass} mb-2`}>Themes</h4>
                         <div className="flex flex-wrap gap-2">
-                          {item.game.themes.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}
+                          {item.game.themes.map(t => <Badge key={t} variant="secondary" className={mobileBadgeClassName}>{t}</Badge>)}
                         </div>
                       </div>
                     )}
@@ -308,25 +344,40 @@ export default function ItemDetail() {
 
                 {/* Lists */}
                 <AccordionSection title="Lists" icon={IconList}>
-                  <div className="space-y-2 px-1 pb-3 pt-1">
+                  <div className="space-y-3">
                     {itemLists.length > 0 ? (
-                      itemLists.map(list => (
-                        <div key={list.id} className="flex items-center gap-3 p-3 bg-card border rounded-md">
-                          <div className="h-8 w-8 rounded bg-secondary/50 flex items-center justify-center shrink-0">
-                            <IconPlaylist className="h-4 w-4 text-muted-foreground/50" />
+                      itemLists.map(list => {
+                        const coverUrl = getListCoverUrl(list, items)
+
+                        return (
+                          <div key={list.id} className="flex overflow-hidden border bg-card">
+                            <div className="h-[78px] w-[62px] shrink-0 overflow-hidden bg-secondary/50">
+                              {coverUrl ? (
+                                <img
+                                  src={coverUrl}
+                                  alt={list.name}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center">
+                                  <IconPlaylist className="h-4 w-4 text-muted-foreground/50" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3">
+                              <span className="font-medium text-sm truncate block">{list.name}</span>
+                              <span className="text-xs text-muted-foreground">{list.item_count ? `${list.item_count} Items` : ""}</span>
+                            </div>
+                            <Link
+                              to={`/lists/${list.id}`}
+                              className="flex shrink-0 items-center border-l border-border/60 px-4 text-xs font-semibold transition-colors hover:bg-accent/40"
+                            >
+                              View List
+                            </Link>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="font-medium text-sm truncate block">{list.name}</span>
-                            <span className="text-xs text-muted-foreground">{list.item_count ? `${list.item_count} Items` : ""}</span>
-                          </div>
-                          <Link
-                            to={`/lists/${list.id}`}
-                            className="text-xs font-medium px-3 py-1 rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
-                          >
-                            View List
-                          </Link>
-                        </div>
-                      ))
+                        )
+                      })
                     ) : (
                       <div className="text-center py-4 text-muted-foreground text-sm">
                         Not in any lists.
@@ -336,11 +387,29 @@ export default function ItemDetail() {
                   </div>
                 </AccordionSection>
 
+                {/* Collection / Series (games only) */}
+                {isGame && item.game.collection && (
+                  <AccordionSection title={`More in ${item.game.collection}`} icon={IconStack2}>
+                    <div>
+                      <CollectionRow item={item} maxItems={9} />
+                    </div>
+                  </AccordionSection>
+                )}
+
+                {/* Series (books only) */}
+                {!isGame && item.book.series_name && (
+                  <AccordionSection title={`More in ${item.book.series_name}`} icon={IconStack2}>
+                    <div>
+                      <SeriesRow item={item} maxItems={9} />
+                    </div>
+                  </AccordionSection>
+                )}
+
                 {/* Recommendations (games only) */}
                 {isGame && item.game.similar_games && item.game.similar_games.length > 0 && (
                   <AccordionSection title="Recommendations" icon={IconStarFilled}>
-                    <div className="pb-3 pt-1">
-                      <RecommendationsRow item={item} />
+                    <div>
+                      <RecommendationsRow item={item} maxItems={9} />
                     </div>
                   </AccordionSection>
                 )}
@@ -348,7 +417,7 @@ export default function ItemDetail() {
             </div>
           ) : (
             /* Notes tab content */
-            <div className="px-4 pt-6">
+            <div className="px-4 pt-6 pb-28">
               {item.notes ? (
                 <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground bg-card p-4 rounded-lg border">
                   {item.notes}
@@ -400,7 +469,12 @@ export default function ItemDetail() {
         </div>
 
         {/* ═══════════════ Sheets / Dialogs ═══════════════ */}
-        <StatusSheet item={item} open={isSheetOpen} onOpenChange={setIsSheetOpen} />
+        <StatusSheet
+          item={item}
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          onDeleteSuccess={handleDeleteSuccess}
+        />
         <ManageListsDialog itemId={item.id} open={isManageListsOpen} onOpenChange={setIsManageListsOpen} />
         <NotesPanel
           open={isNotesOpen}

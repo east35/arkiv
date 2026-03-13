@@ -178,6 +178,9 @@ export function useItems() {
     itemUpdate: Partial<Omit<Item, "id" | "user_id" | "created_at" | "updated_at">>,
     extensionUpdate?: Partial<BookFields> | Partial<GameFields>,
   ) => {
+    const existingItem = useShelfStore.getState().items.find((i) => i.id === id)
+    if (!existingItem) throw new Error(`Item ${id} not found in store`)
+
     // Update core item if there are fields to update
     if (Object.keys(itemUpdate).length > 0) {
       const { error } = await supabase
@@ -190,11 +193,7 @@ export function useItems() {
 
     // Update extension if provided
     if (extensionUpdate && Object.keys(extensionUpdate).length > 0) {
-      // Determine table from current item state
-      const item = useShelfStore.getState().items.find((i) => i.id === id)
-      if (!item) throw new Error(`Item ${id} not found in store`)
-
-      const table = item.media_type === "book" ? "books" : "games"
+      const table = existingItem.media_type === "book" ? "books" : "games"
       const { error } = await supabase
         .from(table)
         .update(extensionUpdate)
@@ -203,8 +202,23 @@ export function useItems() {
       if (error) throw error
     }
 
-    // Merge updates into store
-    updateItem(id, { ...itemUpdate } as Partial<FullItem>)
+    const storeUpdate: Partial<FullItem> = { ...itemUpdate } as Partial<FullItem>
+
+    if (extensionUpdate && Object.keys(extensionUpdate).length > 0) {
+      if (existingItem.media_type === "book") {
+        storeUpdate.book = {
+          ...existingItem.book,
+          ...(extensionUpdate as Partial<BookFields>),
+        }
+      } else {
+        storeUpdate.game = {
+          ...existingItem.game,
+          ...(extensionUpdate as Partial<GameFields>),
+        }
+      }
+    }
+
+    updateItem(id, storeUpdate)
   }, [updateItem])
 
   /**
