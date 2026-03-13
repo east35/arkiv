@@ -53,7 +53,7 @@ const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className={cn("sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-4 sm:pt-6 sm:pb-6 pb-2 -mr-3", scrolled && "border-b")}>
+      <div className={cn("sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 safe-header-padding sm:pb-6 pb-2 -mr-3", scrolled && "border-b")}>
         <LibraryControls
           mediaType={mediaType}
           hideSearch={hideSearch}

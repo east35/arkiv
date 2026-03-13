@@ -95,7 +95,7 @@ export default function Lists() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-4 sm:pt-6 sm:pb-6 pb-2 border-b">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 safe-header-padding sm:pb-6 pb-2 border-b">
         <div className="flex items-center justify-between gap-2 py-3">
           <h1 className="text-3xl font-bold tracking-tight shrink-0">Lists</h1>
 

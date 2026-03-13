@@ -67,7 +67,7 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
     meta.push({ icon: IconDeviceGamepad2, text: selectedPlatformText });
 
   return (
-    <div className="min-w-0" style={{ backgroundColor: "var(--card)" }}>
+    <div className="min-w-0 bg-[efefef] dark:bg-card">
       {/* ── Group 1: Hero block — title, metadata, description ── */}
       {/* min-h matches the cover art (280px × 1.5 aspect ratio = 420px) */}
       <div
@@ -120,7 +120,7 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
       </div>
 
       {/* ── Group 2: Tags, lists, recommendations ── */}
-      <div className="bg-card p-6 space-y-6">
+      <div className="bg-[#e6e6e6] p-6 space-y-6 dark:bg-card">
         {/* Genres & Themes */}
         <div className="flex flex-wrap gap-x-12 gap-y-6">
           {item.genres.length > 0 && (
@@ -131,7 +131,7 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
                   <Badge
                     key={g}
                     variant="secondary"
-                    className=" bg-gray-600 p-3 text-sm font-normal"
+                    className="bg-gray-600 p-3 text-sm font-normal text-white"
                   >
                     {g}
                   </Badge>
@@ -147,7 +147,7 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
                   <Badge
                     key={t}
                     variant="secondary"
-                    className=" bg-gray-600 p-3 text-sm font-normal"
+                    className="bg-gray-600 p-3 text-sm font-normal text-white"
                   >
                     {t}
                   </Badge>
@@ -163,7 +163,7 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
             <h3 className="text-sm font-semibold mb-3">Lists</h3>
             <div className="space-y-2">
               {itemLists.map((list) => {
-                const coverUrl = getListCoverUrl(list, items)
+                const coverUrl = getListCoverUrl(list, items);
 
                 return (
                   <div
@@ -199,7 +199,7 @@ export function ItemDetailContent({ item, itemLists }: ItemDetailContentProps) {
                       View List
                     </Link>
                   </div>
-                )
+                );
               })}
             </div>
           </div>

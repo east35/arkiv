@@ -221,7 +221,7 @@ export default function Settings() {
         {/* Sticky header */}
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           {/* Title row */}
-          <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6">
+          <div className="px-4 sm:px-6 safe-header-padding pb-4 sm:pb-6">
             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
             <p className="text-muted-foreground mt-1">
               Manage your account, preferences, and data.

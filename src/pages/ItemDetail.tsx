@@ -162,7 +162,7 @@ export default function ItemDetail() {
 
   const mobileDetailLabelClass = "text-sm font-medium leading-tight text-muted-foreground/75"
   const mobileDetailRowValueClass = "max-w-[62%] text-right text-sm font-medium leading-tight text-foreground"
-  const mobileBadgeClassName = "bg-gray-600 p-3"
+  const mobileBadgeClassName = "bg-gray-600 p-3 text-white"
   const platformLabel = isGame ? "Platform" : "Format"
 
   return (

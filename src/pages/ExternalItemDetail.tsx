@@ -12,12 +12,14 @@ import {
 
 import { supabase } from "@/lib/supabase"
 import { useCommitItem } from "@/hooks/useCommitItem"
+import { useShelfStore } from "@/store/useShelfStore"
 import { Badge } from "@/components/ui/badge"
 import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { MediaType, IgdbGameDetails, HardcoverBookDetails } from "@/types"
+import type { MediaType, IgdbGameDetails, HardcoverBookDetails, IgdbSearchResult } from "@/types"
+import { toast } from "sonner"
 
 const GAME_COVER_FALLBACK =
   "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
@@ -44,7 +46,9 @@ export default function ExternalItemDetail() {
   const [details, setDetails] = useState<IgdbGameDetails | HardcoverBookDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [resolvingRecommendationName, setResolvingRecommendationName] = useState<string | null>(null)
   const { commit, committingId } = useCommitItem()
+  const items = useShelfStore((s) => s.items)
   const isCommitting = committingId === Number(externalId)
 
   const isGame = mediaType === "game"
@@ -82,6 +86,52 @@ export default function ExternalItemDetail() {
     const newItem = await commit(Number(externalId), mediaType as MediaType)
     if (newItem) {
       navigate(`/item/${newItem.id}`, { replace: true, state: { backLabel } })
+    }
+  }
+
+  const handleRecommendationClick = async (similarGame: { id?: number; name: string }) => {
+    const navigateToGame = (gameId: number) => {
+      const libraryItem = items.find(
+        (item) => item.media_type === "game" && item.external_id === String(gameId)
+      )
+
+      navigate(
+        libraryItem ? `/item/${libraryItem.id}` : `/item/external/game/${gameId}`,
+        { state: { backLabel: title } },
+      )
+    }
+
+    if (similarGame.id != null) {
+      navigateToGame(similarGame.id)
+      return
+    }
+
+    setResolvingRecommendationName(similarGame.name)
+
+    try {
+      const { data, error: searchError } = await supabase.functions.invoke("igdb-proxy", {
+        body: { action: "search", query: similarGame.name },
+      })
+
+      if (searchError) throw searchError
+
+      const searchResults = (data as IgdbSearchResult[] | null) ?? []
+      const normalizedName = similarGame.name.trim().toLowerCase()
+      const exactMatch = searchResults.find(
+        (result) => result.name.trim().toLowerCase() === normalizedName,
+      )
+      const resolvedId = exactMatch?.id ?? searchResults[0]?.id ?? null
+
+      if (resolvedId == null) {
+        toast.error(`Could not open ${similarGame.name}.`)
+        return
+      }
+
+      navigateToGame(resolvedId)
+    } catch {
+      toast.error(`Could not open ${similarGame.name}.`)
+    } finally {
+      setResolvingRecommendationName(null)
     }
   }
 
@@ -129,7 +179,7 @@ export default function ExternalItemDetail() {
   return (
     <div className="flex-1 relative bg-background">
       {/* ═══════════════ Sticky Header ═══════════════ */}
-      <div className="sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-b border-border/40">
+      <div className="sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-b border-border/40 safe-header-bar">
         {/* Back link */}
         <button
           onClick={() => navigate(-1)}
@@ -204,7 +254,7 @@ export default function ExternalItemDetail() {
           </div>
 
           {/* Right column — content */}
-          <div className="min-w-0" style={{ backgroundColor: 'var(--card)' }}>
+          <div className="min-w-0 bg-[#e6e6e6] dark:bg-card">
             {/* Hero block */}
             <div className="p-6 flex flex-col overflow-hidden border-b" style={{ minHeight: 280, backgroundColor: 'var(--muted)' }}>
               <h1 className="text-5xl font-bold tracking-tight mb-3">{title}</h1>
@@ -227,7 +277,7 @@ export default function ExternalItemDetail() {
             </div>
 
             {/* Genres + Themes */}
-            <div className="p-6 space-y-6" style={{ backgroundColor: 'var(--card)' }}>
+            <div className="bg-[#e6e6e6] p-6 space-y-6 dark:bg-card">
               {genres.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Genres</h3>
@@ -250,32 +300,42 @@ export default function ExternalItemDetail() {
                 <div>
                   <h3 className="text-sm font-semibold mb-3">Recommendations</h3>
                   <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {gameDetails.similarGames.slice(0, 10).map((sg) => (
-                      <button
-                        key={sg.id}
-                        className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col text-left group"
-                        onClick={() =>
-                          navigate(`/item/external/game/${sg.id}`, {
-                            state: { backLabel: title },
-                          })
-                        }
-                      >
-                        <div className="relative aspect-[2/3] w-full overflow-hidden">
-                          <img
-                            src={sg.cover || GAME_COVER_FALLBACK}
-                            alt={sg.name}
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <span className="text-white text-xs font-semibold">View Details</span>
+                    {gameDetails.similarGames.slice(0, 10).map((sg) => {
+                      const isResolvingRecommendation = resolvingRecommendationName === sg.name
+
+                      return (
+                        <button
+                          key={`${sg.id ?? "search"}-${sg.name}`}
+                          type="button"
+                          className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col text-left group"
+                          onClick={() => void handleRecommendationClick(sg)}
+                        >
+                          <div className="relative aspect-[2/3] w-full overflow-hidden">
+                            <img
+                              src={sg.cover || GAME_COVER_FALLBACK}
+                              alt={sg.name}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                            <div
+                              className={cn(
+                                "absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center",
+                                isResolvingRecommendation ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                              )}
+                            >
+                              {isResolvingRecommendation ? (
+                                <IconLoader2 className="h-4 w-4 animate-spin text-white" />
+                              ) : (
+                                <span className="text-white text-xs font-semibold">View Details</span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="px-2.5 pt-2 pb-1.5">
-                          <h4 className="font-bold text-sm leading-tight line-clamp-1" title={sg.name}>{sg.name}</h4>
-                        </div>
-                      </button>
-                    ))}
+                          <div className="px-2.5 pt-2 pb-1.5">
+                            <h4 className="font-bold text-sm leading-tight line-clamp-1" title={sg.name}>{sg.name}</h4>
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               )}

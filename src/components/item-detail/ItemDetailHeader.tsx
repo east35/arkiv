@@ -27,7 +27,7 @@ export function ItemDetailHeader({
   const navigate = useNavigate();
 
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-b">
+    <div className="sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-b safe-header-bar">
       {/* Back link */}
       <button
         onClick={() => navigate(-1)}

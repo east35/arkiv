@@ -161,7 +161,7 @@ export default function ListDetail() {
   return (
     <div className="flex flex-col min-h-full">
       {/* Header bar — matches ItemDetailHeader styling */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/40">
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/40 safe-header-bar">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}

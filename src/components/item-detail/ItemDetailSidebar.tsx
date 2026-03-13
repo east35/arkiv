@@ -22,7 +22,7 @@ export function ItemDetailSidebar({
       : "https://books.google.com/googlebooks/images/no_cover_thumb.gif");
 
   return (
-    <div className="space-y-0 border-r">
+    <div className="space-y-0 border-r border-r-[#cecece] dark:border-r-border">
       {/* Cover Image — edge-to-edge, no rounding */}
       <div className="w-full aspect-[2/3] overflow-hidden bg-muted border-b">
         <img
@@ -33,7 +33,7 @@ export function ItemDetailSidebar({
       </div>
 
       {/* Sidebar card — framed module below cover */}
-      <div className="bg-card rounded-b-lg">
+      <div className="rounded-b-lg bg-[#e6e6e6] dark:bg-card">
       {/* Your Progress */}
       <div className="pt-5 pb-4 px-4">
         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
