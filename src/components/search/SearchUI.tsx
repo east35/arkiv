@@ -49,6 +49,8 @@ export function SearchUI() {
   );
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // null → no alert; "status" → ask to update status; "cancel" → ask to cancel add
   const [alertPhase, setAlertPhase] = useState<"status" | "cancel" | null>(
@@ -62,7 +64,7 @@ export function SearchUI() {
   const { scrolled } = useOutletContext<{ scrolled?: boolean }>();
 
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
-  const { results, loading, search, clearResults } = useExternalSearch();
+  const { results, loading, loadingMore, hasMore, search, loadMore, clearResults } = useExternalSearch();
   const { commit, committingId } = useCommitItem();
   const { deleteItem } = useItems();
 
@@ -89,6 +91,31 @@ export function SearchUI() {
       clearResults();
     }
   }, [debouncedQuery, mediaType, search, clearResults]);
+
+  useEffect(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [debouncedQuery, mediaType]);
+
+  useEffect(() => {
+    const root = scrollContainerRef.current;
+    const target = loadMoreRef.current;
+    if (!root || !target || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMore();
+        }
+      },
+      {
+        root,
+        rootMargin: "0px 0px 600px 0px",
+      },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore, results.length]);
 
   const handleAdd = async (result: SearchResult) => {
     const item = await commit(result.id, result.mediaType);
@@ -216,7 +243,10 @@ export function SearchUI() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-[#f5f5f5] px-4 pb-8 dark:bg-[#171717] sm:px-6">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto bg-[#f5f5f5] px-4 pb-8 dark:bg-[#171717] sm:px-6"
+      >
         <div className="mx-auto w-full max-w-[1400px] py-6">
           {!loading && debouncedQuery && results.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
@@ -245,6 +275,14 @@ export function SearchUI() {
                   isAdding={committingId === result.id}
                 />
               ))}
+            </div>
+          )}
+
+          {hasMore && debouncedQuery && results.length > 0 && (
+            <div ref={loadMoreRef} className="flex min-h-10 items-center justify-center py-6">
+              {loadingMore ? (
+                <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : null}
             </div>
           )}
         </div>

@@ -13,18 +13,28 @@ import {
 import { supabase } from "@/lib/supabase"
 import { useCommitItem } from "@/hooks/useCommitItem"
 import { useShelfStore } from "@/store/useShelfStore"
+import { statusIcons, statusLabels } from "@/components/status-icons"
 import { Badge } from "@/components/ui/badge"
 import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { MediaType, IgdbGameDetails, HardcoverBookDetails, IgdbSearchResult, BookItem } from "@/types"
+import type { MediaType, IgdbGameDetails, HardcoverBookDetails, IgdbSearchResult, BookItem, Status } from "@/types"
 import { toast } from "sonner"
 
 const GAME_COVER_FALLBACK =
   "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
 const BOOK_COVER_FALLBACK =
   "https://books.google.com/googlebooks/images/no_cover_thumb.gif"
+
+const STATUS_BAR: Record<Status, string> = {
+  in_collection: "bg-zinc-300 text-zinc-950",
+  backlog: "bg-purple-500 text-purple-950",
+  in_progress: "bg-primary text-primary-foreground",
+  completed: "bg-green-500 text-green-950",
+  paused: "bg-yellow-400 text-yellow-950",
+  dropped: "bg-red-500 text-red-950",
+}
 
 /**
  * Detail page for external items not yet in the user's collection.
@@ -45,6 +55,7 @@ export default function ExternalItemDetail() {
   const backLabel: string = (location.state as any)?.backLabel ?? null
 
   const [details, setDetails] = useState<IgdbGameDetails | HardcoverBookDetails | null>(null)
+  const [loadedDetailKey, setLoadedDetailKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resolvingRecommendationName, setResolvingRecommendationName] = useState<string | null>(null)
@@ -54,11 +65,16 @@ export default function ExternalItemDetail() {
 
   const isGame = mediaType === "game"
   const validMediaType = mediaType === "game" || mediaType === "book"
+  const detailKey = validMediaType && externalId ? `${mediaType}:${externalId}` : null
 
   // Fetch details from proxy
   useEffect(() => {
     if (!externalId || !validMediaType) return
     let cancelled = false
+    setLoading(true)
+    setError(null)
+    setDetails(null)
+    setLoadedDetailKey(null)
 
     const fn = isGame ? "igdb-proxy" : "hardcover-proxy"
     supabase.functions
@@ -69,6 +85,7 @@ export default function ExternalItemDetail() {
           setError("Could not load details.")
         } else {
           setDetails(data)
+          setLoadedDetailKey(detailKey)
         }
       })
       .catch(() => {
@@ -79,7 +96,7 @@ export default function ExternalItemDetail() {
       })
 
     return () => { cancelled = true }
-  }, [externalId, isGame, validMediaType])
+  }, [detailKey, externalId, isGame, validMediaType])
 
   /** Commit item to collection, then navigate to the real detail page */
   const handleAddToCollection = async () => {
@@ -90,22 +107,19 @@ export default function ExternalItemDetail() {
     }
   }
 
-  const handleRecommendationClick = async (similarGame: { id?: number; name: string }) => {
-    const navigateToGame = (gameId: number) => {
-      const libraryItem = items.find(
-        (item) => item.media_type === "game" && item.external_id === String(gameId)
-      )
+  const navigateToRecommendation = (gameId: number, backLabelText: string) => {
+    const libraryItem = items.find(
+      (item) => item.media_type === "game" && item.external_id === String(gameId)
+    )
 
-      navigate(
-        libraryItem ? `/item/${libraryItem.id}` : `/item/external/game/${gameId}`,
-        { state: { backLabel: title } },
-      )
-    }
+    navigate(
+      libraryItem ? `/item/${libraryItem.id}` : `/item/external/game/${gameId}`,
+      { state: { backLabel: backLabelText } },
+    )
+  }
 
-    if (similarGame.id != null) {
-      navigateToGame(similarGame.id)
-      return
-    }
+  const resolveRecommendationId = async (similarGame: { id?: number; name: string }) => {
+    if (similarGame.id != null) return similarGame.id
 
     setResolvingRecommendationName(similarGame.name)
 
@@ -125,33 +139,102 @@ export default function ExternalItemDetail() {
 
       if (resolvedId == null) {
         toast.error(`Could not open ${similarGame.name}.`)
-        return
       }
 
-      navigateToGame(resolvedId)
+      return resolvedId
     } catch {
       toast.error(`Could not open ${similarGame.name}.`)
+      return null
     } finally {
       setResolvingRecommendationName(null)
     }
   }
 
+  const handleRecommendationClick = async (similarGame: { id?: number; name: string }) => {
+    const resolvedId = await resolveRecommendationId(similarGame)
+    if (resolvedId == null) return
+
+    navigateToRecommendation(resolvedId, title)
+  }
+
+  const handleRecommendationQuickAdd = async (
+    e: React.MouseEvent,
+    similarGame: { id?: number; name: string },
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const resolvedId = await resolveRecommendationId(similarGame)
+    if (resolvedId == null) return
+
+    const newItem = await commit(resolvedId, "game")
+    if (newItem) {
+      navigate(`/item/${newItem.id}`, { state: { backLabel: title } })
+    }
+  }
+
+  const isContentLoading = loading || (detailKey != null && loadedDetailKey !== detailKey && !error)
+
+  const header = (
+    <div
+      className={cn(
+        "sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-border/40 safe-header-bar md:border-b",
+        scrolled && "border-b",
+      )}
+    >
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+        style={{ height: "55px" }}
+      >
+        <IconArrowLeft className="h-5 w-5" />
+        <span className="hidden sm:inline">
+          {backLabel ? `Back to ${backLabel}` : "Back"}
+        </span>
+        <span className="sm:hidden">Back</span>
+      </button>
+
+      <button
+        onClick={handleAddToCollection}
+        disabled={isCommitting || isContentLoading}
+        className="hidden md:flex items-center self-stretch px-5 gap-3 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-opacity disabled:opacity-60"
+      >
+        {isCommitting ? (
+          <IconLoader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <IconPlus className="h-4 w-4" />
+        )}
+        <span>{isCommitting ? "Adding…" : "Add to Collection"}</span>
+      </button>
+    </div>
+  )
+
   /* ── Loading / Error states ── */
-  if (loading) return <LoadingState className="h-full" />
+  if (isContentLoading) {
+    return (
+      <div className="flex-1 relative bg-background">
+        {header}
+        <LoadingState className="h-[calc(100vh-55px)]" />
+      </div>
+    )
+  }
 
   if (error || !details) {
     return (
-      <EmptyState
-        title="Item not found"
-        description={error || "Could not load external item details."}
-        className="h-full"
-        action={
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            <IconArrowLeft className="h-4 w-4 mr-2" />
-            Go Back
-          </Button>
-        }
-      />
+      <div className="flex-1 relative bg-background">
+        {header}
+        <EmptyState
+          title="Item not found"
+          description={error || "Could not load external item details."}
+          className="h-[calc(100vh-55px)]"
+          action={
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              <IconArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+          }
+        />
+      </div>
     )
   }
 
@@ -187,42 +270,89 @@ export default function ExternalItemDetail() {
 
   const sourceScore = gameDetails?.sourceScore ?? (bookDetails?.rating ? Math.round(bookDetails.rating * 10) : null)
   const ratingsCount = gameDetails?.ratingsCount ?? bookDetails?.ratingsCount ?? null
+  const libraryByExternalId = new Map(
+    items
+      .filter((item) => item.media_type === "game" && item.external_id)
+      .map((item) => [String(item.external_id), item]),
+  )
   const renderRecommendationCards = (maxItems: number, gridClassName: string) => (
     <div className={gridClassName}>
       {gameDetails?.similarGames.slice(0, maxItems).map((sg) => {
         const isResolvingRecommendation = resolvingRecommendationName === sg.name
+        const libraryItem = sg.id != null ? libraryByExternalId.get(String(sg.id)) : undefined
+        const isAdding = sg.id != null && committingId === sg.id
+        const cover = libraryItem?.cover_url || sg.cover || GAME_COVER_FALLBACK
+        const recommendationTitle = libraryItem?.title || sg.name
+        const subtitle = libraryItem && libraryItem.media_type === "game"
+          ? libraryItem.game.developer || libraryItem.game.publisher || ""
+          : sg.releaseDate ? String(new Date(sg.releaseDate).getFullYear()) : ""
 
         return (
-          <button
+          <div
             key={`${sg.id ?? "search"}-${sg.name}`}
-            type="button"
-            className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col text-left group"
-            onClick={() => void handleRecommendationClick(sg)}
+            className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col"
           >
-            <div className="relative aspect-[2/3] w-full overflow-hidden">
-              <img
-                src={sg.cover || GAME_COVER_FALLBACK}
-                alt={sg.name}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-              <div
-                className={cn(
-                  "absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center",
-                  isResolvingRecommendation ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-                )}
-              >
-                {isResolvingRecommendation ? (
-                  <IconLoader2 className="h-4 w-4 animate-spin text-white" />
-                ) : (
-                  <span className="text-white text-xs font-semibold">View Details</span>
-                )}
+            <button
+              type="button"
+              className="group flex flex-1 flex-col text-left"
+              onClick={() => void handleRecommendationClick(sg)}
+            >
+              <div className="relative aspect-[2/3] w-full overflow-hidden">
+                <img
+                  src={cover}
+                  alt={recommendationTitle}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+                <div
+                  className={cn(
+                    "absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center",
+                    isResolvingRecommendation ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                  )}
+                >
+                  {isResolvingRecommendation ? (
+                    <IconLoader2 className="h-4 w-4 animate-spin text-white" />
+                  ) : (
+                    <span className="text-white text-xs font-semibold">View Details</span>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="px-2.5 pt-2 pb-1.5">
-              <h4 className="font-bold text-sm leading-tight line-clamp-1" title={sg.name}>{sg.name}</h4>
-            </div>
-          </button>
+              <div className="px-2.5 pt-2 pb-1.5 flex-1">
+                <h4 className="font-bold text-sm leading-tight line-clamp-1" title={recommendationTitle}>
+                  {recommendationTitle}
+                </h4>
+                <p
+                  className={cn(
+                    "text-[11px] text-muted-foreground truncate mt-0.5 min-h-[1rem]",
+                    !subtitle && "invisible",
+                  )}
+                >
+                  {subtitle || " "}
+                </p>
+              </div>
+            </button>
+            {libraryItem ? (
+              <div className={cn("w-full shrink-0 px-3 py-2 flex items-center gap-2 font-semibold text-[11px]", STATUS_BAR[libraryItem.status])}>
+                <span className="[&>svg]:h-4 [&>svg]:w-4 shrink-0">{statusIcons[libraryItem.status]}</span>
+                <span className="truncate">{statusLabels[libraryItem.status]}</span>
+              </div>
+            ) : (
+              <button
+                onClick={(e) => void handleRecommendationQuickAdd(e, sg)}
+                disabled={isResolvingRecommendation || isAdding}
+                className="w-full shrink-0 px-3 py-2 flex items-center gap-2 font-semibold text-[11px] bg-zinc-300 text-zinc-950 hover:bg-zinc-400 transition-colors disabled:opacity-60"
+              >
+                {isResolvingRecommendation || isAdding ? (
+                  <IconLoader2 className="h-4 w-4 shrink-0 animate-spin" />
+                ) : (
+                  <IconPlus className="h-4 w-4 shrink-0" />
+                )}
+                <span className="truncate">
+                  {isAdding ? "Adding…" : isResolvingRecommendation ? "Loading…" : "Add"}
+                </span>
+              </button>
+            )}
+          </div>
         )
       })}
     </div>
@@ -230,40 +360,7 @@ export default function ExternalItemDetail() {
 
   return (
     <div className="flex-1 relative bg-background">
-      {/* ═══════════════ Sticky Header ═══════════════ */}
-      <div
-        className={cn(
-          "sticky top-0 z-20 flex items-center justify-between bg-background/80 backdrop-blur-md border-border/40 safe-header-bar md:border-b",
-          scrolled && "border-b",
-        )}
-      >
-        {/* Back link */}
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          style={{ height: "55px" }}
-        >
-          <IconArrowLeft className="h-5 w-5" />
-          <span className="hidden sm:inline">
-            {backLabel ? `Back to ${backLabel}` : "Back"}
-          </span>
-          <span className="sm:hidden">Back</span>
-        </button>
-
-        {/* Desktop: Add to Collection */}
-        <button
-          onClick={handleAddToCollection}
-          disabled={isCommitting}
-          className="hidden md:flex items-center self-stretch px-5 gap-3 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-opacity disabled:opacity-60"
-        >
-          {isCommitting ? (
-            <IconLoader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <IconPlus className="h-4 w-4" />
-          )}
-          <span>{isCommitting ? "Adding…" : "Add to Collection"}</span>
-        </button>
-      </div>
+      {header}
 
       {/* ═══════════════ Desktop Layout ═══════════════ */}
       <div className="hidden md:block">

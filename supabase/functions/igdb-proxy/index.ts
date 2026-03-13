@@ -5,7 +5,7 @@
  * so client credentials are never exposed to the browser.
  *
  * Endpoints (via `action` field in POST body):
- *   - search:  { action: "search", query: string }
+ *   - search:  { action: "search", query: string, limit?: number, offset?: number }
  *   - details: { action: "details", id: number }
  *
  * Required Supabase secrets:
@@ -44,6 +44,8 @@ const baseCorsHeaders = {
 
 const MAX_BODY_BYTES = 4_096
 const MAX_SEARCH_QUERY_LENGTH = 100
+const DEFAULT_SEARCH_LIMIT = 20
+const MAX_SEARCH_LIMIT = 50
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_REQUESTS = 60
 
@@ -173,6 +175,26 @@ function validateGameId(id: unknown): number {
   return id
 }
 
+function validateSearchLimit(limit: unknown): number {
+  if (limit == null) return DEFAULT_SEARCH_LIMIT
+
+  const value = typeof limit === "number" ? limit : parseInt(String(limit), 10)
+  if (!Number.isInteger(value) || value <= 0 || value > MAX_SEARCH_LIMIT) {
+    throw new HttpError(400, `limit must be an integer between 1 and ${MAX_SEARCH_LIMIT}`)
+  }
+  return value
+}
+
+function validateSearchOffset(offset: unknown): number {
+  if (offset == null) return 0
+
+  const value = typeof offset === "number" ? offset : parseInt(String(offset), 10)
+  if (!Number.isInteger(value) || value < 0) {
+    throw new HttpError(400, "offset must be a non-negative integer")
+  }
+  return value
+}
+
 // ---------------------------------------------------------------------------
 // Twitch OAuth token cache (in-memory, lives for the function's lifetime)
 // ---------------------------------------------------------------------------
@@ -253,26 +275,31 @@ async function igdbFetch(endpoint: string, body: string): Promise<unknown> {
 // ---------------------------------------------------------------------------
 // Search: returns compact game results for autocomplete
 // ---------------------------------------------------------------------------
-async function searchGames(query: string) {
+async function searchGames(query: string, limit: number, offset: number) {
+  const fetchLimit = Math.min(limit + 1, MAX_SEARCH_LIMIT)
   const body = `
     search "${query.replace(/"/g, '\\"')}";
     fields id, name, cover.image_id, platforms.name, summary, first_release_date;
-    limit 10;
+    limit ${fetchLimit};
+    offset ${offset};
   `
   const results = await igdbFetch("games", body) as Array<Record<string, unknown>>
 
-  return results.map((game) => ({
-    id: game.id,
-    name: game.name,
-    cover: game.cover
-      ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${(game.cover as Record<string, string>).image_id}.jpg`
-      : null,
-    platforms: ((game.platforms as Array<{ name: string }>) || []).map((p) => p.name),
-    summary: game.summary || null,
-    releaseDate: game.first_release_date
-      ? new Date((game.first_release_date as number) * 1000).toISOString().split("T")[0]
-      : null,
-  }))
+  return {
+    results: results.slice(0, limit).map((game) => ({
+      id: game.id,
+      name: game.name,
+      cover: game.cover
+        ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${(game.cover as Record<string, string>).image_id}.jpg`
+        : null,
+      platforms: ((game.platforms as Array<{ name: string }>) || []).map((p) => p.name),
+      summary: game.summary || null,
+      releaseDate: game.first_release_date
+        ? new Date((game.first_release_date as number) * 1000).toISOString().split("T")[0]
+        : null,
+    })),
+    hasMore: results.length > limit,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -291,7 +318,7 @@ async function getGameDetails(id: number) {
            category,
            external_games.category, external_games.uid,
            remasters.name, standalone_expansions.name,
-           similar_games.id, similar_games.name, similar_games.cover.image_id;
+           similar_games.id, similar_games.name, similar_games.cover.image_id, similar_games.first_release_date;
     limit 1;
   `
   const results = await igdbFetch("games", body) as Array<Record<string, unknown>>
@@ -341,11 +368,14 @@ async function getGameDetails(id: number) {
     parentGame: game.parent_game ? (game.parent_game as { name: string }).name : null,
     remasters: ((game.remasters as Array<{ name: string }>) || []).map((r) => r.name),
     standaloneExpansions: ((game.standalone_expansions as Array<{ name: string }>) || []).map((e) => e.name),
-    similarGames: ((game.similar_games as Array<{ id: number; name: string; cover?: { image_id: string } }>) || []).map((g) => ({
+    similarGames: ((game.similar_games as Array<{ id: number; name: string; cover?: { image_id: string }; first_release_date?: number }>) || []).map((g) => ({
       id: g.id,
       name: g.name,
       cover: g.cover
         ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${g.cover.image_id}.jpg`
+        : null,
+      releaseDate: g.first_release_date
+        ? new Date(g.first_release_date * 1000).toISOString().split("T")[0]
         : null,
     })),
   }
@@ -423,13 +453,18 @@ serve(async (req: Request) => {
       throw new HttpError(400, "Invalid JSON payload")
     }
 
-    const { action, query, id } = body as Record<string, unknown>
+    const { action, query, id, limit, offset } = body as Record<string, unknown>
 
     let data: unknown
 
     switch (action) {
       case "search":
-        data = await searchGames(validateSearchQuery(query))
+        {
+          const normalizedLimit = validateSearchLimit(limit)
+          const normalizedOffset = validateSearchOffset(offset)
+          const pagedResults = await searchGames(validateSearchQuery(query), normalizedLimit, normalizedOffset)
+          data = limit == null && offset == null ? pagedResults.results : pagedResults
+        }
         break
 
       case "details":

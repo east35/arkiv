@@ -148,7 +148,7 @@ export function AppSidebar({
         <div
           className={cn(
             "border-b border-black/10 bg-primary dark:border-white/10",
-            collapsed ? "px-1 py-4 flex justify-center" : "px-4",
+            collapsed ? "px-1 py-4 flex justify-center" : "px-5",
           )}
         >
           <Link to="/" onClick={onNavClick} aria-label="Go to Home">

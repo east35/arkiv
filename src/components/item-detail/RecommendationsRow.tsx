@@ -127,7 +127,7 @@ export function RecommendationsRow({ item, maxItems = 10 }: RecommendationsRowPr
           const title = libraryItem?.title || rec.name
           const subtitle = libraryItem && libraryItem.media_type === "game"
             ? libraryItem.game.developer || libraryItem.game.publisher || ""
-            : ""
+            : rec.releaseDate ? String(new Date(rec.releaseDate).getFullYear()) : ""
 
           const linkTo = libraryItem
             ? `/item/${libraryItem.id}`

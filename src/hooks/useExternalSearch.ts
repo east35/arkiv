@@ -8,13 +8,12 @@
  * objects returned by the igdb-proxy and hardcover-proxy Edge Functions.
  */
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { supabase } from "@/lib/supabase"
 import type {
   MediaType,
   IgdbSearchResult,
   HardcoverSearchResult,
-  HardcoverBookDetails,
 } from "@/types"
 import { toast } from "sonner"
 
@@ -30,6 +29,12 @@ export interface SearchResult {
 
 /** Delay (ms) the UI should debounce keystrokes before triggering search. */
 export const SEARCH_DEBOUNCE_MS = 500
+export const SEARCH_PAGE_SIZE = 20
+
+interface PaginatedSearchPayload<T> {
+  results: T[]
+  hasMore: boolean
+}
 
 function formatGameSubtitle(platforms: string[] | null | undefined): string {
   const clean = (platforms ?? []).filter(Boolean)
@@ -39,77 +44,75 @@ function formatGameSubtitle(platforms: string[] | null | undefined): string {
   return `${clean[0]} +${clean.length - 1} more`
 }
 
-async function hydrateBookSearchResults(
-  results: HardcoverSearchResult[],
-): Promise<HardcoverSearchResult[]> {
-  const detailedResults = await Promise.all(
-    results.map(async (result) => {
-      const { data, error } = await supabase.functions.invoke("hardcover-proxy", {
-        body: { action: "details", id: result.id },
-      })
-
-      if (error || !data) return result
-
-      const details = data as HardcoverBookDetails
-      return {
-        ...result,
-        title: details.title || result.title,
-        authors: details.authors?.length ? details.authors : result.authors,
-        image: details.image ?? result.image,
-        pages: details.pages ?? result.pages,
-        releaseYear: details.releaseDate ? parseInt(details.releaseDate.slice(0, 4), 10) || result.releaseYear : result.releaseYear,
-      }
-    }),
-  )
-
-  return detailedResults
-}
-
 export function useExternalSearch() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const activeSearchRef = useRef<{ query: string; type: MediaType; offset: number } | null>(null)
 
-  const search = useCallback(async (query: string, type: MediaType) => {
-    if (!query.trim()) {
-      setResults([])
-      return
-    }
+  const mapResults = useCallback(async (
+    data: unknown,
+    type: MediaType,
+  ): Promise<PaginatedSearchPayload<SearchResult>> => {
+    const payload = (Array.isArray(data)
+      ? { results: data, hasMore: false }
+      : data ?? {}) as Partial<PaginatedSearchPayload<IgdbSearchResult | HardcoverSearchResult>>
+    const rawResults = Array.isArray(payload.results) ? payload.results : []
 
-    setLoading(true)
-    try {
-      const functionName = type === "game" ? "igdb-proxy" : "hardcover-proxy"
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: { action: "search", query }
-      })
-
-      if (error) throw error
-
-      // Guard: Edge Function may return null/undefined on empty results
-      if (!Array.isArray(data)) {
-        setResults([])
-        return
-      }
-
-      if (type === "game") {
-        setResults((data as IgdbSearchResult[]).map((g) => ({
+    if (type === "game") {
+      return {
+        results: (rawResults as IgdbSearchResult[]).map((g) => ({
           id: g.id,
           title: g.name,
           subtitle: formatGameSubtitle(g.platforms),
           cover: g.cover,
           year: g.releaseDate ? g.releaseDate.split("-")[0] : null,
           mediaType: "game",
-        })))
-      } else {
-        const hydratedBooks = await hydrateBookSearchResults(data as HardcoverSearchResult[])
+        })),
+        hasMore: Boolean(payload.hasMore),
+      }
+    }
 
-        setResults(hydratedBooks.map((b) => ({
-          id: b.id,
-          title: b.title,
-          subtitle: b.authors?.join(", ") || "Unknown Author",
-          cover: b.image,
-          year: b.releaseYear ? String(b.releaseYear) : null,
-          mediaType: "book",
-        })))
+    return {
+      results: (rawResults as HardcoverSearchResult[]).map((b) => ({
+        id: b.id,
+        title: b.title,
+        subtitle: b.authors?.join(", ") || "Unknown Author",
+        cover: b.image,
+        year: b.releaseYear ? String(b.releaseYear) : null,
+        mediaType: "book",
+      })),
+      hasMore: Boolean(payload.hasMore),
+    }
+  }, [])
+
+  const search = useCallback(async (query: string, type: MediaType) => {
+    const normalizedQuery = query.trim()
+    if (!normalizedQuery) {
+      setResults([])
+      setHasMore(false)
+      activeSearchRef.current = null
+      return
+    }
+
+    activeSearchRef.current = { query: normalizedQuery, type, offset: 0 }
+    setLoading(true)
+    try {
+      const functionName = type === "game" ? "igdb-proxy" : "hardcover-proxy"
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: { action: "search", query: normalizedQuery, limit: SEARCH_PAGE_SIZE, offset: 0 }
+      })
+
+      if (error) throw error
+
+      const mapped = await mapResults(data, type)
+      if (
+        activeSearchRef.current?.query === normalizedQuery &&
+        activeSearchRef.current?.type === type
+      ) {
+        setResults(mapped.results)
+        setHasMore(mapped.hasMore)
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error"
@@ -128,12 +131,54 @@ export function useExternalSearch() {
         toast.error(`Search error details: ${details}`)
       }
       setResults([])
+      setHasMore(false)
     } finally {
       setLoading(false)
     }
+  }, [mapResults])
+
+  const loadMore = useCallback(async () => {
+    const activeSearch = activeSearchRef.current
+    if (!activeSearch || loading || loadingMore || !hasMore) return
+
+    const nextOffset = results.length
+    setLoadingMore(true)
+
+    try {
+      const functionName = activeSearch.type === "game" ? "igdb-proxy" : "hardcover-proxy"
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: {
+          action: "search",
+          query: activeSearch.query,
+          limit: SEARCH_PAGE_SIZE,
+          offset: nextOffset,
+        },
+      })
+
+      if (error) throw error
+
+      const mapped = await mapResults(data, activeSearch.type)
+      if (
+        activeSearchRef.current?.query === activeSearch.query &&
+        activeSearchRef.current?.type === activeSearch.type
+      ) {
+        setResults((current) => [...current, ...mapped.results])
+        setHasMore(mapped.hasMore)
+        activeSearchRef.current = { ...activeSearch, offset: nextOffset }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error"
+      toast.error(`Could not load more results: ${message}`)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [hasMore, loading, loadingMore, mapResults, results.length])
+
+  const clearResults = useCallback(() => {
+    setResults([])
+    setHasMore(false)
+    activeSearchRef.current = null
   }, [])
 
-  const clearResults = useCallback(() => setResults([]), [])
-
-  return { results, loading, search, clearResults }
+  return { results, loading, loadingMore, hasMore, search, loadMore, clearResults }
 }

@@ -4,7 +4,7 @@
  * Proxies requests to the Hardcover GraphQL API, keeping the API key server-side.
  *
  * Endpoints (via `action` field in POST body):
- *   - search:  { action: "search", query: string }
+ *   - search:  { action: "search", query: string, limit?: number, offset?: number }
  *   - details: { action: "details", id: number }
  *
  * Required Supabase secrets:
@@ -44,6 +44,8 @@ const baseCorsHeaders = {
 const HARDCOVER_GRAPHQL_URL = "https://api.hardcover.app/v1/graphql"
 const MAX_BODY_BYTES = 4_096
 const MAX_SEARCH_QUERY_LENGTH = 100
+const DEFAULT_SEARCH_LIMIT = 20
+const MAX_SEARCH_LIMIT = 50
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_REQUESTS = 60
 const HARDCOVER_TIMEOUT_MS = 12_000
@@ -181,6 +183,26 @@ function containsControlChars(value: string): boolean {
   return false
 }
 
+function validateSearchLimit(limit: unknown): number {
+  if (limit == null) return DEFAULT_SEARCH_LIMIT
+
+  const value = typeof limit === "number" ? limit : parseInt(String(limit), 10)
+  if (!Number.isInteger(value) || value <= 0 || value > MAX_SEARCH_LIMIT) {
+    throw new HttpError(400, `limit must be an integer between 1 and ${MAX_SEARCH_LIMIT}`)
+  }
+  return value
+}
+
+function validateSearchOffset(offset: unknown): number {
+  if (offset == null) return 0
+
+  const value = typeof offset === "number" ? offset : parseInt(String(offset), 10)
+  if (!Number.isInteger(value) || value < 0) {
+    throw new HttpError(400, "offset must be a non-negative integer")
+  }
+  return value
+}
+
 /**
  * Get the Hardcover API key from Supabase secrets.
  */
@@ -273,28 +295,30 @@ async function hardcoverQuery(query: string, variables: Record<string, unknown>)
 // ---------------------------------------------------------------------------
 // Search: returns compact book results for autocomplete
 // ---------------------------------------------------------------------------
-async function searchBooks(query: string) {
+async function searchBooks(query: string, limit: number, offset: number) {
+  const fetchLimit = Math.min(limit + 1, MAX_SEARCH_LIMIT)
+  const page = Math.floor(offset / limit) + 1
   const gql = `
-    query SearchBooks($query: String!) {
-      search(query: $query, query_type: "books", per_page: 10) {
+    query SearchBooks($query: String!, $perPage: Int!, $page: Int!) {
+      search(query: $query, query_type: "books", per_page: $perPage, page: $page) {
         results
       }
     }
   `
 
-  const data = await hardcoverQuery(gql, { query }) as {
+  const data = await hardcoverQuery(gql, { query, perPage: fetchLimit, page }) as {
     search?: { results?: string }
   }
 
   // results is a JSON string containing Typesense search results
   const rawResults = data?.search?.results
-  if (!rawResults) return []
+  if (!rawResults) return { results: [], hasMore: false }
 
   let parsed: { hits?: Array<{ document?: Record<string, unknown> }> }
   try {
     parsed = typeof rawResults === "string" ? JSON.parse(rawResults) : rawResults
   } catch {
-    return []
+    return { results: [], hasMore: false }
   }
 
   const hits = parsed.hits ?? []
@@ -361,7 +385,12 @@ async function searchBooks(query: string) {
     } => result !== null)
 
   const ids = Array.from(new Set(partialResults.map((result) => result.id)))
-  if (!ids.length) return partialResults
+  if (!ids.length) {
+    return {
+      results: partialResults.slice(0, limit),
+      hasMore: partialResults.length > limit,
+    }
+  }
 
   const gql = `
     query SearchBookMetadata($ids: [Int!]!) {
@@ -402,7 +431,7 @@ async function searchBooks(query: string) {
       ]),
   )
 
-  return partialResults.map((result) => {
+  const hydratedResults = partialResults.map((result) => {
     const canonical = metadataById.get(result.id)
     if (!canonical) return result
 
@@ -415,6 +444,11 @@ async function searchBooks(query: string) {
       releaseYear: canonical.releaseYear ?? result.releaseYear,
     }
   })
+
+  return {
+    results: hydratedResults.slice(0, limit),
+    hasMore: hydratedResults.length > limit,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -518,13 +552,18 @@ serve(async (req: Request) => {
     if (!body || typeof body !== "object") {
       throw new HttpError(400, "Invalid JSON payload")
     }
-    const { action, query, id } = body as Record<string, unknown>
+    const { action, query, id, limit, offset } = body as Record<string, unknown>
 
     let data: unknown
 
     switch (action) {
       case "search":
-        data = await searchBooks(validateSearchQuery(query))
+        {
+          const normalizedLimit = validateSearchLimit(limit)
+          const normalizedOffset = validateSearchOffset(offset)
+          const pagedResults = await searchBooks(validateSearchQuery(query), normalizedLimit, normalizedOffset)
+          data = limit == null && offset == null ? pagedResults.results : pagedResults
+        }
         break
 
       case "details":
