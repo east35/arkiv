@@ -160,24 +160,23 @@ export default function ListDetail() {
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Header — matches other page headers */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6 pt-4 sm:pt-6 sm:pb-6 pb-2 border-b">
-        <div className="flex items-center justify-between gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
+      {/* Header bar — matches ItemDetailHeader styling */}
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/40">
+        <div className="flex items-center justify-between">
+          <button
             onClick={() => navigate(-1)}
-            className="text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
-            <IconArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
+            <IconArrowLeft className="h-5 w-5" />
+            <span className="hidden sm:inline">Back to Lists</span>
+            <span className="sm:hidden">Back</span>
+          </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger
               className={iconActionButtonClassName({ size: "lg" })}
             >
-              <IconDots className="h-4 w-4" />
+              <IconDots className="h-4 w-4 mr-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
@@ -190,8 +189,11 @@ export default function ListDetail() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
 
-        <div className="flex items-end justify-between gap-4 mt-3">
+      {/* List info + controls */}
+      <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6">
+        <div className="flex items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{list.name}</h1>
             {list.description && (

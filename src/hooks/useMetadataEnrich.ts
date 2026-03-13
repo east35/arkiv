@@ -309,6 +309,7 @@ function buildGameUpdate(details: IgdbGameDetails) {
   if (details.playerPerspectives?.length) extUpdate.player_perspectives = details.playerPerspectives
   if (details.gameCategory != null) extUpdate.game_category = details.gameCategory
   if (details.steamId) extUpdate.steam_id = details.steamId
+  if (details.similarGames?.length) extUpdate.similar_games = details.similarGames
 
   return { itemUpdate, extUpdate }
 }

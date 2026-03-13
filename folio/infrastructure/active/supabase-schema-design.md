@@ -95,6 +95,7 @@ The core table. Every tracked book or game is a row here. Shared fields live on 
 | `progress_hours` | integer | 0 | Hours played |
 | `progress_minutes` | integer | 0 | Minutes played (0–59) |
 | `collection` | text | NULL | Steam, custom source |
+| `similar_games` | jsonb | `'[]'` | Array of `{name, cover}` from IGDB |
 
 ### `lists`
 

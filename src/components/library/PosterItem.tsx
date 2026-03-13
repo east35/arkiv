@@ -152,7 +152,6 @@ export function PosterItem({
   const [isManageListsOpen, setIsManageListsOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [flyoutSide, setFlyoutSide] = useState<"right" | "left">("right");
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { enrichSingle } = useMetadataEnrich();
   const preferences = useShelfStore((s) => s.preferences);
@@ -173,10 +172,6 @@ export function PosterItem({
 
   const handleMouseEnter = () => {
     if (window.innerWidth < 768) return;
-    if (wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      setFlyoutSide(rect.right + rect.width > window.innerWidth ? "left" : "right");
-    }
     setIsHovered(true);
   };
 
@@ -211,18 +206,14 @@ export function PosterItem({
           </Link>
         </div>
 
-        {/* Hover flyout — desktop only */}
+        {/* Hover flyout — desktop only, overlays the poster */}
         <div
           className={cn(
-            "absolute top-0 inset-y-0 w-full z-10 bg-zinc-900 text-white flex-col hidden md:flex",
-            flyoutSide === "right" ? "left-full" : "right-full",
-            "transition-[opacity,transform] duration-150",
+            "absolute inset-0 z-10 bg-zinc-900/95 backdrop-blur-sm text-white flex-col hidden md:flex",
+            "transition-opacity duration-150",
             isHovered
-              ? "opacity-100 translate-x-0 pointer-events-auto"
-              : cn(
-                  "opacity-0 pointer-events-none",
-                  flyoutSide === "right" ? "-translate-x-2" : "translate-x-2",
-                ),
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none",
           )}
           onClick={(e) => e.stopPropagation()}
         >

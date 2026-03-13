@@ -95,6 +95,7 @@ export interface GameFields {
   player_perspectives: string[]
   game_category: number | null
   steam_id: string | null
+  similar_games: Array<{ name: string; cover: string | null }>
 }
 
 /** Full book: core item + book-specific fields */

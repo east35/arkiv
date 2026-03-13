@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react"
-import { useParams, useNavigate, Link, useLocation } from "react-router-dom"
-import { formatDateTime } from "@/lib/utils"
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom"
 import {
-  IconArrowLeft,
-  IconCalendar,
-  IconBook,
-  IconDeviceGamepad2,
   IconSearchOff,
-  IconPlaylistAdd,
+  IconArrowLeft,
+  IconArrowNarrowLeft,
+  IconFlag,
   IconEdit,
+  IconPencil,
+  IconPlaylist,
+  IconUser,
+  IconCalendar,
+  IconStack2,
+  IconDeviceGamepad2,
+  IconBookmark,
+  IconInfoCircle,
+  IconList,
+  IconStarFilled,
 } from "@tabler/icons-react"
 
 import { useShelfStore } from "@/store/useShelfStore"
@@ -17,32 +24,30 @@ import { useLists } from "@/hooks/useLists"
 import { StatusSheet } from "@/components/status-sheet/StatusSheet"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
 import { ManageListsDialog } from "@/components/lists/ManageListsDialog"
 import { EmptyState } from "@/components/ui/empty-state"
 import { LoadingState } from "@/components/ui/loading-state"
-import type { FullItem, GameFields, Status } from "@/types"
+import type { FullItem, Status } from "@/types"
 import { statusIcons } from "@/components/status-icons"
 import { cn } from "@/lib/utils"
+import { formatDateTime } from "@/lib/utils"
 
-const GAME_CATEGORY_LABELS: Record<number, string> = {
-  1: "DLC",
-  2: "Expansion",
-  3: "Bundle",
-  4: "Standalone Expansion",
-  5: "Mod",
-  6: "Episode",
-  8: "Remake",
-  9: "Remaster",
-  10: "Expanded Game",
-  11: "Port",
-  12: "Fork",
-}
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { ItemDetailHeader } from "@/components/item-detail/ItemDetailHeader"
+import { ItemDetailSidebar } from "@/components/item-detail/ItemDetailSidebar"
+import { ItemDetailContent } from "@/components/item-detail/ItemDetailContent"
+import { MobileAccordion, AccordionSection } from "@/components/item-detail/MobileAccordion"
+import { NotesPanel } from "@/components/item-detail/NotesPanel"
+import { RecommendationsRow } from "@/components/item-detail/RecommendationsRow"
 
-function gameCategoryLabel(game: GameFields): string | null {
-  if (game.game_category == null || game.game_category === 0) return null
-  return GAME_CATEGORY_LABELS[game.game_category] ?? null
+/* ── Status colour map (matches PosterItem STATUS_BAR) ── */
+const statusBg: Record<Status, string> = {
+  in_collection: "bg-zinc-300 text-zinc-950",
+  backlog: "bg-purple-500 text-purple-950",
+  in_progress: "bg-primary text-primary-foreground",
+  completed: "bg-green-500 text-green-950",
+  paused: "bg-yellow-400 text-yellow-950",
+  dropped: "bg-red-500 text-red-950",
 }
 
 export default function ItemDetail() {
@@ -58,16 +63,28 @@ export default function ItemDetail() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isManageListsOpen, setIsManageListsOpen] = useState(false)
   const [itemListIds, setItemListIds] = useState<string[]>([])
+  const [isNotesOpen, setIsNotesOpen] = useState(false)
+  const [mobileTab, setMobileTab] = useState<"overview" | "notes">("overview")
+  const [scrollbarW, setScrollbarW] = useState(0)
+
+  // Track scrollbar width of the main scroll container so the Notes tab can dodge it
+  useEffect(() => {
+    const el = document.querySelector<HTMLElement>("main.app-scroll-area")
+    if (!el) return
+    const measure = () => setScrollbarW(el.offsetWidth - el.clientWidth)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   // Find item in store or fetch
   useEffect(() => {
     if (!id) return
-
     const found = items.find(i => i.id === id)
     if (found) {
       setItem(found)
     } else {
-      // If not found (refresh), fetch all
       fetchItems().then(allItems => {
         const fresh = allItems.find(i => i.id === id)
         if (fresh) setItem(fresh)
@@ -75,7 +92,7 @@ export default function ItemDetail() {
     }
   }, [id, items, fetchItems])
 
-  // Fetch list memberships for this item
+  // Fetch list memberships
   useEffect(() => {
     if (!id) return
     if (lists.length === 0) fetchLists().catch(() => {})
@@ -86,12 +103,9 @@ export default function ItemDetail() {
 
   const itemLists = lists.filter(l => itemListIds.includes(l.id))
 
-  // Loading state: show spinner while items are being fetched
-  if (!item && !items.length) {
-    return <LoadingState className="h-full" />
-  }
+  /* ── Loading / 404 ── */
+  if (!item && !items.length) return <LoadingState className="h-full" />
 
-  // 404 state: items loaded but this ID doesn't exist
   if (!item) {
     return (
       <EmptyState
@@ -110,354 +124,294 @@ export default function ItemDetail() {
   }
 
   const isGame = item.media_type === "game"
-  const coverUrl = item.cover_url || (isGame 
-    ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" 
+  const coverUrl = item.cover_url || (isGame
+    ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
     : "https://books.google.com/googlebooks/images/no_cover_thumb.gif")
-  const statusButtonClass: Record<Status, string> = {
-    in_collection: "bg-slate-600 hover:bg-slate-700 text-white",
-    backlog: "bg-purple-600 hover:bg-purple-700 text-white",
-    in_progress: "bg-primary hover:bg-primary/90 text-primary-foreground",
-    completed: "bg-green-600 hover:bg-green-700 text-white",
-    paused: "bg-orange-500 hover:bg-orange-600 text-white",
-    dropped: "bg-red-600 hover:bg-red-700 text-white",
+
+  /* Build mobile metadata segments (pipe-separated) */
+  const mobileMeta: { icon: React.ComponentType<{ className?: string }>; text: string }[] = []
+  if (isGame) {
+    if (item.game.developer) mobileMeta.push({ icon: IconUser, text: item.game.developer })
+  } else {
+    if (item.book.author) mobileMeta.push({ icon: IconUser, text: item.book.author })
   }
+  const dateStr = isGame ? item.game.release_date : item.book.publish_date
+  if (dateStr) mobileMeta.push({ icon: IconCalendar, text: String(new Date(dateStr).getFullYear()) })
+  if (isGame && item.game.collection) mobileMeta.push({ icon: IconStack2, text: item.game.collection })
+  if (!isGame && item.book.series_name) mobileMeta.push({ icon: IconStack2, text: item.book.series_name })
+  if (isGame && item.game.platforms.length > 0) mobileMeta.push({ icon: IconDeviceGamepad2, text: item.game.platforms[0] })
 
   return (
     <>
-      <div
-        className="flex-1 relative bg-[#f5f5f5] dark:bg-[#171717]"
-      >
-      <div className="relative max-w-5xl mx-auto flex flex-col w-full">
+      <div className="flex-1 relative bg-background">
+        {/* ═══════════════ Sticky Header ═══════════════ */}
+        <ItemDetailHeader
+          item={item}
+          backLabel={backLabel}
+          onStatusClick={() => setIsSheetOpen(true)}
+        />
 
-      {/* Back button */}
-      <div className="px-4 sm:px-6 pt-4 sm:pt-6">
-        <Link to={-1 as any} className="inline-flex items-center gap-2 text-base font-semibold text-black dark:text-white hover:opacity-70 transition-opacity">
-          <IconArrowLeft className="h-5 w-5" />
-          {backLabel ? `Back to ${backLabel}` : "Back"}
-        </Link>
-      </div>
+        {/* ═══════════════ Desktop Layout ═══════════════ */}
+        <div className="hidden md:block">
+          <div className="max-w-5xl mx-auto grid grid-cols-[280px_1fr] pb-20">
+            {/* Left column — sidebar */}
+            <ItemDetailSidebar
+              item={item}
+              preferences={preferences}
+              onEditClick={() => setIsSheetOpen(true)}
+            />
 
-      {/* Mobile: title above cover */}
-      <h1 className="md:hidden text-3xl font-bold tracking-tight px-4 mb-4 text-center mt-4">{item.title}</h1>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8 px-4 sm:px-6 pt-6 pb-24 md:pb-20">
-
-        {/* Left: Cover & Quick Stats */}
-        <div className="space-y-6">
-          {/* Cover: centered + constrained on mobile, full-width on desktop */}
-          <div className="max-w-[180px] mx-auto md:max-w-none overflow-hidden border aspect-[2/3] bg-muted relative">
-            <img
-              src={coverUrl}
-              alt={item.title}
-              className="w-full h-full object-cover"
+            {/* Right column — content */}
+            <ItemDetailContent
+              item={item}
+              itemLists={itemLists}
             />
           </div>
 
-          {/* Status + Add to List CTAs — desktop only */}
-          <div className="hidden md:flex flex-col gap-2">
-            <button
-              className={cn(
-                "w-full flex items-center h-11 font-semibold text-sm overflow-hidden",
-                statusButtonClass[item.status],
-              )}
-              onClick={() => setIsSheetOpen(true)}
-            >
-              <span className="flex items-center gap-2 flex-1 px-4">
-                {statusIcons[item.status]}
-                {item.status.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
-              </span>
-              <span className="w-px self-stretch bg-white/30 my-2" />
-              <span className="flex items-center justify-center w-12">
-                <IconEdit className="h-4 w-4" />
-              </span>
-            </button>
-            <Button
-              variant="outline"
-              className="w-full gap-2"
-              onClick={() => setIsManageListsOpen(true)}
-            >
-              <IconPlaylistAdd className="h-4 w-4" />
-              Add to List
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            {/* Score */}
-            <div className="p-4 rounded-lg border bg-card">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Your Score</div>
-              <div className="text-3xl font-bold flex items-baseline gap-1">
-                {item.user_score ? (
-                  <span className="font-medium">{item.user_score}</span>
-                ) : (
-                  <span className="text-muted-foreground/30">-</span>
-                )}
-                <span className="text-sm text-muted-foreground font-normal">/ 10</span>
-              </div>
-            </div>
-
-            {/* Community Score */}
-            {item.source_score != null && (
-              <div className="p-4 rounded-lg border bg-card">
-                <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Community Score</div>
-                <div className="text-3xl font-bold flex items-baseline gap-1">
-                  <span className="font-medium">{item.source_score}</span>
-                  <span className="text-sm text-muted-foreground font-normal">/ 10</span>
-                </div>
-                {item.source_votes != null && (
-                  <div className="text-xs text-muted-foreground mt-1">{item.source_votes.toLocaleString()} votes</div>
-                )}
-              </div>
-            )}
-
-            {/* Progress */}
-            <div className="p-4 rounded-lg border bg-card">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Progress</div>
-              <div className="text-lg font-medium">
-                {isGame ? (
-                  <>
-                    {item.game.progress_hours}h {item.game.progress_minutes}m
-                  </>
-                ) : (
-                  <>
-                    {item.book.progress ?? 0} <span className="text-muted-foreground text-sm">/ {item.book.page_count ?? "?"} pages</span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* Floating "Notes" tab — fixed to right viewport edge */}
+          <button
+            onClick={() => setIsNotesOpen(true)}
+            className="fixed top-1/2 -translate-y-1/2 z-10 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white pl-3 pr-6 py-2.5 rounded-l-lg shadow-lg transition-all duration-150"
+            style={{ right: scrollbarW }}
+          >
+            <IconArrowNarrowLeft className="h-4 w-4" />
+            <span className="text-sm font-semibold">Notes</span>
+          </button>
         </div>
 
-        {/* Right: Details & Tabs */}
-        <div className="space-y-8">
-          <div>
-            <h1 className="hidden md:block text-4xl font-bold tracking-tight mb-2">{item.title}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                {isGame ? <IconDeviceGamepad2 className="h-4 w-4" /> : <IconBook className="h-4 w-4" />}
-                {isGame ? item.game.developer : item.book.author}
-              </span>
-              
-              {(isGame ? item.game.release_date : item.book.publish_date) && (
-                <>
-                  <Separator orientation="vertical" className="h-4" />
-                  <span className="flex items-center gap-1.5">
-                    <IconCalendar className="h-4 w-4" />
-                    {new Date(isGame ? item.game.release_date! : item.book.publish_date!).getFullYear()}
-                  </span>
-                </>
-              )}
-
-              {!isGame && item.book.series_name && (
-                <>
-                  <Separator orientation="vertical" className="h-4" />
-                  <span>{item.book.series_name}{item.book.series_position ? ` · Book ${item.book.series_position}` : ''}</span>
-                </>
-              )}
-
-              {isGame && item.game.collection && (
-                <>
-                  <Separator orientation="vertical" className="h-4" />
-                  <span>{item.game.collection}</span>
-                </>
-              )}
-
-              {isGame && gameCategoryLabel(item.game) && (
-                <>
-                  <Separator orientation="vertical" className="h-4" />
-                  <Badge variant="outline" className="text-xs">{gameCategoryLabel(item.game)}</Badge>
-                </>
-              )}
-
-              {isGame && item.game.platforms.length > 0 && (
-                <>
-                  <Separator orientation="vertical" className="h-4" />
-                  <span>{item.game.platforms[0]}</span>
-                  {item.game.platforms.length > 1 && (
-                    <Badge variant="secondary" className="text-[10px] h-5 ml-1">+{item.game.platforms.length - 1}</Badge>
-                  )}
-                </>
-              )}
+        {/* ═══════════════ Mobile Layout ═══════════════ */}
+        <div className="md:hidden pb-40">
+          {/* Cover — centered, large */}
+          <div className="flex justify-center px-8 pt-4">
+            <div className="w-[200px] aspect-[2/3] overflow-hidden rounded-lg">
+              <img src={coverUrl} alt={item.title} className="w-full h-full object-cover" />
             </div>
           </div>
 
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              {/* <TabsTrigger value="history">History</TabsTrigger> */}
-            </TabsList>
-            
-            <TabsContent value="overview" className="space-y-6 mt-6">
-              {item.description && (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <p className="whitespace-pre-line">{item.description}</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Genres</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {item.genres.map(g => (
-                      <Badge key={g} variant="secondary">{g}</Badge>
-                    ))}
-                    {item.genres.length === 0 && <span className="text-sm text-muted-foreground">-</span>}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Dates</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Added</span>
-                      <span>{formatDateTime(item.created_at, preferences?.date_format, preferences?.time_format)}</span>
-                    </div>
-                    {item.started_at && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Started</span>
-                        <span>{formatDateTime(item.started_at, preferences?.date_format, preferences?.time_format)}</span>
-                      </div>
-                    )}
-                    {item.completed_at && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Completed</span>
-                        <span>{formatDateTime(item.completed_at, preferences?.date_format, preferences?.time_format)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+          {/* Title + metadata — centered */}
+          <div className="text-center px-6 pt-5 pb-2">
+            <h1 className="text-2xl font-bold tracking-tight mb-2">{item.title}</h1>
+            {mobileMeta.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                {mobileMeta.map((m, i) => (
+                  <span key={i} className="flex items-center gap-1">
+                    <m.icon className="h-3.5 w-3.5 shrink-0" />
+                    {m.text}
+                  </span>
+                ))}
               </div>
+            )}
+          </div>
 
-              {isGame && item.game.themes.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Themes</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {item.game.themes.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}
-                  </div>
-                </div>
-              )}
-
-              {isGame && item.game.game_modes.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Game Modes</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {item.game.game_modes.map(m => <Badge key={m} variant="secondary">{m}</Badge>)}
-                  </div>
-                </div>
-              )}
-
-              {isGame && item.game.player_perspectives.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Perspective</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {item.game.player_perspectives.map(p => <Badge key={p} variant="secondary">{p}</Badge>)}
-                  </div>
-                </div>
-              )}
-
-              {!isGame && item.book.tag_categories &&
-                Object.entries(item.book.tag_categories).map(([category, tags]) =>
-                  tags.length > 0 ? (
-                    <div key={category}>
-                      <h3 className="text-sm font-medium mb-3 text-muted-foreground">{category}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {tags.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}
+          {/* Tab content */}
+          {mobileTab === "overview" ? (
+            <div className="pt-4">
+              <MobileAccordion>
+                {/* Your Details */}
+                <AccordionSection title="Your Details" icon={IconBookmark}>
+                  <div className="space-y-4 px-1 pb-3 pt-1">
+                    {/* Progress */}
+                    <div>
+                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Your Progress</div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl font-bold">
+                          {isGame
+                            ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
+                            : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`}
+                        </span>
+                        {item.status === "completed" && (
+                          <IconFlag className="h-5 w-5 text-green-500 fill-green-500" />
+                        )}
                       </div>
                     </div>
-                  ) : null
-                )
-              }
 
-              {itemLists.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium mb-3 text-muted-foreground">Lists</h3>
-                  <div className="flex flex-col gap-2">
-                    {itemLists.map(list => (
-                      <Link
-                        key={list.id}
-                        to={`/lists/${list.id}`}
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="h-10 w-14 rounded overflow-hidden bg-muted shrink-0">
-                          {(() => {
-                            const coverId = list.cover_item_id || list.first_item_id
-                            const coverItem = coverId ? items.find(i => i.id === coverId) : null
-                            return coverItem?.cover_url ? (
-                              <img src={coverItem.cover_url} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center text-lg font-bold text-muted-foreground/40">
-                                {list.name.charAt(0)}
-                              </div>
-                            )
-                          })()}
+                    {/* Platform */}
+                    <div className="flex items-center justify-between py-2 border-t text-sm">
+                      <span className="text-muted-foreground">Platform</span>
+                      <span className="flex items-center gap-2 font-medium">
+                        {isGame ? (item.game.platforms[0] || "—") : (item.book.format || "Digital")}
+                        <IconPencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </span>
+                    </div>
+
+                    {/* Scores */}
+                    <div className="grid grid-cols-2 gap-4 py-2 border-t">
+                      <div>
+                        <div className="text-xs text-muted-foreground uppercase mb-0.5">Your Score</div>
+                        <div className="text-2xl font-bold">
+                          {item.user_score ? (
+                            <>{item.user_score}<span className="text-sm text-muted-foreground font-normal">/10</span></>
+                          ) : "—"}
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm truncate">{list.name}</p>
-                          {list.description && (
-                            <p className="text-xs text-muted-foreground truncate">{list.description}</p>
-                          )}
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground uppercase mb-0.5">Community Score</div>
+                        <div className="text-2xl font-bold">
+                          {item.source_score ? (
+                            <>{Math.round(item.source_score / 10)}<span className="text-sm text-muted-foreground font-normal">/10</span></>
+                          ) : "—"}
                         </div>
-                      </Link>
-                    ))}
+                        {item.source_votes != null && item.source_votes > 0 && (
+                          <div className="text-xs text-muted-foreground">{item.source_votes.toLocaleString()} Votes</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dates */}
+                    <div className="divide-y text-sm">
+                      <div className="flex justify-between py-2">
+                        <span className="text-muted-foreground">Added</span>
+                        <span>{formatDateTime(item.created_at, preferences?.date_format, preferences?.time_format)}</span>
+                      </div>
+                      {item.started_at && (
+                        <div className="flex justify-between py-2">
+                          <span className="text-muted-foreground">Started</span>
+                          <span>{formatDateTime(item.started_at, preferences?.date_format, preferences?.time_format)}</span>
+                        </div>
+                      )}
+                      {item.completed_at && (
+                        <div className="flex justify-between py-2">
+                          <span className="text-muted-foreground">Completed</span>
+                          <span>{formatDateTime(item.completed_at, preferences?.date_format, preferences?.time_format)}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </TabsContent>
+                </AccordionSection>
 
-            <TabsContent value="notes" className="mt-6">
+                {/* Game / Book Details */}
+                <AccordionSection title={isGame ? "Game Details" : "Book Details"} icon={IconInfoCircle}>
+                  <div className="space-y-4 px-1 pb-3 pt-1">
+                    {item.description && (
+                      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                        {item.description}
+                      </p>
+                    )}
+                    {item.genres.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">Genres</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {item.genres.map(g => <Badge key={g} variant="secondary">{g}</Badge>)}
+                        </div>
+                      </div>
+                    )}
+                    {isGame && item.game.themes.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">Themes</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {item.game.themes.map(t => <Badge key={t} variant="secondary">{t}</Badge>)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </AccordionSection>
+
+                {/* Lists */}
+                <AccordionSection title="Lists" icon={IconList}>
+                  <div className="space-y-2 px-1 pb-3 pt-1">
+                    {itemLists.length > 0 ? (
+                      itemLists.map(list => (
+                        <div key={list.id} className="flex items-center gap-3 p-3 bg-card border rounded-md">
+                          <div className="h-8 w-8 rounded bg-secondary/50 flex items-center justify-center shrink-0">
+                            <IconPlaylist className="h-4 w-4 text-muted-foreground/50" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium text-sm truncate block">{list.name}</span>
+                            <span className="text-xs text-muted-foreground">{list.item_count ? `${list.item_count} Items` : ""}</span>
+                          </div>
+                          <Link
+                            to={`/lists/${list.id}`}
+                            className="text-xs font-medium px-3 py-1 rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
+                          >
+                            View List
+                          </Link>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground text-sm">
+                        Not in any lists.
+                        <Button variant="link" onClick={() => setIsManageListsOpen(true)} className="px-1 h-auto">Add to list</Button>
+                      </div>
+                    )}
+                  </div>
+                </AccordionSection>
+
+                {/* Recommendations (games only) */}
+                {isGame && item.game.similar_games && item.game.similar_games.length > 0 && (
+                  <AccordionSection title="Recommendations" icon={IconStarFilled}>
+                    <div className="pb-3 pt-1">
+                      <RecommendationsRow item={item} />
+                    </div>
+                  </AccordionSection>
+                )}
+              </MobileAccordion>
+            </div>
+          ) : (
+            /* Notes tab content */
+            <div className="px-4 pt-6">
               {item.notes ? (
-                <div className="bg-muted/30 p-4 rounded-lg border whitespace-pre-wrap">
+                <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground bg-card p-4 rounded-lg border">
                   {item.notes}
                 </div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <p>No notes yet.</p>
-                  <Button variant="link" onClick={() => setIsSheetOpen(true)}>Add a note</Button>
+                <div className="flex flex-col items-center justify-center py-16 text-center space-y-4 border-2 border-dashed rounded-lg">
+                  <div className="text-muted-foreground text-sm">No notes yet</div>
+                  <Button variant="outline" size="sm" onClick={() => setIsSheetOpen(true)}>
+                    Add a note
+                  </Button>
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Mobile floating action bar — above bottom nav */}
-      <div
-        className="md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 px-4"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
-      >
-        <Button
-          className={`flex-1 h-12 font-semibold text-base gap-2 rounded-full ${statusButtonClass[item.status]}`}
-          onClick={() => setIsSheetOpen(true)}
-        >
-          {statusIcons[item.status]}
-          {item.status.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
-        </Button>
-        <Button
-          size="icon"
-          variant="outline"
-          className="h-12 w-12 rounded-full shrink-0"
-          onClick={() => setIsManageListsOpen(true)}
-        >
-          <IconPlaylistAdd className="h-5 w-5" />
-        </Button>
-      </div>
+        {/* ═══════════════ Mobile Bottom Bar ═══════════════ */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 pb-safe bg-background">
+          {/* Status bar — full-width, status colour */}
+          <button
+            onClick={() => setIsSheetOpen(true)}
+            className={cn(
+              "w-full h-[55px] flex items-center justify-between px-4 text-sm font-semibold",
+              statusBg[item.status]
+            )}
+          >
+            <span className="flex items-center gap-2">
+              {item.status === "completed" ? <IconFlag className="h-4 w-4" /> : statusIcons[item.status]}
+              {item.status.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
+            </span>
+            <span className="flex items-center gap-3">
+              <span className="h-5 w-px bg-white/30" />
+              <IconEdit className="h-4 w-4" />
+            </span>
+          </button>
 
-      <StatusSheet
-        item={item}
-        open={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
-      />
+          {/* Tab bar — reuses SegmentedControl like CollectionTypeSwitcher */}
+          <SegmentedControl
+            value={mobileTab}
+            onValueChange={(v) => setMobileTab(v as "overview" | "notes")}
+            items={[
+              { value: "overview", label: "Overview", ariaLabel: "Overview" },
+              { value: "notes", label: "Notes", ariaLabel: "Notes" },
+            ]}
+            fullWidth
+            listClassName="!p-0 !gap-0 !border-0 !h-[55px]"
+            triggerClassName="!h-[55px] font-semibold text-sm text-foreground"
+          />
+        </div>
 
-      {item && (
-        <ManageListsDialog
-          itemId={item.id}
-          open={isManageListsOpen}
-          onOpenChange={setIsManageListsOpen}
+        {/* ═══════════════ Sheets / Dialogs ═══════════════ */}
+        <StatusSheet item={item} open={isSheetOpen} onOpenChange={setIsSheetOpen} />
+        <ManageListsDialog itemId={item.id} open={isManageListsOpen} onOpenChange={setIsManageListsOpen} />
+        <NotesPanel
+          open={isNotesOpen}
+          onOpenChange={setIsNotesOpen}
+          notes={item.notes}
+          onEditClick={() => {
+            setIsNotesOpen(false)
+            setIsSheetOpen(true)
+          }}
         />
-      )}
-    </div>
-    </div>
+      </div>
     </>
   )
 }
