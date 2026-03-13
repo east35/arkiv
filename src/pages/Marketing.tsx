@@ -1,133 +1,202 @@
 import { Link } from "react-router-dom"
 import {
   IconArrowRight,
-  IconDeviceGamepad2,
-  IconBook,
-  IconLayoutGrid,
+  IconMessageCircle,
+  IconBrain,
+  IconBookmark,
 } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
-import marketingBg from "../../marketing/bg1.gif"
-import screenshotLight from "../../marketing/akiv-screenshot-light.png"
-import screenshotDark from "../../marketing/akiv-screenshot-dark.png"
+
+const features = [
+  {
+    title: "Track what matters",
+    body: "From current page counts to time played, Arkiv makes progress feel lightweight, fast, and worth keeping up with.",
+    lightImg: "/marketing/desktop/desktop-11.png",
+    darkImg: "/marketing/desktop/desktop-16.png",
+    mobileLight: "/marketing/mobile/mobile-1.png",
+    mobileDark: "/marketing/mobile/mobile-6.png",
+    reverse: false,
+  },
+  {
+    title: "Find anything fast",
+    body: "Search books and games without needing the exact title formatting, then add them with rich metadata in seconds.",
+    lightImg: "/marketing/desktop/desktop-12.png",
+    darkImg: "/marketing/desktop/desktop-17.png",
+    mobileLight: "/marketing/mobile/mobile-2.png",
+    mobileDark: "/marketing/mobile/mobile-7.png",
+    reverse: true,
+  },
+  {
+    title: "A library with memory",
+    body: "Browse by list, revisit series and collections, and surface recommendations that connect what you love to what comes next.",
+    lightImg: "/marketing/desktop/desktop-13.png",
+    darkImg: "/marketing/desktop/desktop-18.png",
+    mobileLight: "/marketing/mobile/mobile-3.png",
+    mobileDark: "/marketing/mobile/mobile-8.png",
+    reverse: false,
+  },
+  {
+    title: "Stats worth checking",
+    body: "See streaks, completion patterns, score trends, and activity over time without turning your beautiful library into spreadsheet work.",
+    lightImg: "/marketing/desktop/desktop-14.png",
+    darkImg: "/marketing/desktop/desktop-19.png",
+    mobileLight: "/marketing/mobile/mobile-4.png",
+    mobileDark: "/marketing/mobile/mobile-9.png",
+    reverse: true,
+  },
+]
 
 export default function Marketing() {
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
-      <img
-        src={marketingBg}
-        alt=""
-        className="fixed inset-0 h-full w-full object-cover"
-      />
-      <div className="fixed inset-0 bg-black/60" />
+    <div className="min-h-screen bg-background">
+      {/* Sticky Nav */}
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/40">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between">
+          <img src="/logo/arkiv-logo-black.svg" alt="Arkiv" className="h-7 dark:hidden" />
+          <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-7 hidden dark:block" />
+          <div className="flex items-center gap-3">
+            <Link to="/login"><Button variant="ghost" size="sm">Sign In</Button></Link>
+            <Link to="/register"><Button size="sm">Get Started</Button></Link>
+          </div>
+        </div>
+      </header>
 
-      <div className="relative z-10">
-        <header className="mx-auto flex w-full max-w-[1700px] items-center justify-between px-6 py-6 md:px-10">
-          <Link to="/" className="inline-flex items-center">
-            <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-9" />
-          </Link>
-          <Link
-            to="/login"
-            className="rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Sign In
-          </Link>
-        </header>
-
-        <main className="mx-auto max-w-[1700px] px-6 pb-16 md:px-10">
-          <section className="grid min-h-[68vh] items-center gap-10 py-10 lg:grid-cols-2 lg:gap-14">
-            <div className="text-left">
-              <h1 className="max-w-2xl text-5xl font-bold tracking-tight text-white md:text-7xl">
-                The home for your games and books.
-              </h1>
-              <p className="mt-6 max-w-2xl text-lg text-white/70 md:text-2xl">
-                Track status, progress, and notes in one clean library. Arkiv gives you a fast,
-                visual way to stay on top of everything you are playing and reading.
-              </p>
-              <div className="mt-10 flex flex-row gap-3">
-                <Link to="/register">
-                  <Button size="lg" className="group bg-white text-black hover:bg-white/90">
-                    Start Free
-                    <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                  </Button>
-                </Link>
-                <Link to="/login">
-                  <Button size="lg">
-                    Sign In
-                  </Button>
-                </Link>
-              </div>
-            </div>
-            <div className="w-full">
-              <img
-                src={screenshotLight}
-                alt="Arkiv interface preview in light mode"
-                className="block w-full rounded-3xl dark:hidden"
-              />
-              <img
-                src={screenshotDark}
-                alt="Arkiv interface preview in dark mode"
-                className="hidden w-full rounded-3xl dark:block"
-              />
-            </div>
-          </section>
-
-          <section className="py-10">
-            <h2 className="mb-10 text-center text-3xl font-bold text-white md:text-4xl">
-              Built for your everyday flow
-            </h2>
-            <div className="grid gap-6 md:grid-cols-3">
-              {[
-                { icon: IconDeviceGamepad2, title: "Track Games", copy: "Keep every title, platform, and status in one place." },
-                { icon: IconBook, title: "Track Books", copy: "Follow reading progress with pages, notes, and quick edits." },
-                { icon: IconLayoutGrid, title: "Browse Fast", copy: "Switch between clean grid and list views instantly." },
-              ].map(({ icon: Icon, title, copy }) => (
-                <div
-                  key={title}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl"
-                >
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-white">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/70">{copy}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="py-20 text-center">
-            <h2 className="text-3xl font-bold text-white md:text-4xl">Ready to organize everything?</h2>
-            <p className="mt-4 text-lg text-white/70">
-              Move from scattered trackers to one clean, focused library.
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-background min-h-[85vh] flex items-center">
+        <span className="absolute inset-0 flex items-center justify-center text-[20vw] font-bold tracking-tighter select-none pointer-events-none text-foreground/[0.04] whitespace-nowrap">
+          arkiv
+        </span>
+        <div className="relative max-w-7xl mx-auto px-6 md:px-10 py-20 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-tight">
+              Your books &amp; games.<br />One sharp, searchable library.
+            </h1>
+            <p className="mt-6 text-lg text-muted-foreground max-w-xl">
+              Capture reading and playthrough info into one clean system. Track status,
+              progress, ratings, notes, lists, and stats without fighting clunky metadata
+              or messy workflows.
             </p>
-            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+            <div className="mt-8 flex gap-3">
               <Link to="/register">
-                <Button size="lg" className="group bg-white text-black hover:bg-white/90">
-                  Create Account
-                  <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Button>
+                <Button size="lg">Get Started <IconArrowRight className="h-4 w-4" /></Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" className="border-white/20 bg-white/10 text-white hover:bg-white/20">
-                  Sign In
-                </Button>
+                <Button size="lg" variant="outline">Sign In</Button>
               </Link>
             </div>
-          </section>
+          </div>
+          <div>
+            <img src="/marketing/desktop/desktop-11.png" alt="Arkiv library view" className="rounded-2xl shadow-2xl dark:hidden" />
+            <img src="/marketing/desktop/desktop-16.png" alt="Arkiv library view" className="rounded-2xl shadow-2xl hidden dark:block" />
+          </div>
+        </div>
+      </section>
 
-          <footer className="pb-8 text-center text-xs text-white/50">
-            © 2026 Arkiv · Built by{" "}
-            <a
-              href="https://jimjordan.design"
-              target="_blank"
-              rel="noreferrer"
-              className="text-white/70 transition-colors hover:text-white"
-            >
-              Jim Jordan
-            </a>
-          </footer>
-        </main>
-      </div>
+      {/* Feature Sections */}
+      {features.map((feature, i) => (
+        <section
+          key={feature.title}
+          className={`py-20 border-t border-border/40 ${i % 2 === 1 ? "bg-[#F8F8F8] dark:bg-[#111111]" : "bg-background"}`}
+        >
+          <div className="max-w-7xl mx-auto px-6 md:px-10 grid lg:grid-cols-2 gap-12 items-center">
+            <div className={feature.reverse ? "lg:order-2" : ""}>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{feature.title}</h2>
+              <p className="mt-4 text-lg text-muted-foreground">{feature.body}</p>
+            </div>
+            <div className={feature.reverse ? "lg:order-1" : ""}>
+              {/* Desktop screenshots */}
+              <div className="hidden md:block">
+                <img src={feature.lightImg} alt={feature.title} className="rounded-2xl shadow-xl dark:hidden" />
+                <img src={feature.darkImg} alt={feature.title} className="rounded-2xl shadow-xl hidden dark:block" />
+              </div>
+              {/* Mobile screenshots */}
+              <div className="block md:hidden mx-auto max-w-xs w-full">
+                <img src={feature.mobileLight} alt={feature.title} className="rounded-2xl shadow-xl dark:hidden w-full" />
+                <img src={feature.mobileDark} alt={feature.title} className="rounded-2xl shadow-xl hidden dark:block w-full" />
+              </div>
+            </div>
+          </div>
+        </section>
+      ))}
+
+      {/* AI Section */}
+      <section className="bg-primary py-20">
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <div className="max-w-2xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground">
+              An AI layer for every item in your library.
+            </h2>
+            <p className="mt-4 text-lg text-primary-foreground/80">
+              Ask questions about the book you're reading or the game you're playing,
+              dig into deeper themes and topics, follow hints for dense or complex games,
+              and keep external sources like articles, essays, wikis, and walkthroughs
+              tied to the item itself.
+            </p>
+          </div>
+
+          <div className="mt-12 flex gap-4 overflow-x-auto pb-4">
+            <img src="/marketing/desktop/desktop-15.png" alt="AI feature" className="rounded-2xl h-72 w-auto flex-shrink-0" />
+            <img src="/marketing/desktop/desktop-16.png" alt="AI feature" className="rounded-2xl h-72 w-auto flex-shrink-0" />
+            <img src="/marketing/desktop/desktop-17.png" alt="AI feature" className="rounded-2xl h-72 w-auto flex-shrink-0" />
+          </div>
+
+          <div className="mt-12 grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: IconMessageCircle,
+                title: "Ask smarter questions",
+                body: "Get quick answers, recipes, and deeper context without leaving your library.",
+              },
+              {
+                icon: IconBrain,
+                title: "Beyond surface-level tracking",
+                body: "Explore themes, characters, mechanics, lore. Add ideas while you read or play.",
+              },
+              {
+                icon: IconBookmark,
+                title: "Keep your sources organized",
+                body: "Save walkthroughs, articles, and reference material alongside your notes instead of scattering them across tabs.",
+              },
+            ].map(({ icon: Icon, title, body }) => (
+              <div key={title}>
+                <Icon className="h-6 w-6 text-primary-foreground/70 mb-3" />
+                <h3 className="text-lg font-semibold text-primary-foreground">{title}</h3>
+                <p className="mt-2 text-sm text-primary-foreground/70 leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer CTA */}
+      <section className="py-24 bg-background text-center border-t border-border/40">
+        <div className="max-w-2xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Stop juggling trackers. Start building a library that thinks with you.
+          </h2>
+          <div className="mt-8">
+            <Link to="/register">
+              <Button size="lg">
+                Get Started <IconArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer Nav */}
+      <footer className="border-t border-border/40 py-6">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-4">
+          <img src="/logo/arkiv-logo-black.svg" alt="Arkiv" className="h-6 dark:hidden" />
+          <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-6 hidden dark:block" />
+          <nav className="flex items-center gap-6 text-sm text-muted-foreground">
+            <a href="mailto:hello@arkiv.app" className="hover:text-foreground transition-colors">Contact Us</a>
+            <Link to="/legal" className="hover:text-foreground transition-colors">Legal Info</Link>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <span>Made in Austin, TX</span>
+          </nav>
+        </div>
+      </footer>
     </div>
   )
 }

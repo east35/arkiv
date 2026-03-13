@@ -104,14 +104,6 @@ export function LibraryMobileFilterSheet({
     Array.isArray(selectedStatuses) &&
     !!onSelectedStatusesChange;
 
-  const multiStatusLabel = useMemo(() => {
-    if (!isMultiStatus || !selectedStatuses) return "All Status";
-    if (selectedStatuses.length === 0) return "No Status";
-    if (selectedStatuses.length === STATUS_OPTIONS.length) return "All Status";
-    if (selectedStatuses.length === 1) return statusLabels[selectedStatuses[0]];
-    return `${selectedStatuses.length} statuses`;
-  }, [isMultiStatus, selectedStatuses]);
-
   const toggleStatus = (status: Status) => {
     if (!isMultiStatus || !selectedStatuses || !onSelectedStatusesChange)
       return;
