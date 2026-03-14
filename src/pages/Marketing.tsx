@@ -1,202 +1,593 @@
-import { Link } from "react-router-dom"
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   IconArrowRight,
-  IconMessageCircle,
   IconBrain,
   IconBookmark,
-} from "@tabler/icons-react"
-import { Button } from "@/components/ui/button"
+  IconEye,
+  IconMessageCircle,
+} from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
 
-const features = [
+const featureSections = [
   {
     title: "Track what matters",
-    body: "From current page counts to time played, Arkiv makes progress feel lightweight, fast, and worth keeping up with.",
-    lightImg: "/marketing/desktop/desktop-11.png",
-    darkImg: "/marketing/desktop/desktop-16.png",
-    mobileLight: "/marketing/mobile/mobile-1.png",
-    mobileDark: "/marketing/mobile/mobile-6.png",
-    reverse: false,
+    body: "From current page counts to time played, Arkiv keeps progress feeling light, fast, and worth returning to.",
+    lightDesktop: "/marketing/desktop/desktop-11.png",
+    darkDesktop: "/marketing/desktop/desktop-16.png",
+    lightMobile: "/marketing/mobile/mobile-1.png",
+    darkMobile: "/marketing/mobile/mobile-6.png",
+    align: "right" as const,
   },
   {
     title: "Find anything fast",
-    body: "Search books and games without needing the exact title formatting, then add them with rich metadata in seconds.",
-    lightImg: "/marketing/desktop/desktop-12.png",
-    darkImg: "/marketing/desktop/desktop-17.png",
-    mobileLight: "/marketing/mobile/mobile-2.png",
-    mobileDark: "/marketing/mobile/mobile-7.png",
-    reverse: true,
+    body: "Search books and games with fuzzy matching and add them with rich metadata in seconds, without wrestling exact title formatting.",
+    lightDesktop: "/marketing/desktop/desktop-12.png",
+    darkDesktop: "/marketing/desktop/desktop-17.png",
+    lightMobile: "/marketing/mobile/mobile-2.png",
+    darkMobile: "/marketing/mobile/mobile-7.png",
+    align: "left" as const,
   },
   {
     title: "A library with memory",
-    body: "Browse by list, revisit series and collections, and surface recommendations that connect what you love to what comes next.",
-    lightImg: "/marketing/desktop/desktop-13.png",
-    darkImg: "/marketing/desktop/desktop-18.png",
-    mobileLight: "/marketing/mobile/mobile-3.png",
-    mobileDark: "/marketing/mobile/mobile-8.png",
-    reverse: false,
+    body: "Browse series, libraries, and collections with recommendations that connect what you love to what comes next.",
+    lightDesktop: "/marketing/desktop/desktop-13.png",
+    darkDesktop: "/marketing/desktop/desktop-18.png",
+    lightMobile: "/marketing/mobile/mobile-3.png",
+    darkMobile: "/marketing/mobile/mobile-8.png",
+    align: "right" as const,
   },
   {
     title: "Stats worth checking",
-    body: "See streaks, completion patterns, score trends, and activity over time without turning your beautiful library into spreadsheet work.",
-    lightImg: "/marketing/desktop/desktop-14.png",
-    darkImg: "/marketing/desktop/desktop-19.png",
-    mobileLight: "/marketing/mobile/mobile-4.png",
-    mobileDark: "/marketing/mobile/mobile-9.png",
-    reverse: true,
+    body: "See streaks, completion patterns, ratings, and activity without turning your personal library into spreadsheet work.",
+    lightDesktop: "/marketing/desktop/desktop-14.png",
+    darkDesktop: "/marketing/desktop/desktop-19.png",
+    lightMobile: "/marketing/mobile/mobile-4.png",
+    darkMobile: "/marketing/mobile/mobile-9.png",
+    align: "left" as const,
   },
-]
+];
+
+const aiCards = [
+  {
+    icon: IconMessageCircle,
+    title: "Ask smarter questions",
+    body: "Pull quick context, summaries, and connections from the item you are already tracking.",
+    bg: "#1914C5",
+  },
+  {
+    icon: IconBrain,
+    title: "Go beyond surface-level tracking",
+    body: "Follow themes, mechanics, and story threads while you read or play, without losing your place.",
+    bg: "#130F94",
+  },
+  {
+    icon: IconBookmark,
+    title: "Keep your sources organized",
+    body: "Save walkthroughs, essays, and notes next to the item instead of scattering them across tabs.",
+    bg: "#0C0A62",
+  },
+];
+
+const featureSurfaceStyles = [
+  {
+    section: "bg-black/[0.03] dark:bg-white/[0.03]",
+    media: "bg-black/[0.06] dark:bg-white/[0.06]",
+  },
+  {
+    section: "bg-black/[0.06] dark:bg-white/[0.06]",
+    media: "bg-black/[0.12] dark:bg-white/[0.12]",
+  },
+  {
+    section: "bg-black/[0.09] dark:bg-white/[0.09]",
+    media: "bg-black/[0.18] dark:bg-white/[0.18]",
+  },
+  {
+    section: "bg-black/[0.12] dark:bg-white/[0.12]",
+    media: "bg-black/[0.24] dark:bg-white/[0.24]",
+  },
+] as const;
+
+const aiShowcase = {
+  desktop: "/marketing/ai/desktop-20.png",
+  mobile: "/marketing/ai/mobile-10.png",
+} as const;
+
+type FeatureSection = (typeof featureSections)[number];
+
+function ThemeImage({
+  lightSrc,
+  darkSrc,
+  alt,
+  className,
+}: {
+  lightSrc: string;
+  darkSrc: string;
+  alt: string;
+  className?: string;
+}) {
+  return (
+    <>
+      <img
+        src={lightSrc}
+        alt={alt}
+        className={`dark:hidden ${className ?? ""}`}
+      />
+      <img
+        src={darkSrc}
+        alt={alt}
+        className={`hidden dark:block ${className ?? ""}`}
+      />
+    </>
+  );
+}
+
+function GhostLogo({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 overflow-hidden ${className ?? ""}`}
+    >
+      <img
+        src="/logo/arkiv-logo-black.svg"
+        alt=""
+        className="absolute bottom-[-20px] left-1/2 w-[520px] max-w-none -translate-x-1/2 opacity-[0.045] dark:invert md:w-[1300px]"
+      />
+    </div>
+  );
+}
+
+function ScreenshotCard({
+  lightSrc,
+  darkSrc,
+  alt,
+  className,
+}: {
+  lightSrc: string;
+  darkSrc: string;
+  alt: string;
+  className?: string;
+}) {
+  return (
+    <div className={`overflow-hidden ${className ?? ""}`}>
+      <ThemeImage
+        lightSrc={lightSrc}
+        darkSrc={darkSrc}
+        alt={alt}
+        className="h-full w-full object-cover"
+      />
+    </div>
+  );
+}
+
+function MarketingFeature({
+  title,
+  body,
+  lightDesktop,
+  darkDesktop,
+  lightMobile,
+  darkMobile,
+  align,
+  sectionClassName,
+  mediaClassName,
+}: FeatureSection & {
+  sectionClassName: string;
+  mediaClassName: string;
+}) {
+  const textBlock = (
+    <div className="flex h-full items-center px-6 py-10 md:px-10 md:py-14">
+      <div className="max-w-sm">
+        <h2 className="text-[2rem] font-semibold leading-[2.25rem] tracking-tight md:text-[2.5rem] md:leading-[2.75rem]">
+          {title}
+        </h2>
+        <p className="mt-4 max-w-xs text-sm leading-7 text-muted-foreground md:text-base">
+          {body}
+        </p>
+      </div>
+    </div>
+  );
+
+  const desktopImage = (
+    <div className="flex h-full items-center justify-end border-r py-6 pl-6">
+      <ScreenshotCard
+        lightSrc={lightDesktop}
+        darkSrc={darkDesktop}
+        alt={title}
+        className="w-full max-w-[640px]"
+      />
+    </div>
+  );
+
+  const mobileImage = (
+    <div className="px-6">
+      <ScreenshotCard
+        lightSrc={lightMobile}
+        darkSrc={darkMobile}
+        alt={title}
+        className="mx-auto"
+      />
+    </div>
+  );
+
+  return (
+    <section
+      className={`relative border-t border-black/8 dark:border-white/8 ${sectionClassName}`}
+    >
+      <div className={`mx-auto max-w-[1400px] md:hidden ${mediaClassName}`}>
+        <div>{textBlock}</div>
+        <div>{mobileImage}</div>
+      </div>
+
+      <div className="mx-auto hidden max-w-[1400px] md:grid md:min-h-[340px] md:grid-cols-[0.9fr_1.1fr]">
+        {align === "left" ? (
+          <>
+            <div className="border-r dark:border-white/8">{textBlock}</div>
+            <div className={mediaClassName}>{desktopImage}</div>
+          </>
+        ) : (
+          <>
+            <div className={`${mediaClassName} md:order-2`}>{desktopImage}</div>
+            <div className="border-r dark:border-white/8 md:order-1">
+              {textBlock}
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default function Marketing() {
+  const [showHeader, setShowHeader] = useState(false);
+  const handleViewDemo = () => window.alert("Coming soon");
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const previousClasses = {
+      light: root.classList.contains("light"),
+      dark: root.classList.contains("dark"),
+    };
+
+    const applySystemTheme = () => {
+      root.classList.remove("light", "dark");
+      root.classList.add(mediaQuery.matches ? "dark" : "light");
+    };
+
+    applySystemTheme();
+    mediaQuery.addEventListener("change", applySystemTheme);
+
+    return () => {
+      mediaQuery.removeEventListener("change", applySystemTheme);
+      root.classList.remove("light", "dark");
+
+      if (previousClasses.light) root.classList.add("light");
+      if (previousClasses.dark) root.classList.add("dark");
+    };
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setShowHeader(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sticky Nav */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/40">
-        <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between">
-          <img src="/logo/arkiv-logo-black.svg" alt="Arkiv" className="h-7 dark:hidden" />
-          <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-7 hidden dark:block" />
-          <div className="flex items-center gap-3">
-            <Link to="/login"><Button variant="ghost" size="sm">Sign In</Button></Link>
-            <Link to="/register"><Button size="sm">Get Started</Button></Link>
+    <div className="min-h-screen bg-background pb-36 text-foreground md:pb-0">
+      <header
+        className={`hidden md:block sticky top-0 z-50 border-b border-black/8 bg-background/92 backdrop-blur-md transition-all duration-300 dark:border-white/8 ${
+          showHeader
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-full opacity-0"
+        }`}
+      >
+        <div className="mx-auto flex h-14 items-stretch justify-between pl-5 md:pl-8">
+          <img
+            src="/logo/arkiv-logo-black.svg"
+            alt="Arkiv"
+            className="h-7 self-center dark:hidden"
+          />
+          <img
+            src="/logo/arkiv-logo-white.svg"
+            alt="Arkiv"
+            className="hidden h-7 self-center dark:block"
+          />
+
+          <div className="flex h-full items-stretch gap-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleViewDemo}
+              className="h-full rounded-none border-l px-6 font-medium hover:bg-black/[0.03]  dark:hover:bg-white/[0.04]"
+            >
+              View Demo
+            </Button>
+            <Link to="/register" className="flex">
+              <Button
+                size="sm"
+                className="h-full rounded-none bg-primary px-6 font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Sign Up or Log In
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-background min-h-[85vh] flex items-center">
-        <span className="absolute inset-0 flex items-center justify-center text-[20vw] font-bold tracking-tighter select-none pointer-events-none text-foreground/[0.04] whitespace-nowrap">
-          arkiv
-        </span>
-        <div className="relative max-w-7xl mx-auto px-6 md:px-10 py-20 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-tight">
-              Your books &amp; games.<br />One sharp, searchable library.
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-xl">
-              Capture reading and playthrough info into one clean system. Track status,
-              progress, ratings, notes, lists, and stats without fighting clunky metadata
-              or messy workflows.
-            </p>
-            <div className="mt-8 flex gap-3">
-              <Link to="/register">
-                <Button size="lg">Get Started <IconArrowRight className="h-4 w-4" /></Button>
-              </Link>
-              <Link to="/login">
-                <Button size="lg" variant="outline">Sign In</Button>
-              </Link>
-            </div>
-          </div>
-          <div>
-            <img src="/marketing/desktop/desktop-11.png" alt="Arkiv library view" className="rounded-2xl shadow-2xl dark:hidden" />
-            <img src="/marketing/desktop/desktop-16.png" alt="Arkiv library view" className="rounded-2xl shadow-2xl hidden dark:block" />
+      <section className="relative overflow-hidden border-b border-black/8 bg-background dark:border-white/8 md:h-[720px]">
+        <GhostLogo className="hidden md:block" />
+
+        <div className="relative mx-auto max-w-[1100px] px-6 pb-14 pt-16 text-left md:flex md:h-full md:flex-col md:justify-center md:px-8 md:pb-20 md:pt-20 md:text-center">
+          <img
+            src="/logo/arkiv-logo-black.svg"
+            alt="Arkiv"
+            className="mb-10 h-14 md:hidden dark:invert"
+          />
+
+          <h1 className="max-w-[18ch] text-[2.3rem] font-semibold leading-[2.55rem] tracking-tight md:mx-auto md:max-w-[900px] md:text-[4rem] md:leading-[4.25rem]">
+            Your books &amp; games.
+            <br />
+            One sharp, searchable library.
+          </h1>
+          <p className="mt-5 max-w-[34ch] text-sm leading-7 text-muted-foreground md:mx-auto md:mt-6 md:max-w-[600px] md:text-base">
+            Track status, progress, scores, notes, and discovery across books
+            and games in one place, with a system that feels fast enough to keep
+            using.
+          </p>
+
+          <div className="mt-7 hidden items-start justify-start gap-5 sm:flex-row md:mt-8 md:flex md:items-center md:justify-center">
+            <Link to="/register">
+              <Button
+                size="lg"
+                className="h-[62px] min-w-[270px] rounded-none bg-primary px-8 text-lg font-medium text-primary-foreground shadow-none hover:bg-primary/90"
+              >
+                Sign Up or Log In
+                <IconArrowRight className="ml-auto h-6 w-6" />
+              </Button>
+            </Link>
+            <Button
+              type="button"
+              size="lg"
+              onClick={handleViewDemo}
+              className="h-[62px] min-w-[270px] rounded-none border border-black/8 bg-background px-8 text-lg font-medium text-primary shadow-none hover:bg-black/[0.03] dark:border-white/0 dark:bg-white dark:text-primary dark:hover:bg-white/95"
+            >
+              See How It Works
+              <IconEye className="ml-auto h-6 w-6" />
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Feature Sections */}
-      {features.map((feature, i) => (
-        <section
+      {featureSections.map((feature, index) => (
+        <MarketingFeature
           key={feature.title}
-          className={`py-20 border-t border-border/40 ${i % 2 === 1 ? "bg-[#F8F8F8] dark:bg-[#111111]" : "bg-background"}`}
-        >
-          <div className="max-w-7xl mx-auto px-6 md:px-10 grid lg:grid-cols-2 gap-12 items-center">
-            <div className={feature.reverse ? "lg:order-2" : ""}>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{feature.title}</h2>
-              <p className="mt-4 text-lg text-muted-foreground">{feature.body}</p>
-            </div>
-            <div className={feature.reverse ? "lg:order-1" : ""}>
-              {/* Desktop screenshots */}
-              <div className="hidden md:block">
-                <img src={feature.lightImg} alt={feature.title} className="rounded-2xl shadow-xl dark:hidden" />
-                <img src={feature.darkImg} alt={feature.title} className="rounded-2xl shadow-xl hidden dark:block" />
-              </div>
-              {/* Mobile screenshots */}
-              <div className="block md:hidden mx-auto max-w-xs w-full">
-                <img src={feature.mobileLight} alt={feature.title} className="rounded-2xl shadow-xl dark:hidden w-full" />
-                <img src={feature.mobileDark} alt={feature.title} className="rounded-2xl shadow-xl hidden dark:block w-full" />
-              </div>
-            </div>
-          </div>
-        </section>
+          {...feature}
+          sectionClassName={featureSurfaceStyles[index].section}
+          mediaClassName={featureSurfaceStyles[index].media}
+        />
       ))}
 
-      {/* AI Section */}
-      <section className="bg-primary py-20">
-        <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground">
+      <section className="overflow-hidden bg-primary text-primary-foreground">
+        <div className="mx-auto max-w-[1400px] px-6 pt-14 md:px-8 md:pt-18">
+          <div className="mx-auto max-w-[760px] text-center">
+            <h2 className="mx-auto max-w-[12ch] text-[2rem] font-semibold leading-[2.25rem] tracking-tight [text-wrap:balance] md:max-w-[16ch] md:text-[3rem] md:leading-[3.25rem]">
               An AI layer for every item in your library.
             </h2>
-            <p className="mt-4 text-lg text-primary-foreground/80">
-              Ask questions about the book you're reading or the game you're playing,
-              dig into deeper themes and topics, follow hints for dense or complex games,
-              and keep external sources like articles, essays, wikis, and walkthroughs
-              tied to the item itself.
+            <p className="mx-auto mt-4 max-w-[58ch] text-sm leading-7 text-primary-foreground/80 md:text-base">
+              Ask questions about the book you are reading or the game you are
+              playing, pull in context from outside sources, and keep everything
+              tied to the item instead of losing it across browser tabs.
             </p>
           </div>
 
-          <div className="mt-12 flex gap-4 overflow-x-auto pb-4">
-            <img src="/marketing/desktop/desktop-15.png" alt="AI feature" className="rounded-2xl h-72 w-auto flex-shrink-0" />
-            <img src="/marketing/desktop/desktop-16.png" alt="AI feature" className="rounded-2xl h-72 w-auto flex-shrink-0" />
-            <img src="/marketing/desktop/desktop-17.png" alt="AI feature" className="rounded-2xl h-72 w-auto flex-shrink-0" />
-          </div>
-
-          <div className="mt-12 grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: IconMessageCircle,
-                title: "Ask smarter questions",
-                body: "Get quick answers, recipes, and deeper context without leaving your library.",
-              },
-              {
-                icon: IconBrain,
-                title: "Beyond surface-level tracking",
-                body: "Explore themes, characters, mechanics, lore. Add ideas while you read or play.",
-              },
-              {
-                icon: IconBookmark,
-                title: "Keep your sources organized",
-                body: "Save walkthroughs, articles, and reference material alongside your notes instead of scattering them across tabs.",
-              },
-            ].map(({ icon: Icon, title, body }) => (
-              <div key={title}>
-                <Icon className="h-6 w-6 text-primary-foreground/70 mb-3" />
-                <h3 className="text-lg font-semibold text-primary-foreground">{title}</h3>
-                <p className="mt-2 text-sm text-primary-foreground/70 leading-relaxed">{body}</p>
-              </div>
-            ))}
+          <div className="mt-10 flex justify-center md:mt-14">
+            <img
+              src={aiShowcase.mobile}
+              alt="AI library mobile view"
+              className="w-full md:hidden"
+            />
+            <img
+              src={aiShowcase.desktop}
+              alt="AI library desktop view"
+              className="hidden w-full max-w-[1368px] md:block"
+            />
           </div>
         </div>
       </section>
-
-      {/* Footer CTA */}
-      <section className="py-24 bg-background text-center border-t border-border/40">
-        <div className="max-w-2xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Stop juggling trackers. Start building a library that thinks with you.
+      <div className="grid overflow-hidden md:grid-cols-3">
+        {aiCards.map(({ icon: Icon, title, body, bg }) => (
+          <div
+            key={title}
+            className="flex px-12 py-12 text-white md:justify-center"
+            style={{ backgroundColor: bg }}
+          >
+            <div className="max-w-[28ch] md:w-full">
+              <Icon className="h-5 w-5 text-white/80" />
+              <h3 className="mt-4 text-lg font-semibold leading-6 text-white">
+                {title}
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-white/78">{body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <section className="border-t border-black/8 bg-background py-16 text-center dark:border-white/8 md:py-20">
+        <div className="mx-auto max-w-[760px] px-6 md:px-8">
+          <h2 className="text-[2rem] font-semibold leading-[2.25rem] tracking-tight md:text-[3rem] md:leading-[3.25rem]">
+            Stop juggling trackers.
+            <br />
+            Start building a library that thinks with you.
           </h2>
-          <div className="mt-8">
+
+          <div className="mt-8 flex items-center justify-center">
             <Link to="/register">
-              <Button size="lg">
-                Get Started <IconArrowRight className="h-4 w-4" />
+              <Button
+                size="lg"
+                className="gap-2 rounded-none bg-primary px-5 font-medium text-primary-foreground shadow-none hover:bg-primary/90"
+              >
+                Sign Up or Log In
+                <IconArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer Nav */}
-      <footer className="border-t border-border/40 py-6">
-        <div className="max-w-7xl mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <img src="/logo/arkiv-logo-black.svg" alt="Arkiv" className="h-6 dark:hidden" />
-          <img src="/logo/arkiv-logo-white.svg" alt="Arkiv" className="h-6 hidden dark:block" />
-          <nav className="flex items-center gap-6 text-sm text-muted-foreground">
-            <a href="mailto:hello@arkiv.app" className="hover:text-foreground transition-colors">Contact Us</a>
-            <Link to="/legal" className="hover:text-foreground transition-colors">Legal Info</Link>
-            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <span>Made in Austin, TX</span>
-          </nav>
+      <footer className="bg-background pt-6">
+        <div className="mx-auto max-w-[1400px] px-6 text-sm text-foreground md:px-8">
+          <div className="space-y-6 md:hidden">
+            <div className="grid grid-cols-3 gap-x-4 gap-y-8 text-center text-[15px] font-medium">
+              <a
+                href="mailto:hello@arkiv.app"
+                className="transition-colors hover:text-foreground"
+              >
+                Contact Us
+              </a>
+              <Link
+                to="/legal"
+                className="transition-colors hover:text-foreground"
+              >
+                Legal Info
+              </Link>
+              <Link
+                to="/privacy"
+                className="transition-colors hover:text-foreground"
+              >
+                Privacy Policy
+              </Link>
+              <button
+                type="button"
+                onClick={() => window.alert("Coming soon")}
+                className="text-center transition-colors hover:text-foreground"
+              >
+                Cookie Settings
+              </button>
+              <div className="col-span-2 flex justify-center">
+                <a
+                  href="https://jimjordan.design"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 whitespace-nowrap transition-colors hover:text-foreground"
+                >
+                  <span>Made in Austin, TX</span>
+                  <img
+                    src="/marketing/atx-black.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-4 w-auto dark:hidden"
+                  />
+                  <img
+                    src="/marketing/atx-white.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="hidden h-4 w-auto dark:block"
+                  />
+                </a>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <img
+                src="/marketing/footer-icon-light.svg"
+                alt=""
+                aria-hidden="true"
+                className="h-14 w-auto dark:hidden"
+              />
+              <img
+                src="/marketing/footer-icon-dark.svg"
+                alt=""
+                aria-hidden="true"
+                className="hidden h-14 w-auto dark:block"
+              />
+            </div>
+          </div>
+
+          <div className="hidden md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-5">
+            <nav className="flex flex-wrap items-center justify-start gap-x-5 gap-y-2">
+              <a
+                href="mailto:hello@arkiv.app"
+                className="transition-colors hover:text-foreground"
+              >
+                Contact
+              </a>
+              <Link
+                to="/legal"
+                className="transition-colors hover:text-foreground"
+              >
+                Legal Info
+              </Link>
+              <Link
+                to="/privacy"
+                className="transition-colors hover:text-foreground"
+              >
+                Privacy Policy
+              </Link>
+            </nav>
+
+            <div className="flex justify-center">
+              <img
+                src="/marketing/footer-icon-light.svg"
+                alt=""
+                aria-hidden="true"
+                className="dark:hidden"
+              />
+              <img
+                src="/marketing/footer-icon-dark.svg"
+                alt=""
+                aria-hidden="true"
+                className="hidden dark:block"
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <a
+                href="https://jimjordan.design"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 transition-colors hover:text-foreground"
+              >
+                <span>Made in Austin, TX</span>
+                <img
+                  src="/marketing/atx-black.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-4 w-auto dark:hidden"
+                />
+                <img
+                  src="/marketing/atx-white.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="hidden h-4 w-auto dark:block"
+                />
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 md:hidden">
+        <div className="overflow-hidden bg-background">
+          <div className="grid grid-cols-2">
+            <Link
+              to="/register"
+              className="flex h-[62px] items-center justify-between gap-4 bg-primary px-6 text-base font-semibold text-primary-foreground"
+            >
+              <span>Get Started</span>
+              <IconArrowRight className="h-6 w-6 shrink-0" />
+            </Link>
+            <button
+              type="button"
+              onClick={handleViewDemo}
+              className="flex h-[62px] items-center justify-between gap-4 bg-background px-6 text-left text-base font-semibold text-primary dark:bg-white dark:text-primary"
+            >
+              <span>View Demo</span>
+              <IconEye className="h-6 w-6 shrink-0" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
