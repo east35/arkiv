@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { Outlet, useLocation, useNavigate, useNavigationType } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { BottomNav } from "./BottomNav";
 import { PageTransitionReveal } from "./PageTransitionReveal";
@@ -14,6 +14,7 @@ const AUTO_COLLAPSE_BREAKPOINT = 1100;
 export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const isDemoMode = useShelfStore((s) => s.isDemoMode);
   const hideNav = hideNavPattern.test(location.pathname);
   const isCollectionRoute = collectionRoutes.includes(location.pathname);
@@ -38,6 +39,31 @@ export default function AppLayout() {
   const lastScrollY = useRef(0);
   const mainRef = useRef<HTMLElement>(null);
   const sidebarFadeTimeoutRef = useRef<number | null>(null);
+  const scrollPositions = useRef<Map<string, number>>(new Map());
+  const targetScrollRef = useRef<number | null>(null);
+  const prevLocationKeyRef = useRef<string>(location.key);
+
+  // Save scroll position when leaving a route; restore when returning
+  useLayoutEffect(() => {
+    const prevKey = prevLocationKeyRef.current;
+    const newKey = location.key;
+    if (prevKey === newKey) return;
+
+    // Use lastScrollY.current (updated by scroll listener) — the DOM's scrollTop gets
+    // auto-adjusted by the browser when shorter content replaces the old page.
+    scrollPositions.current.set(prevKey, lastScrollY.current);
+    const saved = scrollPositions.current.get(newKey);
+    prevLocationKeyRef.current = newKey;
+
+    if (navigationType === "POP" && saved && mainRef.current) {
+      // Restore scroll synchronously before paint — no animation on back navigation
+      mainRef.current.scrollTo({ top: saved, behavior: "instant" });
+      targetScrollRef.current = null;
+    } else {
+      targetScrollRef.current = saved ?? null;
+    }
+  }, [location.key]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const effectiveSidebarCollapsed = sidebarCollapsed || forceSidebarCollapsed;
 
   useEffect(() => {
@@ -151,7 +177,7 @@ export default function AppLayout() {
                   : "pb-16",
           )}
         >
-          <PageTransitionReveal />
+          <PageTransitionReveal targetScrollRef={targetScrollRef} />
           <Outlet context={{ navVisible, scrolled }} />
         </main>
 

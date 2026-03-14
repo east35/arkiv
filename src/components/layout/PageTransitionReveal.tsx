@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { useLocation, useNavigationType } from "react-router-dom";
 
 type Pattern = {
   cols: number;
@@ -39,8 +39,13 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function PageTransitionReveal() {
+type Props = {
+  targetScrollRef: React.RefObject<number | null>;
+};
+
+export function PageTransitionReveal({ targetScrollRef }: Props) {
   const location = useLocation();
+  const navigationType = useNavigationType();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef(0);
   const waitCleanupRef = useRef<null | (() => void)>(null);
@@ -266,7 +271,12 @@ export function PageTransitionReveal() {
     clearAnimation();
     cancelWait();
 
-    // Reset scroll before painting cover so the jump is hidden under it from frame 0
+    // Read and consume the scroll target before the async gap
+    const scrollTarget = targetScrollRef.current ?? 0;
+    targetScrollRef.current = null;
+
+
+    // Reset to top so the jump is hidden under the canvas cover
     canvas.parentElement?.scrollTo({ top: 0, behavior: "instant" });
 
     resizeCanvas();
@@ -280,6 +290,13 @@ export function PageTransitionReveal() {
 
     await waitForRouteReady(cycle);
     if (cycle !== cycleRef.current) return;
+
+    // Restore scroll after content has loaded — still hidden under the cover
+    if (scrollTarget > 0) {
+      const el = canvas.parentElement;
+      el?.scrollTo({ top: scrollTarget, behavior: "instant" });
+    }
+
     startReveal(cycle);
   };
 
@@ -306,6 +323,10 @@ export function PageTransitionReveal() {
   useEffect(() => {
     if (firstRenderRef.current) {
       firstRenderRef.current = false;
+      return;
+    }
+    if (navigationType === "POP") {
+      stop();
       return;
     }
     void runTransition();
