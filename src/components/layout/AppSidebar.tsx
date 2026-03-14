@@ -112,11 +112,11 @@ export function AppSidebar({
   const isDemoMode = useShelfStore((s) => s.isDemoMode);
   const exitDemoMode = useShelfStore((s) => s.exitDemoMode);
   const isActiveRoute = (to: string) =>
-    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+    to === "/home" ? location.pathname === "/home" : location.pathname.startsWith(to);
 
   const mainItems = [
     {
-      to: "/",
+      to: "/home",
       icon: IconLayoutGrid,
       iconFilled: IconLayoutGridFilled,
       label: "Home",
@@ -155,7 +155,7 @@ export function AppSidebar({
             collapsed ? "px-1 py-4 flex justify-center" : "px-5",
           )}
         >
-          <Link to="/" onClick={onNavClick} aria-label="Go to Home">
+          <Link to="/home" onClick={onNavClick} aria-label="Go to Home">
             {collapsed ? (
               <img
                 src="/logo/arkiv-icon-white.svg"
@@ -234,15 +234,17 @@ export function AppSidebar({
             </div>
           )}
 
-          <NavItem
-            to="/settings"
-            icon={IconSettings2}
-            iconFilled={IconSettings2Filled}
-            label="Settings"
-            active={isActiveRoute("/settings")}
-            collapsed={collapsed}
-            onClick={onNavClick}
-          />
+          {!isDemoMode && (
+            <NavItem
+              to="/settings"
+              icon={IconSettings2}
+              iconFilled={IconSettings2Filled}
+              label="Settings"
+              active={isActiveRoute("/settings")}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            />
+          )}
 
           <div className="hidden md:block pb-2 border-t">
             <AlertDialog>
@@ -262,22 +264,35 @@ export function AppSidebar({
                   <AlertDialogTitle>{isDemoMode ? "Exit Demo" : "Sign Out"}</AlertDialogTitle>
                   <AlertDialogDescription>
                     {isDemoMode
-                      ? "Exit the demo? Any changes you made won't be saved."
+                      ? "Any changes you made won't be saved."
                       : "Are you sure you want to sign out of Arkiv?"}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                {isDemoMode && (
+                  <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+                    <p className="font-medium">Ready to track for real?</p>
+                    <p className="text-muted-foreground mt-0.5">Create a free account to save your library.</p>
+                    <button
+                      type="button"
+                      onClick={() => { navigate("/register"); setTimeout(exitDemoMode, 0); }}
+                      className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      Sign Up Free
+                    </button>
+                  </div>
+                )}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => {
                       if (isDemoMode) {
-                        exitDemoMode();
-                        navigate("/marketing");
+                        navigate("/");
+                        setTimeout(exitDemoMode, 0);
                       } else {
                         signOut();
                       }
                     }}
-                    className="bg-destructive text-white hover:bg-destructive/90"
+                    className={isDemoMode ? "" : "bg-destructive text-white hover:bg-destructive/90"}
                   >
                     {isDemoMode ? "Exit Demo" : "Sign Out"}
                   </AlertDialogAction>

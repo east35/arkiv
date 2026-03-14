@@ -66,7 +66,7 @@ export default function AuthPage() {
   const isSignUp = location.pathname === "/register";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const from = (location.state as any)?.from?.pathname || "/";
+  const from = (location.state as any)?.from?.pathname || "/home";
 
   const signInForm = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
@@ -203,7 +203,7 @@ export default function AuthPage() {
                   Sign In
                 </Button>
                 <Link
-                  to="/marketing"
+                  to="/"
                   className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
                 >
                   View product page
@@ -268,7 +268,7 @@ export default function AuthPage() {
                   Sign Up
                 </Button>
                 <Link
-                  to="/marketing"
+                  to="/"
                   className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
                 >
                   View product page

@@ -85,7 +85,7 @@ export default function ItemDetail() {
       return
     }
 
-    navigate("/")
+    navigate("/home")
   }
 
   // Track scrollbar width of the main scroll container so the Notes tab can dodge it
@@ -150,7 +150,7 @@ export default function ItemDetail() {
         icon={<IconSearchOff className="h-12 w-12" />}
         className="h-full"
         action={
-          <Button variant="outline" onClick={() => navigate("/")}>
+          <Button variant="outline" onClick={() => navigate("/home")}>
             <IconArrowLeft className="h-4 w-4 mr-2" />
             Back to Library
           </Button>

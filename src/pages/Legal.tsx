@@ -10,7 +10,7 @@ export default function Legal() {
     <div className="min-h-dvh bg-background">
       <div className="max-w-3xl mx-auto px-6 py-12">
         <div className="mb-10">
-          <Link to="/marketing">
+          <Link to="/">
             <Button variant="ghost" size="sm" className="-ml-2 mb-6">
               <IconArrowLeft className="h-4 w-4 mr-1" />
               Back
@@ -159,7 +159,7 @@ export default function Legal() {
           <Link to="/contact" className="hover:text-foreground underline-offset-4 hover:underline">
             Contact Us
           </Link>
-          <Link to="/marketing" className="hover:text-foreground underline-offset-4 hover:underline">
+          <Link to="/" className="hover:text-foreground underline-offset-4 hover:underline">
             arkiv.app
           </Link>
         </div>

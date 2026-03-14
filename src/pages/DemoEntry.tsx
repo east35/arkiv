@@ -13,7 +13,7 @@ export default function DemoEntry() {
   useEffect(() => {
     // Already in demo mode — go straight to the app
     if (isDemoMode) {
-      navigate("/", { replace: true });
+      navigate("/home", { replace: true });
       return;
     }
 
@@ -23,7 +23,7 @@ export default function DemoEntry() {
         if (!res.ok) throw new Error(`Failed to load demo data (${res.status})`);
         const snapshot: DemoSnapshot = await res.json();
         enterDemoMode(snapshot);
-        navigate("/", { replace: true });
+        navigate("/home", { replace: true });
       } catch (err) {
         console.error(err);
         setError(err instanceof Error ? err.message : "Failed to load demo");

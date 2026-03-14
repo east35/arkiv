@@ -144,7 +144,7 @@ function CardBody({
 }
 
 function pathToLabel(pathname: string): string {
-  if (pathname === "/") return "Home";
+  if (pathname === "/home") return "Home";
   if (pathname === "/books") return "Books";
   if (pathname === "/games") return "Games";
   if (pathname === "/search") return "Search";

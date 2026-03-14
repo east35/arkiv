@@ -19,9 +19,19 @@ import Legal from "@/pages/Legal"
 import Contact from "@/pages/Contact"
 import DemoEntry from "@/pages/DemoEntry"
 import DesignSystem from "@/pages/DesignSystem"
+import { useAuth } from "@/hooks/useAuth"
+import { useShelfStore } from "@/store/useShelfStore"
 
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+
+/** Root route: shows Marketing for guests, redirects authed/demo users to /home */
+function RootRoute() {
+  const { session } = useAuth()
+  const isDemoMode = useShelfStore((s) => s.isDemoMode)
+  if (session || isDemoMode) return <Navigate to="/home" replace />
+  return <Marketing />
+}
 
 function App() {
   return (
@@ -29,7 +39,8 @@ function App() {
       <Routes>
         {/* Public routes — share PublicLayout for pixel transition animations */}
         <Route element={<PublicLayout />}>
-          <Route path="/marketing" element={<Marketing />} />
+          <Route path="/" element={<RootRoute />} />
+          <Route path="/marketing" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/register" element={<AuthPage />} />
           <Route path="/privacy" element={<Privacy />} />
@@ -45,7 +56,7 @@ function App() {
             <AppLayout />
           </RequireAuth>
         }>
-          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/search" element={<Search />} />
           <Route path="/item/:id" element={<ItemDetail />} />
           <Route path="/item/external/:mediaType/:externalId" element={<ExternalItemDetail />} />

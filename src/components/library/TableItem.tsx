@@ -193,7 +193,7 @@ export function TableItem({
 }: TableItemProps) {
   const location = useLocation();
   const backLabel =
-    location.pathname === "/"
+    location.pathname === "/home"
       ? "Home"
       : location.pathname === "/books"
         ? "Books"

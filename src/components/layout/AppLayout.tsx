@@ -18,7 +18,7 @@ export default function AppLayout() {
   const exitDemoMode = useShelfStore((s) => s.exitDemoMode);
   const hideNav = hideNavPattern.test(location.pathname);
   const isCollectionRoute = collectionRoutes.includes(location.pathname);
-  const isHomeRoute = location.pathname === "/";
+  const isHomeRoute = location.pathname === "/home";
   const isSearchRoute = location.pathname === "/search";
   const isCollectionsRoute = location.pathname === "/collections";
   const isSettingsRoute = location.pathname === "/settings";
@@ -119,13 +119,23 @@ export default function AppLayout() {
         {isDemoMode && (
           <div className="flex items-center justify-between gap-3 px-4 py-2 bg-yellow-400 text-yellow-950 text-xs font-medium shrink-0 z-30">
             <span>Demo mode — changes are not saved</span>
-            <button
-              type="button"
-              className="underline underline-offset-2 hover:no-underline shrink-0"
-              onClick={() => { exitDemoMode(); navigate("/marketing"); }}
-            >
-              Exit Demo
-            </button>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                className="underline underline-offset-2 hover:no-underline"
+                onClick={() => { navigate("/register"); setTimeout(exitDemoMode, 0); }}
+              >
+                Sign Up Free
+              </button>
+              <span className="opacity-40">·</span>
+              <button
+                type="button"
+                className="underline underline-offset-2 hover:no-underline"
+                onClick={() => { navigate("/"); setTimeout(exitDemoMode, 0); }}
+              >
+                Exit
+              </button>
+            </div>
           </div>
         )}
         <main

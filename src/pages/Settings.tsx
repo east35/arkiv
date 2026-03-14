@@ -65,6 +65,12 @@ export default function Settings() {
   const { fetchItems } = useItems();
   const { setTheme } = useTheme();
   const navigate = useNavigate();
+  const isDemoMode = useShelfStore((s) => s.isDemoMode);
+
+  if (isDemoMode) {
+    navigate("/", { replace: true });
+    return null;
+  }
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab = [

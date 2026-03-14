@@ -12,6 +12,7 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { LibraryTypeSwitcher } from "@/components/library/LibraryTypeSwitcher";
+import { useShelfStore } from "@/store/useShelfStore";
 import type { MediaType } from "@/types";
 
 const collectionRoutes = ["/books", "/games"];
@@ -24,6 +25,7 @@ interface BottomNavProps {
 export function BottomNav({ visible = true }: BottomNavProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const isDemoMode = useShelfStore((s) => s.isDemoMode);
 
   const isCollectionActive = collectionRoutes.includes(location.pathname);
 
@@ -54,15 +56,15 @@ export function BottomNav({ visible = true }: BottomNavProps) {
       <div className="flex items-stretch justify-around min-h-[44px]">
         {/* Home */}
         <Link
-          to="/"
+          to="/home"
           className={cn(
             "flex flex-col items-center justify-center w-full min-h-[44px] space-y-1 py-2 ",
-            location.pathname === "/"
+            location.pathname === "/home"
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          {location.pathname === "/" ? (
+          {location.pathname === "/home" ? (
             <IconLayoutGridFilled className="h-5 w-5" />
           ) : (
             <IconLayoutGrid className="h-5 w-5" />
@@ -108,8 +110,20 @@ export function BottomNav({ visible = true }: BottomNavProps) {
             label: "Settings",
           },
         ].map((item) => {
+          const isDisabled = isDemoMode && item.to === "/settings";
           const isActive = location.pathname === item.to;
           const Icon = isActive ? item.iconFilled : item.icon;
+          if (isDisabled) {
+            return (
+              <div
+                key={item.to}
+                className="flex flex-col items-center justify-center w-full min-h-[44px] space-y-1 text-muted-foreground/40"
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </div>
+            );
+          }
           return (
             <Link
               key={item.to}
