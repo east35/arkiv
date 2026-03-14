@@ -220,7 +220,8 @@ export function ItemDetailContent({
           {/* Library / Series */}
           <LibraryRow item={item} />
           <SeriesRow item={item} />
-
+        </div>
+        <div className="p-6 border-b">
           {/* Recommendations */}
           <RecommendationsRow item={item} />
         </div>

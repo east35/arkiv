@@ -1,4 +1,4 @@
-import { IconFlag, IconPencil } from "@tabler/icons-react";
+import { IconPencil } from "@tabler/icons-react";
 import { formatDateTime } from "@/lib/utils";
 import type { FullItem, UserPreferences } from "@/types";
 
