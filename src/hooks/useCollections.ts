@@ -118,7 +118,7 @@ export function useCollections() {
    */
   const deleteCollection = useCallback(async (id: string) => {
     if (useShelfStore.getState().isDemoMode) {
-      const { collections, demoCollectionItems, removeDemoCollectionItem } = useShelfStore.getState()
+      const { demoCollectionItems, removeDemoCollectionItem } = useShelfStore.getState()
       // Remove all collection items for this collection
       demoCollectionItems
         .filter((ci) => ci.collection_id === id)

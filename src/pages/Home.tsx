@@ -8,7 +8,7 @@ import { StatusSheet } from "@/components/status-sheet/StatusSheet";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { IconLayoutGrid } from "@tabler/icons-react";
-import type { FullItem, Status } from "@/types";
+import type { FullItem } from "@/types";
 
 export default function Home() {
   const { items, viewMode, sort, homeStatuses, setHomeStatuses } = useShelfStore();
