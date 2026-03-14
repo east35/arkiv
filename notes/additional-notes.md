@@ -1,1 +1,0 @@
-allow users to add links to external sources for games and books(e.g. Wikipedia, IMDb, etc.). The use case is I frequently refer to certain guides for games and articles and reference material about books while reading them. These can be accessed in the notes section of the item detail page.
