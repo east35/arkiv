@@ -77,7 +77,7 @@ export function ItemDetailContent({
       {/* ── Group 1: Hero block — title, metadata, description ── */}
       {/* min-h matches the cover art (280px × 1.5 aspect ratio = 420px) */}
       <div
-        className="bg-card rounded-lg p-6 flex flex-col overflow-hidden border-b"
+        className="bg-card rounded-lg p-8 flex flex-col overflow-hidden border-b"
         style={{ height: 419, backgroundColor: "var(--muted)" }}
       >
         <h1 className="text-5xl font-bold tracking-tight mb-3">{item.title}</h1>
@@ -126,11 +126,13 @@ export function ItemDetailContent({
       </div>
 
       {/* ── Group 2: Tags, collections, recommendations ── */}
-      <div className="bg-[#e6e6e6] p-6 space-y-6 dark:bg-card">
-        {isGame && <HowLongToBeatSection value={item.game} isLoading={isHltbLoading} />}
+      <div className="bg-[#e6e6e6] dark:bg-card">
+        {isGame && (
+          <HowLongToBeatSection value={item.game} isLoading={isHltbLoading} />
+        )}
 
         {/* Genres & Themes */}
-        <div className="flex flex-wrap gap-x-12 gap-y-6">
+        <div className="flex p-6 border-b flex-wrap gap-x-12 gap-y-6">
           {item.genres.length > 0 && (
             <div>
               <h3 className="text-foreground tx-sm mb-3">Genres</h3>
@@ -167,7 +169,7 @@ export function ItemDetailContent({
 
         {/* Collections */}
         {itemCollections.length > 0 && (
-          <div>
+          <div className="p-6 border-b">
             <h3 className="text-foreground tx-sm mb-3">Collections</h3>
             <div className="space-y-2">
               {itemCollections.map((collection) => {
@@ -214,13 +216,14 @@ export function ItemDetailContent({
             </div>
           </div>
         )}
+        <div className="p-6 border-b">
+          {/* Library / Series */}
+          <LibraryRow item={item} />
+          <SeriesRow item={item} />
 
-        {/* Library / Series */}
-        <LibraryRow item={item} />
-        <SeriesRow item={item} />
-
-        {/* Recommendations */}
-        <RecommendationsRow item={item} />
+          {/* Recommendations */}
+          <RecommendationsRow item={item} />
+        </div>
       </div>
     </div>
   );

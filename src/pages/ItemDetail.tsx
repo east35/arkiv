@@ -3,7 +3,6 @@ import { useParams, useNavigate, useLocation, Link, useOutletContext } from "rea
 import {
   IconSearchOff,
   IconArrowLeft,
-  IconArrowNarrowLeft,
   IconFlag,
   IconEdit,
   IconPencil,
@@ -38,7 +37,7 @@ import { ItemDetailHeader } from "@/components/item-detail/ItemDetailHeader"
 import { ItemDetailSidebar } from "@/components/item-detail/ItemDetailSidebar"
 import { ItemDetailContent } from "@/components/item-detail/ItemDetailContent"
 import { MobileAccordion, AccordionSection } from "@/components/item-detail/MobileAccordion"
-import { NotesPanel } from "@/components/item-detail/NotesPanel"
+import { NotesPanelContent } from "@/components/item-detail/NotesPanel"
 import { RecommendationsRow } from "@/components/item-detail/RecommendationsRow"
 import { LibraryRow } from "@/components/item-detail/LibraryRow"
 import { SeriesRow } from "@/components/item-detail/SeriesRow"
@@ -61,7 +60,8 @@ export default function ItemDetail() {
   const navigate = useNavigate()
   const location = useLocation()
   useOutletContext<{ scrolled?: boolean }>()
-  const backLabel: string = (location.state as any)?.backLabel ?? null
+  const locationState = location.state as { backLabel?: string; initialTab?: string; openNotes?: boolean } | null
+  const backLabel: string | null = locationState?.backLabel ?? null
   const { items, collections, preferences } = useShelfStore()
   const { fetchItems } = useItems()
   const { fetchItemMemberships, fetchCollections } = useCollections()
@@ -70,9 +70,7 @@ export default function ItemDetail() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [isManageCollectionsOpen, setIsManageCollectionsOpen] = useState(false)
   const [itemCollectionIds, setItemCollectionIds] = useState<string[]>([])
-  const [isNotesOpen, setIsNotesOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<"overview" | "notes">("overview")
-  const [scrollbarW, setScrollbarW] = useState(0)
   const [libraryEmpty, setLibraryEmpty] = useState(false)
   const [hltbLoading, setHltbLoading] = useState(false)
   const enrichedForItem = useRef<string | null>(null)
@@ -81,7 +79,6 @@ export default function ItemDetail() {
   const handleDeleteSuccess = (deletedItem: FullItem) => {
     setItem(current => current?.id === deletedItem.id ? null : current)
     setIsSheetOpen(false)
-    setIsNotesOpen(false)
 
     if (window.history.length > 1) {
       navigate(-1)
@@ -90,17 +87,6 @@ export default function ItemDetail() {
 
     navigate("/home")
   }
-
-  // Track scrollbar width of the main scroll container so the Notes tab can dodge it
-  useEffect(() => {
-    const el = document.querySelector<HTMLElement>("main.app-scroll-area")
-    if (!el) return
-    const measure = () => setScrollbarW(el.offsetWidth - el.clientWidth)
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
 
   // Find item in store or fetch
   useEffect(() => {
@@ -199,6 +185,10 @@ export default function ItemDetail() {
           item={item}
           backLabel={backLabel}
           onStatusClick={() => setIsSheetOpen(true)}
+          activeTab="overview"
+          onTabChange={(tab) => {
+            if (tab === "notes") navigate(`/item/${id}/notes`, { state: { backLabel }, replace: true })
+          }}
         />
 
         {/* ═══════════════ Desktop Layout ═══════════════ */}
@@ -219,15 +209,6 @@ export default function ItemDetail() {
             />
           </div>
 
-          {/* Floating "Notes" tab — fixed to right viewport edge */}
-          <button
-            onClick={() => setIsNotesOpen(true)}
-            className="fixed top-1/2 -translate-y-1/2 z-10 flex items-center gap-2 bg-primary hover:bg-primary/90 text-white pl-3 pr-6 py-2.5 rounded-l-lg shadow-lg transition-all duration-150"
-            style={{ right: scrollbarW }}
-          >
-            <IconArrowNarrowLeft className="h-4 w-4" />
-            <span className="text-sm font-semibold">Notes</span>
-          </button>
         </div>
 
         {/* ═══════════════ Mobile Layout ═══════════════ */}
@@ -254,7 +235,6 @@ export default function ItemDetail() {
             )}
           </div>
 
-          {/* Tab content */}
           {mobileTab === "overview" ? (
             <div className="pt-4">
               <MobileAccordion>
@@ -262,18 +242,13 @@ export default function ItemDetail() {
                 <AccordionSection title="Your Details" icon={IconBookmark} contentClassName="pb-0">
                   <div className="space-y-0">
                     {/* Progress */}
-                    <div className="space-y-2 pb-4">
-                      <div className={mobileDetailLabelClass}>Your Progress</div>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-[2rem] font-bold tracking-tight leading-none">
-                          {isGame
-                            ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
-                            : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`}
-                        </span>
-                        {item.status === "completed" && (
-                          <IconFlag className="h-5 w-5 text-green-500 fill-green-500" />
-                        )}
-                      </div>
+                    <div className="flex items-start justify-between gap-4 pb-4">
+                      <span className={mobileDetailLabelClass}>{isGame ? "Time Played" : "Pages Read"}</span>
+                      <span className={mobileDetailRowValueClass}>
+                        {isGame
+                          ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
+                          : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`}
+                      </span>
                     </div>
 
                     {/* Platform */}
@@ -447,27 +422,14 @@ export default function ItemDetail() {
               </MobileAccordion>
             </div>
           ) : (
-            /* Notes tab content */
             <div className="px-4 pt-6 pb-6">
-              {item.notes ? (
-                <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground bg-card p-4 rounded-lg border">
-                  {item.notes}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center space-y-4 border-2 border-dashed rounded-lg">
-                  <div className="text-muted-foreground text-sm">No notes yet</div>
-                  <Button variant="outline" size="sm" onClick={() => setIsSheetOpen(true)}>
-                    Add a note
-                  </Button>
-                </div>
-              )}
+              <NotesPanelContent itemId={item.id} />
             </div>
           )}
         </div>
 
         {/* ═══════════════ Mobile Bottom Bar ═══════════════ */}
         <div className="md:hidden flex-shrink-0 bg-background">
-          {/* Status bar — full-width, status colour */}
           <button
             onClick={() => setIsSheetOpen(true)}
             className={cn(
@@ -484,8 +446,6 @@ export default function ItemDetail() {
               <IconEdit className="h-4 w-4" />
             </span>
           </button>
-
-          {/* Tab bar — reuses SegmentedControl like LibraryTypeSwitcher */}
           <SegmentedControl
             value={mobileTab}
             onValueChange={(v) => setMobileTab(v as "overview" | "notes")}
@@ -495,7 +455,7 @@ export default function ItemDetail() {
             ]}
             fullWidth
             listClassName="!p-0 !gap-0 !border-0 !h-[55px]"
-            triggerClassName="!h-[55px] font-semibold text-sm text-foreground"
+            triggerClassName="!h-[55px] font-semibold text-sm"
           />
         </div>
 
@@ -507,15 +467,6 @@ export default function ItemDetail() {
           onDeleteSuccess={handleDeleteSuccess}
         />
         <ManageCollectionsDialog itemId={item.id} open={isManageCollectionsOpen} onOpenChange={setIsManageCollectionsOpen} />
-        <NotesPanel
-          open={isNotesOpen}
-          onOpenChange={setIsNotesOpen}
-          notes={item.notes}
-          onEditClick={() => {
-            setIsNotesOpen(false)
-            setIsSheetOpen(true)
-          }}
-        />
       </div>
     </>
   )

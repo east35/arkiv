@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/form";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 import {
@@ -77,7 +76,6 @@ const formSchema = z.object({
   completed_at: z.date().nullable().optional(),
   paused_at: z.date().nullable().optional(),
   dropped_at: z.date().nullable().optional(),
-  notes: z.string().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -125,7 +123,6 @@ export function StatusSheet({
       completed_at: null,
       paused_at: null,
       dropped_at: null,
-      notes: "",
     },
   });
 
@@ -148,7 +145,6 @@ export function StatusSheet({
         completed_at: item.completed_at ? new Date(item.completed_at) : null,
         paused_at: item.paused_at ? new Date(item.paused_at) : null,
         dropped_at: item.dropped_at ? new Date(item.dropped_at) : null,
-        notes: item.notes || "",
       });
     }
   }, [item, form]);
@@ -177,7 +173,6 @@ export function StatusSheet({
       const coreUpdates: Partial<FullItem> = {
         status: values.status,
         user_score: cleanNumber(values.user_score, 0, 10),
-        notes: values.notes || null,
         started_at: values.started_at?.toISOString() ?? null,
         completed_at: values.completed_at?.toISOString() ?? null,
         paused_at: values.paused_at?.toISOString() ?? null,
@@ -498,26 +493,6 @@ export function StatusSheet({
             )}
           </div>
         </div>
-
-        {/* Row 4: Notes */}
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Add your thoughts..."
-                  className="resize-none min-h-[100px]"
-                  {...field}
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         {/* Metadata (Read-only) */}
         <div className="text-xs text-muted-foreground pt-4 border-t">

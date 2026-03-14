@@ -36,10 +36,9 @@ export interface DemoSnapshot {
 /** Fields to index for fuzzy search over tracked items */
 const FUSE_OPTIONS: IFuseOptions<FullItem> = {
   keys: [
-    { name: "title", weight: 0.6 },
+    { name: "title", weight: 0.7 },
     { name: "description", weight: 0.2 },
     { name: "genres", weight: 0.1 },
-    { name: "notes", weight: 0.1 },
   ],
   threshold: 0.35,        // Balance between fuzzy tolerance and relevance
   includeScore: true,

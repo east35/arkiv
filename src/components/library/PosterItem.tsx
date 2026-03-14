@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   IconPencil,
   IconPlaylistAdd,
-  IconRefresh,
+  IconNotes,
   IconStar,
   IconTrash,
   IconEye,
@@ -12,7 +12,6 @@ import type { FullItem, Status } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { statusIcons, statusLabels } from "@/components/status-icons";
 import { getStatusDate, useShelfStore } from "@/store/useShelfStore";
-import { useMetadataEnrich } from "@/hooks/useMetadataEnrich";
 import { ManageCollectionsDialog } from "@/components/collections/ManageCollectionsDialog";
 import {
   AlertDialog,
@@ -155,18 +154,17 @@ function pathToLabel(pathname: string): string {
 export function PosterItem({
   item,
   onEdit,
-  mobileTapAction = "edit",
+  mobileTapAction = "details",
   hideStatusDate,
 }: PosterItemProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const backLabel = pathToLabel(location.pathname);
   const [isManageCollectionsOpen, setIsManageCollectionsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const { deleteItem } = useItems();
   const [isHovered, setIsHovered] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { enrichSingle } = useMetadataEnrich();
   const preferences = useShelfStore((s) => s.preferences);
   const statusDate = getStatusDate(item);
   const statusText = hideStatusDate
@@ -251,15 +249,14 @@ export function PosterItem({
           </button>
 
           <button
-            className={cn(overlayActionClassName, "disabled:opacity-50")}
-            disabled={syncing}
-            onClick={async () => {
-              setSyncing(true);
-              try { await enrichSingle(item); } finally { setSyncing(false); }
+            className={overlayActionClassName}
+            onClick={() => {
+              setIsHovered(false);
+              navigate(`/item/${item.id}/notes`, { state: { backLabel } });
             }}
           >
-            <IconRefresh className={cn("h-4 w-4 shrink-0", syncing && "animate-spin")} />
-            <span className="text-sm font-semibold whitespace-nowrap">{syncing ? "Syncing…" : "Sync"}</span>
+            <IconNotes className="h-4 w-4 shrink-0" />
+            <span className="text-sm font-semibold whitespace-nowrap">Notes</span>
           </button>
 
           <button

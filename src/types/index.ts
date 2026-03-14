@@ -49,7 +49,6 @@ export interface Item {
   status: Status
   user_score: number | null
   source_score: number | null
-  notes: string | null
   source: Source
   external_id: string | null
   source_votes: number | null
@@ -162,6 +161,8 @@ export interface ActivityLogEntry {
 // User Preferences
 // ---------------------------------------------------------------------------
 
+export type AIProvider = "openai" | "anthropic" | "gemini"
+
 export interface UserPreferences {
   user_id: string
   username: string | null
@@ -171,6 +172,55 @@ export interface UserPreferences {
   time_format: TimeFormat
   steam_id: string | null
   calibre_path: string | null
+  ai_provider: AIProvider | null
+  ai_api_key: string | null
+  created_at: string
+  updated_at: string
+}
+
+// ---------------------------------------------------------------------------
+// Notes Tab Types
+// ---------------------------------------------------------------------------
+
+export interface ItemNote {
+  id: string
+  item_id: string
+  user_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ItemBookmark {
+  id: string
+  item_id: string
+  user_id: string
+  title: string
+  url: string
+  created_at: string
+}
+
+export interface ItemProgress {
+  item_id: string
+  user_id: string
+  type: string | null
+  value: string | null
+  confidence: string | null
+  updated_at: string
+}
+
+export interface AIMessage {
+  role: "user" | "assistant"
+  content: string
+  timestamp: string
+}
+
+export interface AIConversation {
+  id: string
+  item_id: string
+  user_id: string
+  messages: AIMessage[]
+  summary: string | null
   created_at: string
   updated_at: string
 }

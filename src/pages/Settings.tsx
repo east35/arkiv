@@ -55,7 +55,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { StatisticsDashboard } from "@/pages/Statistics";
-import type { DateFormat, TimeFormat, UserPreferences } from "@/types";
+import type { AIProvider, DateFormat, TimeFormat, UserPreferences } from "@/types";
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -79,8 +79,9 @@ export default function Settings() {
     "preferences",
     "statistics",
     "data",
+    "ai",
   ].includes(tabParam ?? "")
-    ? (tabParam as "account" | "linked" | "preferences" | "statistics" | "data")
+    ? (tabParam as "account" | "linked" | "preferences" | "statistics" | "data" | "ai")
     : "account";
   const {
     progress: enrichProgress,
@@ -98,6 +99,7 @@ export default function Settings() {
     { value: "preferences", label: "Preferences" },
     { value: "statistics", label: "Statistics" },
     { value: "data", label: "Data" },
+    { value: "ai", label: "AI" },
   ] as const;
 
   const activeTabLabel =
@@ -106,6 +108,9 @@ export default function Settings() {
   const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({});
   const [sparseCount, setSparseCount] = useState<number | null>(null);
   const [enrichReport, setEnrichReport] = useState<EnrichReport | null>(null);
+  const [aiProvider, setAiProvider] = useState<AIProvider | "">(preferences?.ai_provider ?? "");
+  const [aiApiKey, setAiApiKey] = useState("");
+  const [aiSaving, setAiSaving] = useState(false);
 
   // Fetch prefs on mount.
   useEffect(() => {
@@ -248,6 +253,23 @@ export default function Settings() {
     setEnrichReport(report);
     const sparse = scan();
     setSparseCount(sparse.length);
+  };
+
+  const handleAISave = async () => {
+    setAiSaving(true);
+    try {
+      await updatePreferences({
+        ai_provider: aiProvider || null,
+        ai_api_key: aiApiKey || preferences?.ai_api_key || null,
+      });
+      if (aiApiKey) setAiApiKey(""); // clear after save; key is now stored server-side
+      toast.success("AI settings saved");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save AI settings");
+    } finally {
+      setAiSaving(false);
+    }
   };
 
   if (!preferences) {
@@ -498,6 +520,61 @@ export default function Settings() {
 
             <TabsContent value="statistics">
               <StatisticsDashboard embedded />
+            </TabsContent>
+
+            {/* AI Settings */}
+            <TabsContent value="ai">
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI Discussion</CardTitle>
+                  <CardDescription>
+                    Configure an AI provider to enable in-context discussions on item detail pages.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormFieldBlock id="ai-provider" label="Provider">
+                    <NativeSelect
+                      id="ai-provider"
+                      value={aiProvider}
+                      onValueChange={(val) => setAiProvider(val as AIProvider | "")}
+                    >
+                      <option value="">None</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="anthropic">Anthropic</option>
+                      <option value="gemini">Gemini</option>
+                    </NativeSelect>
+                  </FormFieldBlock>
+
+                  {aiProvider && (
+                    <FormFieldBlock
+                      id="ai-api-key"
+                      label="API Key"
+                      description={
+                        preferences?.ai_api_key
+                          ? "A key is already saved. Enter a new one to replace it."
+                          : "Your key is stored securely and sent directly to the AI provider."
+                      }
+                    >
+                      <Input
+                        id="ai-api-key"
+                        type="password"
+                        value={aiApiKey}
+                        onChange={(e) => setAiApiKey(e.target.value)}
+                        placeholder={preferences?.ai_api_key ? "••••••••••••••••" : "sk-…"}
+                        autoComplete="off"
+                      />
+                    </FormFieldBlock>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={handleAISave} disabled={aiSaving}>
+                    {aiSaving && (
+                      <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save Changes
+                  </Button>
+                </CardFooter>
+              </Card>
             </TabsContent>
 
             {/* Data Export */}
