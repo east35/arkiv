@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useShelfStore } from "@/store/useShelfStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -62,6 +63,13 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const isDemoMode = useShelfStore((s) => s.isDemoMode);
+  const exitDemoMode = useShelfStore((s) => s.exitDemoMode);
+
+  // Clear demo state if arriving from demo (e.g. "Sign Up Free" button)
+  useEffect(() => {
+    if (isDemoMode) exitDemoMode();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isSignUp = location.pathname === "/register";
 

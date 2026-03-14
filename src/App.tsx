@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom"
+import { useEffect } from "react"
 import AppLayout from "@/components/layout/AppLayout"
 import PublicLayout from "@/components/layout/PublicLayout"
 import { RequireAuth } from "@/components/auth/RequireAuth"
@@ -25,11 +26,18 @@ import { useShelfStore } from "@/store/useShelfStore"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 
-/** Root route: shows Marketing for guests, redirects authed/demo users to /home */
+/** Root route: shows Marketing for guests, redirects authed users to /home.
+ *  If arriving from demo mode (e.g. "Exit" button), clears demo state on mount. */
 function RootRoute() {
   const { session } = useAuth()
   const isDemoMode = useShelfStore((s) => s.isDemoMode)
-  if (session || isDemoMode) return <Navigate to="/home" replace />
+  const exitDemoMode = useShelfStore((s) => s.exitDemoMode)
+
+  useEffect(() => {
+    if (isDemoMode) exitDemoMode()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (session) return <Navigate to="/home" replace />
   return <Marketing />
 }
 

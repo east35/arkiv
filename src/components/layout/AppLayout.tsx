@@ -15,7 +15,6 @@ export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const isDemoMode = useShelfStore((s) => s.isDemoMode);
-  const exitDemoMode = useShelfStore((s) => s.exitDemoMode);
   const hideNav = hideNavPattern.test(location.pathname);
   const isCollectionRoute = collectionRoutes.includes(location.pathname);
   const isHomeRoute = location.pathname === "/home";
@@ -123,7 +122,7 @@ export default function AppLayout() {
               <button
                 type="button"
                 className="underline underline-offset-2 hover:no-underline"
-                onClick={() => { navigate("/register"); exitDemoMode(); }}
+                onClick={() => navigate("/register")}
               >
                 Sign Up Free
               </button>
@@ -131,7 +130,7 @@ export default function AppLayout() {
               <button
                 type="button"
                 className="underline underline-offset-2 hover:no-underline"
-                onClick={() => { navigate("/"); exitDemoMode(); }}
+                onClick={() => navigate("/")}
               >
                 Exit
               </button>
