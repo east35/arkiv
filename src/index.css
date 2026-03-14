@@ -194,32 +194,6 @@ main.app-scroll-area::-webkit-scrollbar-thumb:active {
     background-color: var(--app-scrollbar-thumb-active);
 }
 
-/* iOS PWA safe area utilities */
-.pt-safe {
-    padding-top: env(safe-area-inset-top, 0px);
-}
-.pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-.safe-header-padding {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
-}
-.safe-header-bar {
-    padding-top: env(safe-area-inset-top, 0px);
-}
-
-@media (min-width: 640px) {
-    .safe-header-padding {
-        padding-top: 1.5rem;
-    }
-}
-
-@media (min-width: 768px) {
-    .safe-header-bar {
-        padding-top: 0;
-    }
-}
-
 /* Hide number input spinners on mobile for cleaner look */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

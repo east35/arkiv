@@ -143,7 +143,7 @@ export function StatisticsDashboard({ embedded = false }: StatisticsDashboardPro
     return (
       <div className="flex flex-col gap-4">
         {!embedded && (
-          <div className="border-b px-4 sm:px-6 safe-header-padding pb-4">
+          <div className="border-b px-4 sm:px-6 pt-4 sm:pt-6 pb-4">
             <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
           </div>
         )}
@@ -209,7 +209,7 @@ export function StatisticsDashboard({ embedded = false }: StatisticsDashboardPro
   return (
     <div className={embedded ? "space-y-6" : "flex flex-col h-full overflow-hidden"}>
       {!embedded ? (
-        <div className="bg-background px-4 sm:px-6 safe-header-padding pb-4 flex-shrink-0">
+        <div className="bg-background px-4 sm:px-6 pt-4 sm:pt-6 pb-4 flex-shrink-0">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <h1 className="text-3xl font-bold tracking-tight">Statistics</h1>
             {rangeControls}

@@ -178,7 +178,7 @@ export default function ExternalItemDetail() {
   const header = (
     <div
       className={cn(
-        "sticky top-0 z-20 flex items-center justify-between bg-background safe-header-bar",
+        "sticky top-0 z-20 flex items-center justify-between bg-background",
       )}
     >
       <button
@@ -213,7 +213,7 @@ export default function ExternalItemDetail() {
     return (
       <div className="flex-1 relative bg-background">
         {header}
-        <LoadingState className="h-[calc(100vh-55px)]" />
+        <LoadingState className="h-[calc(100dvh-55px)]" />
       </div>
     )
   }
@@ -225,7 +225,7 @@ export default function ExternalItemDetail() {
         <EmptyState
           title="Item not found"
           description={error || "Could not load external item details."}
-          className="h-[calc(100vh-55px)]"
+          className="h-[calc(100dvh-55px)]"
           action={
             <Button variant="outline" onClick={() => navigate(-1)}>
               <IconArrowLeft className="h-4 w-4 mr-2" />
@@ -358,7 +358,7 @@ export default function ExternalItemDetail() {
   )
 
   return (
-    <div className="flex-1 relative bg-background">
+    <div className="flex-1 relative bg-background max-md:flex max-md:flex-col max-md:h-dvh max-md:overflow-hidden">
       {header}
 
       {/* ═══════════════ Desktop Layout ═══════════════ */}
@@ -461,7 +461,7 @@ export default function ExternalItemDetail() {
       </div>
 
       {/* ═══════════════ Mobile Layout ═══════════════ */}
-      <div className="md:hidden pb-32">
+      <div className="md:hidden flex-1 overflow-y-auto min-h-0">
         {/* Cover */}
         <div className="flex justify-center px-8 pt-4">
           <div className="w-[200px] aspect-[2/3] overflow-hidden rounded-lg">
@@ -576,7 +576,7 @@ export default function ExternalItemDetail() {
       </div>
 
       {/* ═══════════════ Mobile Bottom Bar — Add to Library ═══════════════ */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 pb-safe">
+      <div className="md:hidden flex-shrink-0">
         <button
           onClick={handleAddToLibrary}
           disabled={isCommitting}

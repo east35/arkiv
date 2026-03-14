@@ -17,7 +17,7 @@ export function MobileFab({
   onClick,
   icon,
   label,
-  bottom = "calc(5rem + env(safe-area-inset-bottom, 0px))",
+  bottom = "5rem",
   navVisible,
   hiddenClassName = "md:hidden",
   containerClassName,

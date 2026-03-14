@@ -221,7 +221,7 @@ export default function Settings() {
         {/* Sticky header */}
         <div className="sticky top-0 z-20 bg-background">
           {/* Title row */}
-          <div className="px-4 sm:px-6 safe-header-padding pb-4 sm:pb-6">
+          <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6">
             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
             <p className="text-muted-foreground mt-1">
               Manage your account, preferences, and data.
@@ -234,7 +234,7 @@ export default function Settings() {
                   <IconChevronDown className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="pb-safe">
+              <SheetContent side="bottom">
                 <SheetHeader>
                   <SheetTitle>Settings</SheetTitle>
                 </SheetHeader>

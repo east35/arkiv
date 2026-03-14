@@ -174,7 +174,7 @@ export function SearchUI() {
   return (
     <div className="flex flex-col fixed md:relative inset-0 md:inset-auto z-[60] md:z-auto bg-[#f5f5f5] dark:bg-[#171717]">
       <div
-        className="sticky top-0 z-20 bg-background px-4 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+1rem)] sm:pt-6 sm:pb-6 pb-2"
+        className="sticky top-0 z-20 bg-background px-4 sm:px-6 pt-4 sm:pt-6 sm:pb-6 pb-2"
       >
         <div className="flex items-center justify-between gap-2 py-3">
           <h1 className="text-3xl font-bold tracking-tight">
@@ -333,7 +333,7 @@ export function SearchUI() {
       </AlertDialog>
 
       {/* Mobile type picker — pinned to bottom of full-screen overlay */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-background pb-safe">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-background">
         <LibraryTypeSwitcher
           value={mediaType}
           onValueChange={setMediaType}

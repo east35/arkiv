@@ -42,7 +42,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 bg-background md:hidden pb-safe transition-transform duration-200 ease-out",
+        "fixed bottom-0 left-0 right-0 z-50 bg-background md:hidden transition-transform duration-200 ease-out",
         visible ? "translate-y-0" : "translate-y-full pointer-events-none",
       )}
     >

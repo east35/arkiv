@@ -168,7 +168,7 @@ export default function ItemDetail() {
 
   return (
     <>
-      <div className="flex-1 relative bg-background">
+      <div className="flex-1 relative bg-background max-md:flex max-md:flex-col max-md:h-dvh max-md:overflow-hidden">
         {/* ═══════════════ Sticky Header ═══════════════ */}
         <ItemDetailHeader
           item={item}
@@ -205,7 +205,7 @@ export default function ItemDetail() {
         </div>
 
         {/* ═══════════════ Mobile Layout ═══════════════ */}
-        <div className="md:hidden">
+        <div className="md:hidden flex-1 overflow-y-auto min-h-0">
           {/* Cover — centered, large */}
           <div className="flex justify-center px-8 pt-4">
             <div className="w-[200px] aspect-[2/3] overflow-hidden rounded-lg">
@@ -418,7 +418,7 @@ export default function ItemDetail() {
             </div>
           ) : (
             /* Notes tab content */
-            <div className="px-4 pt-6 pb-[calc(110px+env(safe-area-inset-bottom,0px)+1rem)]">
+            <div className="px-4 pt-6 pb-6">
               {item.notes ? (
                 <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground bg-card p-4 rounded-lg border">
                   {item.notes}
@@ -436,7 +436,7 @@ export default function ItemDetail() {
         </div>
 
         {/* ═══════════════ Mobile Bottom Bar ═══════════════ */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 pb-safe bg-background">
+        <div className="md:hidden flex-shrink-0 bg-background">
           {/* Status bar — full-width, status colour */}
           <button
             onClick={() => setIsSheetOpen(true)}

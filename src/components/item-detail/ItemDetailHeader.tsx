@@ -32,7 +32,7 @@ export function ItemDetailHeader({
   return (
     <div
       className={cn(
-        "sticky top-0 z-20 flex items-center justify-between bg-background safe-header-bar",
+        "sticky top-0 z-20 flex items-center justify-between bg-background",
       )}
     >
       {/* Back link */}

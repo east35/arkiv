@@ -70,7 +70,7 @@ export default function Home() {
     filteredItems.filter((i) => i.media_type === "book"),
   );
   const bottomClearanceClass =
-    "pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-6";
+    "pb-24 md:pb-6";
 
   const handleEdit = (item: FullItem) => {
     setSelectedItem(item);
@@ -86,7 +86,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <div className="sticky top-0 z-20 bg-background px-4 sm:px-6 safe-header-padding sm:pb-6 pb-2">
+      <div className="sticky top-0 z-20 bg-background px-4 sm:px-6 pt-4 sm:pt-6 sm:pb-6 pb-2">
         <LibraryControls
           title={
             <>
