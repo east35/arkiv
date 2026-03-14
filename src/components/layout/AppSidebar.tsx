@@ -274,7 +274,7 @@ export function AppSidebar({
                     <p className="text-muted-foreground mt-0.5">Create a free account to save your library.</p>
                     <button
                       type="button"
-                      onClick={() => { navigate("/register"); setTimeout(exitDemoMode, 0); }}
+                      onClick={() => { navigate("/register"); exitDemoMode(); }}
                       className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
                       Sign Up Free
@@ -287,7 +287,7 @@ export function AppSidebar({
                     onClick={() => {
                       if (isDemoMode) {
                         navigate("/");
-                        setTimeout(exitDemoMode, 0);
+                        exitDemoMode();
                       } else {
                         signOut();
                       }

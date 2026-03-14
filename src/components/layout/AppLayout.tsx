@@ -123,7 +123,7 @@ export default function AppLayout() {
               <button
                 type="button"
                 className="underline underline-offset-2 hover:no-underline"
-                onClick={() => { navigate("/register"); setTimeout(exitDemoMode, 0); }}
+                onClick={() => { navigate("/register"); exitDemoMode(); }}
               >
                 Sign Up Free
               </button>
@@ -131,7 +131,7 @@ export default function AppLayout() {
               <button
                 type="button"
                 className="underline underline-offset-2 hover:no-underline"
-                onClick={() => { navigate("/"); setTimeout(exitDemoMode, 0); }}
+                onClick={() => { navigate("/"); exitDemoMode(); }}
               >
                 Exit
               </button>
