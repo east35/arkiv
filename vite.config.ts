@@ -10,7 +10,11 @@ const DEV_FUNCTIONS_PROXY_ORIGIN = "http://localhost:5173"
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
   const supabaseUrl = env.VITE_SUPABASE_URL
-  const proxyFunctionsInDev = env.VITE_SUPABASE_FUNCTIONS_PROXY !== "false" && Boolean(supabaseUrl)
+  const functionsBaseUrl = env.VITE_SUPABASE_FUNCTIONS_URL
+    || (supabaseUrl ? `${supabaseUrl}/functions/v1` : "")
+  const functionsTarget = functionsBaseUrl ? new URL(functionsBaseUrl) : null
+  const functionsTargetPath = functionsTarget?.pathname.replace(/\/$/, "") || "/functions/v1"
+  const proxyFunctionsInDev = env.VITE_SUPABASE_FUNCTIONS_PROXY !== "false" && Boolean(functionsTarget)
 
   return {
     server: {
@@ -18,7 +22,7 @@ export default defineConfig(({ mode }) => {
       proxy: proxyFunctionsInDev
         ? {
             [DEV_FUNCTIONS_PROXY_PATH]: {
-              target: supabaseUrl,
+              target: functionsTarget!.origin,
               changeOrigin: true,
               headers: {
                 origin: DEV_FUNCTIONS_PROXY_ORIGIN,
@@ -31,7 +35,7 @@ export default defineConfig(({ mode }) => {
                   proxyReq.setHeader("origin", DEV_FUNCTIONS_PROXY_ORIGIN)
                 })
               },
-              rewrite: (proxyPath) => proxyPath.replace(DEV_FUNCTIONS_PROXY_PATH, "/functions/v1"),
+              rewrite: (proxyPath) => proxyPath.replace(DEV_FUNCTIONS_PROXY_PATH, functionsTargetPath),
             },
           }
         : undefined,

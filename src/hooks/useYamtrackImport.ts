@@ -287,6 +287,10 @@ async function enrichImportedGame(itemId: string, row: MappedRow): Promise<boole
   if (details.platforms?.length) gameUpdate.platforms = details.platforms
   if (details.themes?.length) gameUpdate.themes = details.themes
   if (details.screenshots?.length) gameUpdate.screenshots = details.screenshots
+  if (details.hltb_average != null) gameUpdate.hltb_average = details.hltb_average
+  if (details.hltb_main != null) gameUpdate.hltb_main = details.hltb_main
+  if (details.hltb_main_extra != null) gameUpdate.hltb_main_extra = details.hltb_main_extra
+  if (details.hltb_completionist != null) gameUpdate.hltb_completionist = details.hltb_completionist
 
   if (Object.keys(itemUpdate).length > 0) {
     const { error: updateError } = await supabase.from("items").update(itemUpdate).eq("id", itemId)

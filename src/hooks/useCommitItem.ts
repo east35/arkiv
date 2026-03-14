@@ -146,6 +146,10 @@ export function useCommitItem() {
           steam_id: gameDetails!.steamId ?? null,
           active_platform: null,
           similar_games: gameDetails!.similarGames ?? [],
+          hltb_average: gameDetails!.hltb_average ?? null,
+          hltb_main: gameDetails!.hltb_main ?? null,
+          hltb_main_extra: gameDetails!.hltb_main_extra ?? null,
+          hltb_completionist: gameDetails!.hltb_completionist ?? null,
         } satisfies Omit<GameFields, "item_id">
       }
 

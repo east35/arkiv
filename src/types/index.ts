@@ -97,6 +97,10 @@ export interface GameFields {
   steam_id: string | null
   active_platform: string | null
   similar_games: Array<{ id?: number; name: string; cover: string | null; releaseDate?: string | null }>
+  hltb_average: number | null
+  hltb_main: number | null
+  hltb_main_extra: number | null
+  hltb_completionist: number | null
 }
 
 /** Full book: core item + book-specific fields */
@@ -228,6 +232,10 @@ export interface IgdbGameDetails {
   remasters: string[]
   standaloneExpansions: string[]
   similarGames: Array<{ id?: number; name: string; cover: string | null; releaseDate?: string | null }>
+  hltb_average: number | null
+  hltb_main: number | null
+  hltb_main_extra: number | null
+  hltb_completionist: number | null
 }
 
 /** Hardcover search result (compact) */

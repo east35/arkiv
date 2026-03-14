@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase"
 import { useCommitItem } from "@/hooks/useCommitItem"
 import { useShelfStore } from "@/store/useShelfStore"
 import { statusIcons, statusLabels } from "@/components/status-icons"
+import { HowLongToBeatSection } from "@/components/item-detail/HowLongToBeatSection"
 import { Badge } from "@/components/ui/badge"
 import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -430,6 +431,10 @@ export default function ExternalItemDetail() {
 
             {/* Genres + Themes */}
             <div className="bg-[#e6e6e6] p-6 space-y-6 dark:bg-card">
+              {gameDetails && (
+                <HowLongToBeatSection value={gameDetails} />
+              )}
+
               {genres.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Genres</h3>
@@ -543,6 +548,10 @@ export default function ExternalItemDetail() {
 
         {/* Genres + Themes */}
         <div className="px-6 pt-4 space-y-4">
+          {gameDetails && (
+            <HowLongToBeatSection value={gameDetails} />
+          )}
+
           {genres.length > 0 && (
             <div>
               <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">Genres</h4>

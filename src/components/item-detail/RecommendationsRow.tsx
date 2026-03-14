@@ -1,16 +1,16 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { IconPlus, IconLoader2 } from "@tabler/icons-react"
-import { supabase } from "@/lib/supabase"
-import { useShelfStore } from "@/store/useShelfStore"
-import { useCommitItem } from "@/hooks/useCommitItem"
-import { statusIcons, statusLabels } from "@/components/status-icons"
-import { cn } from "@/lib/utils"
-import type { FullItem, Status, IgdbSearchResult } from "@/types"
-import { toast } from "sonner"
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { IconPlus, IconLoader2 } from "@tabler/icons-react";
+import { supabase } from "@/lib/supabase";
+import { useShelfStore } from "@/store/useShelfStore";
+import { useCommitItem } from "@/hooks/useCommitItem";
+import { statusIcons, statusLabels } from "@/components/status-icons";
+import { cn } from "@/lib/utils";
+import type { FullItem, Status, IgdbSearchResult } from "@/types";
+import { toast } from "sonner";
 
 interface RecommendationsRowProps {
-  item: FullItem
+  item: FullItem;
 }
 
 /* Status bar colours — mirrors PosterItem */
@@ -21,10 +21,10 @@ const STATUS_BAR: Record<Status, string> = {
   completed: "bg-green-500 text-green-950",
   paused: "bg-yellow-400 text-yellow-950",
   dropped: "bg-red-500 text-red-950",
-}
+};
 
 const COVER_FALLBACK =
-  "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
+  "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png";
 
 /**
  * Displays recommended similar games using PosterItem-style cards.
@@ -34,105 +34,129 @@ const COVER_FALLBACK =
  * - "Back to" label shows the current game's title.
  */
 export function RecommendationsRow({ item }: RecommendationsRowProps) {
-  const [resolvingRecommendationName, setResolvingRecommendationName] = useState<string | null>(null)
-  const items = useShelfStore((s) => s.items)
-  const { commit, committingId } = useCommitItem()
-  const navigate = useNavigate()
+  const [resolvingRecommendationName, setResolvingRecommendationName] =
+    useState<string | null>(null);
+  const items = useShelfStore((s) => s.items);
+  const { commit, committingId } = useCommitItem();
+  const navigate = useNavigate();
 
-  if (item.media_type !== "game" || !item.game.similar_games || item.game.similar_games.length === 0) {
-    return null
+  if (
+    item.media_type !== "game" ||
+    !item.game.similar_games ||
+    item.game.similar_games.length === 0
+  ) {
+    return null;
   }
 
   // Build a map of external IGDB IDs → library items for quick lookup
   const libraryByExternalId = new Map(
     items
       .filter((i) => i.media_type === "game" && i.external_id)
-      .map((i) => [String(i.external_id), i])
-  )
+      .map((i) => [String(i.external_id), i]),
+  );
 
-  const resolveRecommendationId = async (recommendation: { id?: number; name: string }) => {
-    if (recommendation.id != null) return recommendation.id
+  const resolveRecommendationId = async (recommendation: {
+    id?: number;
+    name: string;
+  }) => {
+    if (recommendation.id != null) return recommendation.id;
 
-    setResolvingRecommendationName(recommendation.name)
+    setResolvingRecommendationName(recommendation.name);
 
     try {
-      const { data, error: searchError } = await supabase.functions.invoke("igdb-proxy", {
-        body: { action: "search", query: recommendation.name },
-      })
+      const { data, error: searchError } = await supabase.functions.invoke(
+        "igdb-proxy",
+        {
+          body: { action: "search", query: recommendation.name },
+        },
+      );
 
-      if (searchError) throw searchError
+      if (searchError) throw searchError;
 
-      const searchResults = (data as IgdbSearchResult[] | null) ?? []
-      const normalizedName = recommendation.name.trim().toLowerCase()
+      const searchResults = (data as IgdbSearchResult[] | null) ?? [];
+      const normalizedName = recommendation.name.trim().toLowerCase();
       const exactMatch = searchResults.find(
         (result) => result.name.trim().toLowerCase() === normalizedName,
-      )
+      );
 
-      const resolvedId = exactMatch?.id ?? searchResults[0]?.id ?? null
+      const resolvedId = exactMatch?.id ?? searchResults[0]?.id ?? null;
       if (resolvedId == null) {
-        toast.error(`Could not open ${recommendation.name}.`)
+        toast.error(`Could not open ${recommendation.name}.`);
       }
 
-      return resolvedId
+      return resolvedId;
     } catch {
-      toast.error(`Could not open ${recommendation.name}.`)
-      return null
+      toast.error(`Could not open ${recommendation.name}.`);
+      return null;
     } finally {
-      setResolvingRecommendationName(null)
+      setResolvingRecommendationName(null);
     }
-  }
+  };
 
-  const navigateToRecommendation = async (recommendation: { id?: number; name: string }) => {
-    const resolvedId = await resolveRecommendationId(recommendation)
-    if (resolvedId == null) return
+  const navigateToRecommendation = async (recommendation: {
+    id?: number;
+    name: string;
+  }) => {
+    const resolvedId = await resolveRecommendationId(recommendation);
+    if (resolvedId == null) return;
 
     const libraryItem = items.find(
       (libraryGame) =>
-        libraryGame.media_type === "game" && libraryGame.external_id === String(resolvedId),
-    )
+        libraryGame.media_type === "game" &&
+        libraryGame.external_id === String(resolvedId),
+    );
 
     navigate(
-      libraryItem ? `/item/${libraryItem.id}` : `/item/external/game/${resolvedId}`,
+      libraryItem
+        ? `/item/${libraryItem.id}`
+        : `/item/external/game/${resolvedId}`,
       { state: { backLabel: item.title } },
-    )
-  }
+    );
+  };
 
   /** Quick-add: commit external game, then navigate to its new detail page */
   const handleQuickAdd = async (
     e: React.MouseEvent,
     recommendation: { id?: number; name: string },
   ) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const resolvedId = await resolveRecommendationId(recommendation)
-    if (resolvedId == null) return
+    e.preventDefault();
+    e.stopPropagation();
+    const resolvedId = await resolveRecommendationId(recommendation);
+    if (resolvedId == null) return;
 
-    const newItem = await commit(resolvedId, "game")
+    const newItem = await commit(resolvedId, "game");
     if (newItem) {
-      navigate(`/item/${newItem.id}`, { state: { backLabel: item.title } })
+      navigate(`/item/${newItem.id}`, { state: { backLabel: item.title } });
     }
-  }
+  };
 
   return (
     <div>
-      <h3 className="text-sm font-semibold mb-3 hidden md:block">Recommendations</h3>
+      <h3 className="text-foreground tx-sm mb-3 hidden md:block">
+        Recommendations
+      </h3>
 
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
         {item.game.similar_games.map((rec) => {
-          const libraryItem = rec.id ? libraryByExternalId.get(String(rec.id)) : undefined
-          const isAdding = rec.id != null && committingId === rec.id
-          const isResolving = resolvingRecommendationName === rec.name
-          const cover = libraryItem?.cover_url || rec.cover || COVER_FALLBACK
-          const title = libraryItem?.title || rec.name
-          const subtitle = libraryItem && libraryItem.media_type === "game"
-            ? libraryItem.game.developer || libraryItem.game.publisher || ""
-            : rec.releaseDate ? String(new Date(rec.releaseDate).getFullYear()) : ""
+          const libraryItem = rec.id
+            ? libraryByExternalId.get(String(rec.id))
+            : undefined;
+          const isAdding = rec.id != null && committingId === rec.id;
+          const isResolving = resolvingRecommendationName === rec.name;
+          const cover = libraryItem?.cover_url || rec.cover || COVER_FALLBACK;
+          const title = libraryItem?.title || rec.name;
+          const subtitle =
+            libraryItem && libraryItem.media_type === "game"
+              ? libraryItem.game.developer || libraryItem.game.publisher || ""
+              : rec.releaseDate
+                ? String(new Date(rec.releaseDate).getFullYear())
+                : "";
 
           const linkTo = libraryItem
             ? `/item/${libraryItem.id}`
             : rec.id != null
               ? `/item/external/game/${rec.id}`
-              : null
+              : null;
 
           if (!linkTo) {
             return (
@@ -146,23 +170,42 @@ export function RecommendationsRow({ item }: RecommendationsRowProps) {
                   onClick={() => void navigateToRecommendation(rec)}
                 >
                   <div className="relative aspect-[2/3] w-full overflow-hidden">
-                    <img src={cover} alt={title} className="h-full w-full object-cover" loading="lazy" />
+                    <img
+                      src={cover}
+                      alt={title}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                     <div
                       className={cn(
                         "absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center",
-                        isResolving ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                        isResolving
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100",
                       )}
                     >
                       {isResolving ? (
                         <IconLoader2 className="h-4 w-4 shrink-0 animate-spin text-white" />
                       ) : (
-                        <span className="text-white text-xs font-semibold">View Details</span>
+                        <span className="text-white text-xs font-semibold">
+                          View Details
+                        </span>
                       )}
                     </div>
                   </div>
                   <div className="px-2.5 pt-2 pb-1.5 flex-1">
-                    <h4 className="font-bold text-sm leading-tight line-clamp-1" title={title}>{title}</h4>
-                    <p className={cn("text-[11px] text-muted-foreground truncate mt-0.5 min-h-[1rem]", !subtitle && "invisible")}>
+                    <h4
+                      className="font-bold text-sm leading-tight line-clamp-1"
+                      title={title}
+                    >
+                      {title}
+                    </h4>
+                    <p
+                      className={cn(
+                        "text-[11px] text-muted-foreground truncate mt-0.5 min-h-[1rem]",
+                        !subtitle && "invisible",
+                      )}
+                    >
                       {subtitle || " "}
                     </p>
                   </div>
@@ -177,10 +220,12 @@ export function RecommendationsRow({ item }: RecommendationsRowProps) {
                   ) : (
                     <IconPlus className="h-4 w-4 shrink-0" />
                   )}
-                  <span className="truncate">{isResolving ? "Loading…" : "Add"}</span>
+                  <span className="truncate">
+                    {isResolving ? "Loading…" : "Add"}
+                  </span>
                 </button>
               </div>
-            )
+            );
           }
 
           return (
@@ -191,21 +236,47 @@ export function RecommendationsRow({ item }: RecommendationsRowProps) {
               className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col group"
             >
               <div className="relative aspect-[2/3] w-full overflow-hidden">
-                <img src={cover} alt={title} className="h-full w-full object-cover" loading="lazy" />
+                <img
+                  src={cover}
+                  alt={title}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-xs font-semibold">View Details</span>
+                  <span className="text-white text-xs font-semibold">
+                    View Details
+                  </span>
                 </div>
               </div>
               <div className="px-2.5 pt-2 pb-1.5 flex-1">
-                <h4 className="font-bold text-sm leading-tight line-clamp-1" title={title}>{title}</h4>
-                <p className={cn("text-[11px] text-muted-foreground truncate mt-0.5 min-h-[1rem]", !subtitle && "invisible")}>
+                <h4
+                  className="font-bold text-sm leading-tight line-clamp-1"
+                  title={title}
+                >
+                  {title}
+                </h4>
+                <p
+                  className={cn(
+                    "text-[11px] text-muted-foreground truncate mt-0.5 min-h-[1rem]",
+                    !subtitle && "invisible",
+                  )}
+                >
                   {subtitle || " "}
                 </p>
               </div>
               {libraryItem ? (
-                <div className={cn("w-full shrink-0 px-3 py-2 flex items-center gap-2 font-semibold text-[11px]", STATUS_BAR[libraryItem.status])}>
-                  <span className="[&>svg]:h-4 [&>svg]:w-4 shrink-0">{statusIcons[libraryItem.status]}</span>
-                  <span className="truncate">{statusLabels[libraryItem.status]}</span>
+                <div
+                  className={cn(
+                    "w-full shrink-0 px-3 py-2 flex items-center gap-2 font-semibold text-[11px]",
+                    STATUS_BAR[libraryItem.status],
+                  )}
+                >
+                  <span className="[&>svg]:h-4 [&>svg]:w-4 shrink-0">
+                    {statusIcons[libraryItem.status]}
+                  </span>
+                  <span className="truncate">
+                    {statusLabels[libraryItem.status]}
+                  </span>
                 </div>
               ) : rec.id != null ? (
                 <button
@@ -218,13 +289,15 @@ export function RecommendationsRow({ item }: RecommendationsRowProps) {
                   ) : (
                     <IconPlus className="h-4 w-4 shrink-0" />
                   )}
-                  <span className="truncate">{isAdding ? "Adding…" : "Add"}</span>
+                  <span className="truncate">
+                    {isAdding ? "Adding…" : "Add"}
+                  </span>
                 </button>
               ) : null}
             </Link>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

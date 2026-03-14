@@ -47,9 +47,18 @@ const DEFAULT_SEARCH_LIMIT = 20
 const MAX_SEARCH_LIMIT = 50
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_REQUESTS = 60
+const HLTB_BASE_URL = "https://howlongtobeat.com"
+const HLTB_FINDER_INIT_PATH = "/api/finder/init"
+const HLTB_FINDER_PATH = "/api/finder"
+const HLTB_TIMEOUT_MS = 8_000
+const HLTB_TOKEN_TTL_MS = 10 * 60 * 1000
+const HLTB_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
 const requestCounts = new Map<string, { count: number; resetAt: number }>()
+const hltbCache = new Map<string, HltbTimes | null>()
 
+let cachedHltbAuthToken: string | null = null
+let hltbAuthTokenExpiresAt = 0
 
 class HttpError extends Error {
   status: number
@@ -272,6 +281,265 @@ async function igdbFetch(endpoint: string, body: string): Promise<unknown> {
   return res.json()
 }
 
+type HltbTimes = {
+  hltb_average: number | null
+  hltb_main: number | null
+  hltb_main_extra: number | null
+  hltb_completionist: number | null
+}
+
+type HltbSearchResult = {
+  game_name?: string
+  comp_main?: number | string | null
+  comp_plus?: number | string | null
+  comp_all?: number | string | null
+  comp_100?: number | string | null
+  release_world?: number | string | null
+  similarity?: number | string | null
+}
+
+type HltbFinderResponse = {
+  data?: HltbSearchResult[]
+}
+
+type HltbFinderInitResponse = {
+  token?: string
+}
+
+function normalizeHltbTitle(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[™®©]/g, "")
+    .replace(/[:\-–—]+/g, " ")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+}
+
+function buildHltbSearchVariants(title: string): string[] {
+  const variants: string[] = []
+  const push = (value: string) => {
+    const normalized = value.trim().replace(/\s+/g, " ")
+    if (!normalized || variants.includes(normalized)) return
+    variants.push(normalized)
+  }
+
+  push(title)
+  push(title.split(":")[0] ?? "")
+  push(title.replace(/[™®©]/g, ""))
+  push(title.replace(/[^\w\s]/g, " "))
+  return variants
+}
+
+function secondsToHours(value: unknown): number | null {
+  const numeric = typeof value === "number"
+    ? value
+    : typeof value === "string"
+      ? parseFloat(value)
+      : NaN
+  if (!Number.isFinite(numeric) || numeric <= 0) return null
+  return Math.round((numeric / 3600) * 10) / 10
+}
+
+function hasAnyHltbTime(value: HltbTimes): boolean {
+  return Object.values(value).some((entry) => entry != null)
+}
+
+function mapHltbTimes(result: HltbSearchResult): HltbTimes {
+  return {
+    hltb_average: secondsToHours(result.comp_all),
+    hltb_main: secondsToHours(result.comp_main),
+    hltb_main_extra: secondsToHours(result.comp_plus),
+    hltb_completionist: secondsToHours(result.comp_100),
+  }
+}
+
+function getHltbReleaseYear(result: HltbSearchResult): number | null {
+  const raw = result.release_world
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw
+  if (typeof raw === "string") {
+    const year = parseInt(raw.slice(0, 4), 10)
+    return Number.isFinite(year) ? year : null
+  }
+  return null
+}
+
+function getHltbSimilarity(result: HltbSearchResult): number {
+  const raw = result.similarity
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw
+  if (typeof raw === "string") {
+    const similarity = parseFloat(raw)
+    return Number.isFinite(similarity) ? similarity : 0
+  }
+  return 0
+}
+
+function scoreHltbResult(
+  result: HltbSearchResult,
+  normalizedTitle: string,
+  releaseYear: number | null,
+): number {
+  const candidate = normalizeHltbTitle(result.game_name ?? "")
+  if (!candidate) return -1
+
+  let score = getHltbSimilarity(result)
+  if (candidate === normalizedTitle) score += 3
+  else if (candidate.startsWith(normalizedTitle) || normalizedTitle.startsWith(candidate)) score += 1.5
+  else if (candidate.includes(normalizedTitle) || normalizedTitle.includes(candidate)) score += 0.75
+
+  if (releaseYear != null) {
+    const candidateYear = getHltbReleaseYear(result)
+    if (candidateYear === releaseYear) score += 0.5
+  }
+
+  return score
+}
+
+function getHltbRequestHeaders(token?: string): HeadersInit {
+  const headers: Record<string, string> = {
+    "accept": "application/json, text/plain, */*",
+    "accept-language": "en-US,en;q=0.9",
+    "origin": HLTB_BASE_URL,
+    "referer": `${HLTB_BASE_URL}/`,
+    "user-agent": HLTB_USER_AGENT,
+  }
+
+  if (token) {
+    headers["x-auth-token"] = token
+  }
+
+  return headers
+}
+
+async function getHltbAuthToken(forceRefresh = false): Promise<string> {
+  if (!forceRefresh && cachedHltbAuthToken && Date.now() < hltbAuthTokenExpiresAt) {
+    return cachedHltbAuthToken
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort("timeout"), HLTB_TIMEOUT_MS)
+
+  try {
+    const res = await fetch(`${HLTB_BASE_URL}${HLTB_FINDER_INIT_PATH}?t=${Date.now()}`, {
+      headers: getHltbRequestHeaders(),
+      signal: controller.signal,
+    })
+
+    if (!res.ok) {
+      const responseBody = await res.text()
+      console.warn("HowLongToBeat token init failed", { status: res.status, responseBody })
+      throw new Error("HowLongToBeat token init failed")
+    }
+
+    const payload = await res.json() as HltbFinderInitResponse
+    if (!payload.token) {
+      throw new Error("HowLongToBeat token init returned no token")
+    }
+
+    cachedHltbAuthToken = payload.token
+    hltbAuthTokenExpiresAt = Date.now() + HLTB_TOKEN_TTL_MS
+    return payload.token
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+async function hltbSearch(query: string): Promise<HltbSearchResult[]> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort("timeout"), HLTB_TIMEOUT_MS)
+
+    try {
+      const token = await getHltbAuthToken(attempt > 0)
+      const res = await fetch(`${HLTB_BASE_URL}${HLTB_FINDER_PATH}`, {
+        method: "POST",
+        headers: {
+          ...getHltbRequestHeaders(token),
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          searchType: "games",
+          searchTerms: query.split(/\s+/).filter(Boolean),
+          searchPage: 1,
+          size: 20,
+          searchOptions: {
+            games: {
+              userId: 0,
+              platform: "",
+              sortCategory: "popular",
+              rangeCategory: "main",
+              rangeTime: { min: 0, max: 0 },
+              gameplay: { perspective: "", flow: "", genre: "", difficulty: "" },
+              rangeYear: { min: "", max: "" },
+              modifier: "",
+            },
+            users: { sortCategory: "postcount" },
+            lists: { sortCategory: "follows" },
+            filter: "",
+            sort: 0,
+            randomizer: 0,
+          },
+          useCache: true,
+        }),
+        signal: controller.signal,
+      })
+
+      if (res.status === 403 && attempt === 0) {
+        cachedHltbAuthToken = null
+        hltbAuthTokenExpiresAt = 0
+        continue
+      }
+
+      if (!res.ok) {
+        const responseBody = await res.text()
+        console.warn("HowLongToBeat search failed", { status: res.status, responseBody })
+        return []
+      }
+
+      const payload = await res.json() as HltbFinderResponse
+      return Array.isArray(payload.data) ? payload.data : []
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
+
+  return []
+}
+
+async function getHowLongToBeatData(title: string, releaseDate: string | null): Promise<HltbTimes | null> {
+  const releaseYear = releaseDate ? parseInt(releaseDate.slice(0, 4), 10) || null : null
+  const normalizedTitle = normalizeHltbTitle(title)
+  const cacheKey = `${normalizedTitle}|${releaseYear ?? ""}`
+  if (hltbCache.has(cacheKey)) return hltbCache.get(cacheKey) ?? null
+
+  const variants = buildHltbSearchVariants(title)
+
+  for (const query of variants) {
+    try {
+      const results = await hltbSearch(query)
+      if (!results.length) continue
+
+      const best = results
+        .filter((result) => hasAnyHltbTime(mapHltbTimes(result)))
+        .sort((a, b) => scoreHltbResult(b, normalizedTitle, releaseYear) - scoreHltbResult(a, normalizedTitle, releaseYear))[0]
+
+      if (!best) continue
+
+      const mapped = mapHltbTimes(best)
+      if (!hasAnyHltbTime(mapped)) continue
+      hltbCache.set(cacheKey, mapped)
+      return mapped
+    } catch (err) {
+      console.warn("HowLongToBeat lookup failed", { title, query, err })
+    }
+  }
+
+  hltbCache.set(cacheKey, null)
+  return null
+}
+
 // ---------------------------------------------------------------------------
 // Search: returns compact game results for autocomplete
 // ---------------------------------------------------------------------------
@@ -326,11 +594,21 @@ async function getGameDetails(id: number) {
 
   const game = results[0]
   const companies = (game.involved_companies as Array<Record<string, unknown>>) || []
+  const releaseDate = game.first_release_date
+    ? new Date((game.first_release_date as number) * 1000).toISOString().split("T")[0]
+    : null
 
   // Extract Steam App ID from external_games (category=1 is Steam)
   const externalGames = (game.external_games as Array<{ category: number; uid: string }>) || []
   const steamEntry = externalGames.find((eg) => eg.category === 1)
   const steamId = steamEntry?.uid ?? null
+  let hltb: HltbTimes | null = null
+
+  try {
+    hltb = await getHowLongToBeatData(String(game.name ?? ""), releaseDate)
+  } catch (err) {
+    console.warn("HowLongToBeat enrichment skipped", { id, err })
+  }
 
   return {
     id: game.id,
@@ -352,9 +630,7 @@ async function getGameDetails(id: number) {
     screenshots: ((game.screenshots as Array<{ image_id: string }>) || []).map(
       (s) => `https://images.igdb.com/igdb/image/upload/t_screenshot_big/${s.image_id}.jpg`
     ),
-    releaseDate: game.first_release_date
-      ? new Date((game.first_release_date as number) * 1000).toISOString().split("T")[0]
-      : null,
+    releaseDate,
     // Use total_rating (weighted critic + community) as the primary score
     sourceScore: game.total_rating != null ? Number((game.total_rating as number).toFixed(1)) : null,
     ratingsCount: (game.total_rating_count as number) ?? null,
@@ -378,6 +654,10 @@ async function getGameDetails(id: number) {
         ? new Date(g.first_release_date * 1000).toISOString().split("T")[0]
         : null,
     })),
+    hltb_average: hltb?.hltb_average ?? null,
+    hltb_main: hltb?.hltb_main ?? null,
+    hltb_main_extra: hltb?.hltb_main_extra ?? null,
+    hltb_completionist: hltb?.hltb_completionist ?? null,
   }
 }
 
@@ -574,4 +854,4 @@ serve(async (req: Request) => {
     console.error("igdb-proxy unexpected error:", err)
     return jsonResponse(req, { error: "Internal server error" }, 500)
   }
-})
+}, { port: Number(Deno.env.get("PORT") ?? 8000) })

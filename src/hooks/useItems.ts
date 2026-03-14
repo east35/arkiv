@@ -78,6 +78,10 @@ function hydrateItem(item: Item, book: BookFields | null, game: GameFields | nul
     steam_id: null,
     active_platform: null,
     similar_games: [],
+    hltb_average: null,
+    hltb_main: null,
+    hltb_main_extra: null,
+    hltb_completionist: null,
   }
 
   return {

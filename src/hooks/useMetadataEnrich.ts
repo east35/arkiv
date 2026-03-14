@@ -2,12 +2,12 @@
  * Arkiv — Metadata Enrichment Hook
  *
  * One-time bulk backfill for imported items missing metadata.
- * Parses external_id to determine the source API, fetches full
+ * Resolves external_id to determine the source API, fetches full
  * details, and updates both core item and extension fields.
  *
  * Strategy:
- *   - Games (igdb:*):    Fetch by IGDB numeric ID via details action
- *   - Books (hardcover:*): Search Hardcover by title, pick best match,
+ *   - Games (igdb:* or legacy numeric IDs): Fetch by IGDB numeric ID via details action
+ *   - Books (hardcover:* or legacy numeric IDs): Search Hardcover by title, pick best match,
  *     then fetch full details by ID
  *   - Rate limiting: 250ms delay between IGDB calls (4 req/sec limit),
  *     200ms between Hardcover calls
@@ -15,6 +15,7 @@
 
 import { useState, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
+import { hasHowLongToBeatData } from "@/lib/howlongtobeat"
 import { useShelfStore } from "@/store/useShelfStore"
 import { useItems } from "@/hooks/useItems"
 import { toast } from "sonner"
@@ -69,7 +70,7 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Determine if an item needs enrichment.
- * Items missing description, genres, or developer/author are considered sparse.
+ * Items missing core metadata, related content, or HLTB timing data are considered sparse.
  * Items without external_id can still be enriched via title search.
  */
 function needsEnrichment(item: FullItem): boolean {
@@ -80,7 +81,8 @@ function needsEnrichment(item: FullItem): boolean {
   if (item.media_type === "game") {
     const missingDev = !item.game.developer
     const missingSimilarGames = !item.game.similar_games || item.game.similar_games.length === 0
-    return missingDescription || missingGenres || missingDev || missingSimilarGames
+    const missingHltb = !hasHowLongToBeatData(item.game)
+    return missingDescription || missingGenres || missingDev || missingSimilarGames || missingHltb
   }
 
   if (item.media_type === "book") {
@@ -92,16 +94,37 @@ function needsEnrichment(item: FullItem): boolean {
 }
 
 /**
- * Parse an external_id in the format "source:id" into its parts.
- * Returns null if the format is invalid.
+ * Resolve an external_id into its source and raw ID.
+ * Supports both "source:id" values and legacy plain numeric IDs committed by the app.
  */
-function parseExternalId(externalId: string): { source: string; id: string } | null {
-  const colonIndex = externalId.indexOf(":")
-  if (colonIndex === -1) return null
-  return {
-    source: externalId.slice(0, colonIndex),
-    id: externalId.slice(colonIndex + 1),
+function parseExternalId(
+  externalId: string,
+  mediaType: FullItem["media_type"],
+  source: FullItem["source"],
+): { source: string; id: string } | null {
+  const normalized = externalId.trim()
+  if (!normalized) return null
+
+  const colonIndex = normalized.indexOf(":")
+  if (colonIndex !== -1) {
+    return {
+      source: normalized.slice(0, colonIndex),
+      id: normalized.slice(colonIndex + 1),
+    }
   }
+
+  // Older tracked items store raw numeric provider IDs without a source prefix.
+  // Use the item source/media type to recover the correct provider.
+  if (/^\d+$/.test(normalized)) {
+    if (mediaType === "game" && source === "igdb") {
+      return { source: "igdb", id: normalized }
+    }
+    if (mediaType === "book" && source === "hardcover") {
+      return { source: "hardcover", id: normalized }
+    }
+  }
+
+  return null
 }
 
 /**
@@ -311,6 +334,10 @@ function buildGameUpdate(details: IgdbGameDetails) {
   if (details.gameCategory != null) extUpdate.game_category = details.gameCategory
   if (details.steamId) extUpdate.steam_id = details.steamId
   if (details.similarGames?.length) extUpdate.similar_games = details.similarGames
+  if (details.hltb_average != null) extUpdate.hltb_average = details.hltb_average
+  if (details.hltb_main != null) extUpdate.hltb_main = details.hltb_main
+  if (details.hltb_main_extra != null) extUpdate.hltb_main_extra = details.hltb_main_extra
+  if (details.hltb_completionist != null) extUpdate.hltb_completionist = details.hltb_completionist
 
   return { itemUpdate, extUpdate }
 }
@@ -493,7 +520,7 @@ export function useMetadataEnrich() {
  * Returns "enriched" if data was updated, "skipped" if no data found.
  */
 async function enrichItem(item: FullItem): Promise<"enriched" | "skipped"> {
-  const parsed = parseExternalId(item.external_id ?? "")
+  const parsed = parseExternalId(item.external_id ?? "", item.media_type, item.source)
 
   if (item.media_type === "game") {
     // For games: use IGDB numeric ID directly, or fall back to title search

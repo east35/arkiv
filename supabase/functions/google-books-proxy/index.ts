@@ -315,4 +315,4 @@ serve(async (req: Request) => {
     console.error("google-books-proxy unexpected error:", err)
     return jsonResponse(req, { error: "Internal server error" }, 500)
   }
-})
+}, { port: Number(Deno.env.get("PORT") ?? 8000) })

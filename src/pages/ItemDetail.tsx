@@ -42,7 +42,9 @@ import { NotesPanel } from "@/components/item-detail/NotesPanel"
 import { RecommendationsRow } from "@/components/item-detail/RecommendationsRow"
 import { LibraryRow } from "@/components/item-detail/LibraryRow"
 import { SeriesRow } from "@/components/item-detail/SeriesRow"
+import { HowLongToBeatSection } from "@/components/item-detail/HowLongToBeatSection"
 import { getCollectionCoverUrl } from "@/components/item-detail/collection-cover"
+import { hasHowLongToBeatData } from "@/lib/howlongtobeat"
 
 /* ── Status colour map (matches PosterItem STATUS_BAR) ── */
 const statusBg: Record<Status, string> = {
@@ -72,6 +74,7 @@ export default function ItemDetail() {
   const [mobileTab, setMobileTab] = useState<"overview" | "notes">("overview")
   const [scrollbarW, setScrollbarW] = useState(0)
   const [libraryEmpty, setLibraryEmpty] = useState(false)
+  const [hltbLoading, setHltbLoading] = useState(false)
   const enrichedForItem = useRef<string | null>(null)
   const { enrichSingle } = useMetadataEnrich()
 
@@ -128,13 +131,16 @@ export default function ItemDetail() {
     enrichedForItem.current = null
   }, [id])
 
-  // Auto-enrich game silently when similar_games is missing
+  // Auto-enrich game silently when key external metadata is missing.
   useEffect(() => {
     if (!item || item.media_type !== "game") return
-    if (item.game.similar_games && item.game.similar_games.length > 0) return
+    const missingSimilarGames = !item.game.similar_games || item.game.similar_games.length === 0
+    const missingHltb = !hasHowLongToBeatData(item.game)
+    if (!missingSimilarGames && !missingHltb) return
     if (enrichedForItem.current === item.id) return
     enrichedForItem.current = item.id
-    void enrichSingle(item, true)
+    if (missingHltb) setHltbLoading(true)
+    void enrichSingle(item, true).finally(() => setHltbLoading(false))
   }, [item, enrichSingle])
 
   const itemCollections = collections.filter((collection) => itemCollectionIds.includes(collection.id))
@@ -209,6 +215,7 @@ export default function ItemDetail() {
             <ItemDetailContent
               item={item}
               itemCollections={itemCollections}
+              isHltbLoading={hltbLoading}
             />
           </div>
 
@@ -338,6 +345,9 @@ export default function ItemDetail() {
                 {/* Game / Book Details */}
                 <AccordionSection title={isGame ? "Game Details" : "Book Details"} icon={IconInfoCircle}>
                   <div className="space-y-5">
+                    {isGame && (
+                      <HowLongToBeatSection value={item.game} isLoading={hltbLoading} />
+                    )}
                     {item.description && (
                       <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                         {item.description}

@@ -18,6 +18,7 @@ import {
 import { RecommendationsRow } from "./RecommendationsRow";
 import { LibraryRow } from "./LibraryRow";
 import { SeriesRow } from "./SeriesRow";
+import { HowLongToBeatSection } from "./HowLongToBeatSection";
 import { getCollectionCoverUrl } from "./collection-cover";
 import { useShelfStore } from "@/store/useShelfStore";
 import type { FullItem, Collection } from "@/types";
@@ -25,9 +26,14 @@ import type { FullItem, Collection } from "@/types";
 interface ItemDetailContentProps {
   item: FullItem;
   itemCollections: Collection[];
+  isHltbLoading?: boolean;
 }
 
-export function ItemDetailContent({ item, itemCollections }: ItemDetailContentProps) {
+export function ItemDetailContent({
+  item,
+  itemCollections,
+  isHltbLoading,
+}: ItemDetailContentProps) {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isClamped, setIsClamped] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
@@ -121,11 +127,13 @@ export function ItemDetailContent({ item, itemCollections }: ItemDetailContentPr
 
       {/* ── Group 2: Tags, collections, recommendations ── */}
       <div className="bg-[#e6e6e6] p-6 space-y-6 dark:bg-card">
+        {isGame && <HowLongToBeatSection value={item.game} isLoading={isHltbLoading} />}
+
         {/* Genres & Themes */}
         <div className="flex flex-wrap gap-x-12 gap-y-6">
           {item.genres.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold mb-2">Genres</h3>
+              <h3 className="text-foreground tx-sm mb-3">Genres</h3>
               <div className="flex flex-wrap gap-2">
                 {item.genres.map((g) => (
                   <Badge
@@ -141,7 +149,7 @@ export function ItemDetailContent({ item, itemCollections }: ItemDetailContentPr
           )}
           {isGame && item.game.themes.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold mb-2">Themes</h3>
+              <h3 className="text-foreground tx-sm mb-3">Themes</h3>
               <div className="flex flex-wrap gap-2">
                 {item.game.themes.map((t) => (
                   <Badge
@@ -160,7 +168,7 @@ export function ItemDetailContent({ item, itemCollections }: ItemDetailContentPr
         {/* Collections */}
         {itemCollections.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold mb-3">Collections</h3>
+            <h3 className="text-foreground tx-sm mb-3">Collections</h3>
             <div className="space-y-2">
               {itemCollections.map((collection) => {
                 const coverUrl = getCollectionCoverUrl(collection, items);
@@ -189,7 +197,9 @@ export function ItemDetailContent({ item, itemCollections }: ItemDetailContentPr
                         {collection.name}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        {collection.item_count ? `${collection.item_count} Items` : "Collection"}
+                        {collection.item_count
+                          ? `${collection.item_count} Items`
+                          : "Collection"}
                       </p>
                     </div>
                     <Link

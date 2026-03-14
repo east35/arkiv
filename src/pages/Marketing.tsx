@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 
 const featureSections = [
   {
-    title: "Track what matters",
-    body: "From current page counts to time played, Arkiv keeps progress feeling light, fast, and worth returning to.",
+    title: "Pick up where you left off",
+    body: "Jump back into a book or game with your progress, status, notes, and recent context already in place instead of reconstructing it from memory.",
     lightDesktop: "/marketing/desktop/desktop-11.png",
     darkDesktop: "/marketing/desktop/desktop-16.png",
     lightMobile: "/marketing/mobile/mobile-1.png",
@@ -21,8 +21,8 @@ const featureSections = [
     align: "right" as const,
   },
   {
-    title: "Find anything fast",
-    body: "Search books and games with fuzzy matching and add them with rich metadata in seconds, without wrestling exact title formatting.",
+    title: "Stop fighting your catalog",
+    body: "Search books and games with fuzzy matching and rich metadata, so adding something new takes seconds instead of cleanup work.",
     lightDesktop: "/marketing/desktop/desktop-12.png",
     darkDesktop: "/marketing/desktop/desktop-17.png",
     lightMobile: "/marketing/mobile/mobile-2.png",
@@ -30,8 +30,8 @@ const featureSections = [
     align: "left" as const,
   },
   {
-    title: "A library with memory",
-    body: "Browse series, libraries, and collections with recommendations that connect what you love to what comes next.",
+    title: "Keep context attached",
+    body: "Series links, collections, recommendations, notes, and saved resources stay with the item, so your library stays useful long after you add it.",
     lightDesktop: "/marketing/desktop/desktop-13.png",
     darkDesktop: "/marketing/desktop/desktop-18.png",
     lightMobile: "/marketing/mobile/mobile-3.png",
@@ -39,8 +39,8 @@ const featureSections = [
     align: "right" as const,
   },
   {
-    title: "Stats worth checking",
-    body: "See streaks, completion patterns, ratings, and activity without turning your personal library into spreadsheet work.",
+    title: "See patterns without busywork",
+    body: "Spot streaks, completion habits, ratings, and trends automatically, without turning your reading and play history into spreadsheet maintenance.",
     lightDesktop: "/marketing/desktop/desktop-14.png",
     darkDesktop: "/marketing/desktop/desktop-19.png",
     lightMobile: "/marketing/mobile/mobile-4.png",
@@ -52,20 +52,20 @@ const featureSections = [
 const aiCards = [
   {
     icon: IconMessageCircle,
-    title: "Ask smarter questions",
-    body: "Pull quick context, summaries, and connections from the item you are already tracking.",
+    title: "Jump back in fast",
+    body: "Get spoiler-safe recaps, character refreshers, and quick reminders before your next reading session or playthrough.",
     bg: "#1914C5",
   },
   {
     icon: IconBrain,
-    title: "Go beyond surface-level tracking",
-    body: "Follow themes, mechanics, and story threads while you read or play, without losing your place.",
+    title: "Ask better questions",
+    body: "Explore themes, mechanics, arcs, and connections while the book or game is still open in your head.",
     bg: "#130F94",
   },
   {
     icon: IconBookmark,
-    title: "Keep your sources organized",
-    body: "Save walkthroughs, essays, and notes next to the item instead of scattering them across tabs.",
+    title: "Keep reference close",
+    body: "Save essays, walkthroughs, wiki links, and personal notes on the item so useful context stops disappearing into tabs.",
     bg: "#0C0A62",
   },
 ];
@@ -316,12 +316,12 @@ export default function Marketing() {
           <h1 className="max-w-[18ch] text-[2.3rem] font-semibold leading-[2.55rem] tracking-tight md:mx-auto md:max-w-[900px] md:text-[4rem] md:leading-[4.25rem]">
             Your books &amp; games.
             <br />
-            One sharp, searchable library.
+            A library that remembers what matters.
           </h1>
           <p className="mt-5 max-w-[34ch] text-lg leading-7 text-muted-foreground md:mx-auto md:mt-6 md:max-w-[600px] md:text-lg">
-            Track status, progress, scores, notes, and discovery across books
-            and games in one place, with a system that feels fast enough to keep
-            using.
+            Track progress and habits, then turn each book or game into its own
+            AI context for themes, character refreshers, spoiler-safe catchups,
+            and saved reference links.
           </p>
 
           <div className="mt-7 hidden items-start justify-start gap-5 sm:flex-row md:mt-8 md:flex md:items-center md:justify-center">
@@ -360,12 +360,12 @@ export default function Marketing() {
         <div className="mx-auto max-w-[1400px] px-6 pt-14 md:px-8 md:pt-18">
           <div className="mx-auto max-w-[760px] text-center">
             <h2 className="mx-auto max-w-[12ch] text-[2rem] font-semibold leading-[2.25rem] tracking-tight [text-wrap:balance] md:max-w-[16ch] md:text-[3rem] md:leading-[3.25rem]">
-              An AI layer for every item in your library.
+              Every item becomes its own AI context.
             </h2>
             <p className="mx-auto mt-4 max-w-[58ch] text-lg leading-7 text-primary-foreground/80 md:text-lg">
-              Ask questions about the book you are reading or the game you are
-              playing, pull in context from outside sources, and keep everything
-              tied to the item instead of losing it across browser tabs.
+              Ask what themes keep surfacing, who a character is, or what
+              happened last without spoilers, then pull in outside links and
+              notes for quick reference without losing the thread.
             </p>
           </div>
 
@@ -403,7 +403,7 @@ export default function Marketing() {
       <section className="border-t border-black/8 bg-background py-16 text-center dark:border-white/8 md:py-20">
         <div className="mx-auto max-w-[760px] px-6 md:px-8">
           <h2 className="text-[2rem] font-semibold leading-[2.25rem] tracking-tight md:text-[3rem] md:leading-[3.25rem]">
-            Stop juggling trackers.
+            Stop losing the thread.
             <br />
             Start building a library that thinks with you.
           </h2>
