@@ -180,7 +180,7 @@ function MarketingFeature({
         <h2 className="text-[2rem] font-semibold leading-[2.25rem] tracking-tight md:text-[2.5rem] md:leading-[2.75rem]">
           {title}
         </h2>
-        <p className="mt-4 max-w-xs text-sm leading-7 text-muted-foreground md:text-base">
+        <p className="mt-4 max-w-xs text-lg leading-7 text-muted-foreground md:text-lg">
           {body}
         </p>
       </div>
@@ -335,7 +335,7 @@ export default function Marketing() {
             <br />
             One sharp, searchable library.
           </h1>
-          <p className="mt-5 max-w-[34ch] text-sm leading-7 text-muted-foreground md:mx-auto md:mt-6 md:max-w-[600px] md:text-base">
+          <p className="mt-5 max-w-[34ch] text-lg leading-7 text-muted-foreground md:mx-auto md:mt-6 md:max-w-[600px] md:text-lg">
             Track status, progress, scores, notes, and discovery across books
             and games in one place, with a system that feels fast enough to keep
             using.
@@ -379,7 +379,7 @@ export default function Marketing() {
             <h2 className="mx-auto max-w-[12ch] text-[2rem] font-semibold leading-[2.25rem] tracking-tight [text-wrap:balance] md:max-w-[16ch] md:text-[3rem] md:leading-[3.25rem]">
               An AI layer for every item in your library.
             </h2>
-            <p className="mx-auto mt-4 max-w-[58ch] text-sm leading-7 text-primary-foreground/80 md:text-base">
+            <p className="mx-auto mt-4 max-w-[58ch] text-lg leading-7 text-primary-foreground/80 md:text-lg">
               Ask questions about the book you are reading or the game you are
               playing, pull in context from outside sources, and keep everything
               tied to the item instead of losing it across browser tabs.
@@ -412,7 +412,7 @@ export default function Marketing() {
               <h3 className="mt-4 text-lg font-semibold leading-6 text-white">
                 {title}
               </h3>
-              <p className="mt-3 text-sm leading-7 text-white/78">{body}</p>
+              <p className="mt-3 text-lg leading-7 text-white/78">{body}</p>
             </div>
           </div>
         ))}
@@ -576,7 +576,7 @@ export default function Marketing() {
           <div className="grid grid-cols-2">
             <Link
               to="/register"
-              className="flex h-[62px] items-center justify-between gap-4 bg-primary px-6 text-base font-semibold text-primary-foreground"
+              className="flex h-[62px] items-center justify-between gap-4 bg-primary px-6 text-lg font-semibold text-primary-foreground"
             >
               <span>Get Started</span>
               <IconArrowRight className="h-6 w-6 shrink-0" />
@@ -584,7 +584,7 @@ export default function Marketing() {
             <button
               type="button"
               onClick={handleViewDemo}
-              className="flex h-[62px] items-center justify-between gap-4 bg-background px-6 text-left text-base font-semibold text-primary dark:bg-white dark:text-primary"
+              className="flex h-[62px] items-center justify-between gap-4 bg-background px-6 text-left text-lg font-semibold text-primary dark:bg-white dark:text-primary"
             >
               <span>View Demo</span>
               <IconEye className="h-6 w-6 shrink-0" />
