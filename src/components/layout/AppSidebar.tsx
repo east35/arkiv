@@ -1,5 +1,6 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useShelfStore } from "@/store/useShelfStore";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -106,7 +107,10 @@ export function AppSidebar({
   onCollapse,
 }: AppSidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut } = useAuth();
+  const isDemoMode = useShelfStore((s) => s.isDemoMode);
+  const exitDemoMode = useShelfStore((s) => s.exitDemoMode);
   const isActiveRoute = (to: string) =>
     to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
 
@@ -248,25 +252,34 @@ export function AppSidebar({
                   "w-full h-12 text-base font-medium gap-0 text-black/80 hover:text-black hover:bg-black/6 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/6",
                   collapsed ? "justify-center px-0" : "justify-start px-5",
                 )}
-                title={collapsed ? "Sign Out" : undefined}
+                title={collapsed ? (isDemoMode ? "Exit Demo" : "Sign Out") : undefined}
               >
                 <IconLogout className={cn("h-5 w-5", !collapsed && "mr-4")} />
-                {!collapsed && "Sign Out"}
+                {!collapsed && (isDemoMode ? "Exit Demo" : "Sign Out")}
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Sign Out</AlertDialogTitle>
+                  <AlertDialogTitle>{isDemoMode ? "Exit Demo" : "Sign Out"}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to sign out of Arkiv?
+                    {isDemoMode
+                      ? "Exit the demo? Any changes you made won't be saved."
+                      : "Are you sure you want to sign out of Arkiv?"}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => signOut()}
+                    onClick={() => {
+                      if (isDemoMode) {
+                        exitDemoMode();
+                        navigate("/marketing");
+                      } else {
+                        signOut();
+                      }
+                    }}
                     className="bg-destructive text-white hover:bg-destructive/90"
                   >
-                    Sign Out
+                    {isDemoMode ? "Exit Demo" : "Sign Out"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

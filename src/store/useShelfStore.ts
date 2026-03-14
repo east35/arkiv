@@ -10,6 +10,7 @@ import Fuse, { type IFuseOptions } from "fuse.js"
 import type {
   FullItem,
   Collection,
+  CollectionItem,
   UserPreferences,
   LibraryFilters,
   LibrarySort,
@@ -17,6 +18,16 @@ import type {
   Status,
   MediaType,
 } from "@/types"
+
+// ---------------------------------------------------------------------------
+// Demo Snapshot Type
+// ---------------------------------------------------------------------------
+
+export interface DemoSnapshot {
+  items: FullItem[]
+  collections: Collection[]
+  collectionItems: CollectionItem[]
+}
 
 // ---------------------------------------------------------------------------
 // Fuse.js Configuration
@@ -49,6 +60,11 @@ interface ShelfState {
   filters: LibraryFilters
   sort: LibrarySort
   viewMode: ViewMode
+  homeStatuses: Status[]
+
+  // --- Demo Mode ---
+  isDemoMode: boolean
+  demoCollectionItems: CollectionItem[]
 
   // --- Fuse.js instance (rebuilt when items change) ---
   _fuse: Fuse<FullItem> | null
@@ -65,6 +81,13 @@ interface ShelfState {
   setFilters: (filters: Partial<LibraryFilters>) => void
   setSort: (sort: Partial<LibrarySort>) => void
   setViewMode: (mode: ViewMode) => void
+  setHomeStatuses: (statuses: Status[]) => void
+
+  // --- Actions: Demo ---
+  enterDemoMode: (snapshot: DemoSnapshot) => void
+  exitDemoMode: () => void
+  addDemoCollectionItem: (item: CollectionItem) => void
+  removeDemoCollectionItem: (collectionId: string, itemId: string) => void
 
   // --- Derived: filtered + sorted items ---
   getFilteredItems: (mediaType?: MediaType) => FullItem[]
@@ -133,6 +156,23 @@ function compareItems(a: FullItem, b: FullItem, field: LibrarySort["field"]): nu
 // Store
 // ---------------------------------------------------------------------------
 
+// Recalculate collection preview metadata from a list of collection items
+function syncCollectionCounts(
+  collections: Collection[],
+  collectionItems: CollectionItem[],
+): Collection[] {
+  return collections.map((col) => {
+    const members = collectionItems.filter((ci) => ci.collection_id === col.id)
+    const sorted = [...members].sort((a, b) => a.added_at.localeCompare(b.added_at))
+    return {
+      ...col,
+      item_count: members.length,
+      first_item_id: sorted[0]?.item_id ?? null,
+      preview_item_ids: sorted.slice(0, 4).map((m) => m.item_id),
+    }
+  })
+}
+
 export const useShelfStore = create<ShelfState>((set, get) => ({
   // --- Data ---
   items: [],
@@ -150,6 +190,11 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
     direction: "asc",
   },
   viewMode: "poster",
+  homeStatuses: ["in_progress"] as Status[],
+
+  // --- Demo Mode ---
+  isDemoMode: false,
+  demoCollectionItems: [],
 
   // --- Fuse ---
   _fuse: null,
@@ -196,6 +241,48 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
     })),
 
   setViewMode: (viewMode) => set({ viewMode }),
+
+  setHomeStatuses: (homeStatuses) => set({ homeStatuses }),
+
+  // --- Demo ---
+
+  enterDemoMode: ({ items, collections, collectionItems }) =>
+    set({
+      isDemoMode: true,
+      items,
+      collections: syncCollectionCounts(collections, collectionItems),
+      demoCollectionItems: collectionItems,
+      _fuse: buildFuse(items),
+    }),
+
+  exitDemoMode: () =>
+    set({
+      isDemoMode: false,
+      items: [],
+      collections: [],
+      demoCollectionItems: [],
+      _fuse: null,
+    }),
+
+  addDemoCollectionItem: (item) =>
+    set((state) => {
+      const demoCollectionItems = [...state.demoCollectionItems, item]
+      return {
+        demoCollectionItems,
+        collections: syncCollectionCounts(state.collections, demoCollectionItems),
+      }
+    }),
+
+  removeDemoCollectionItem: (collectionId, itemId) =>
+    set((state) => {
+      const demoCollectionItems = state.demoCollectionItems.filter(
+        (ci) => !(ci.collection_id === collectionId && ci.item_id === itemId),
+      )
+      return {
+        demoCollectionItems,
+        collections: syncCollectionCounts(state.collections, demoCollectionItems),
+      }
+    }),
 
   // --- Derived ---
 

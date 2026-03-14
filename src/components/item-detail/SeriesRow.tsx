@@ -6,7 +6,6 @@ import type { FullItem, Status } from "@/types"
 
 interface SeriesRowProps {
   item: FullItem
-  maxItems?: number
 }
 
 /* Status bar colours — mirrors PosterItem */
@@ -28,7 +27,7 @@ const COVER_FALLBACK =
  * Filters the Zustand store by matching `series_name` — no external API call needed.
  * "Back to" label shows the current book's title.
  */
-export function SeriesRow({ item, maxItems = 10 }: SeriesRowProps) {
+export function SeriesRow({ item }: SeriesRowProps) {
   const items = useShelfStore((s) => s.items)
 
   if (item.media_type !== "book" || !item.book.series_name) return null
@@ -59,7 +58,7 @@ export function SeriesRow({ item, maxItems = 10 }: SeriesRowProps) {
       </h3>
 
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-        {sorted.slice(0, maxItems).map((book) => (
+        {sorted.map((book) => (
           <Link
             key={book.id}
             to={`/item/${book.id}`}

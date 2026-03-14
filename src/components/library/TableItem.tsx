@@ -28,6 +28,8 @@ interface TableItemProps {
   onEdit: (item: FullItem) => void;
   mobileTapAction?: "edit" | "details";
   hideStatusDate?: boolean;
+  hideScore?: boolean;
+  hideProgress?: boolean;
   stacked?: boolean;
   isFirst?: boolean;
   className?: string;
@@ -64,12 +66,16 @@ function RowBody({
   onEdit,
   mobileTapAction,
   backLabel,
+  hideScore,
+  hideProgress,
 }: {
   item: FullItem;
   statusText: string;
   onEdit: (item: FullItem) => void;
   mobileTapAction: "edit" | "details";
   backLabel: string;
+  hideScore?: boolean;
+  hideProgress?: boolean;
 }) {
   const isGame = item.media_type === "game";
   const coverUrl =
@@ -115,21 +121,25 @@ function RowBody({
       </div>
 
       {/* Score */}
-      <div className="w-14 shrink-0 border-r border-border flex items-center justify-center gap-1 text-xs font-semibold">
-        {item.user_score != null ? (
-          <>
-            <IconStar className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-            <span>{item.user_score}</span>
-          </>
-        ) : (
-          <span className="text-muted-foreground/40">-</span>
-        )}
-      </div>
+      {!hideScore && (
+        <div className="w-14 shrink-0 border-r border-border flex items-center justify-center gap-1 text-xs font-semibold">
+          {item.user_score != null ? (
+            <>
+              <IconStar className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+              <span>{item.user_score}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground/40">-</span>
+          )}
+        </div>
+      )}
 
       {/* Progress */}
-      <div className="w-20 px-1 shrink-0 border-r border-border flex items-center justify-center text-xs font-semibold">
-        <span className="text-muted-foreground">{progressDisplay}</span>
-      </div>
+      {!hideProgress && (
+        <div className="w-20 px-1 shrink-0 border-r border-border flex items-center justify-center text-xs font-semibold">
+          <span className="text-muted-foreground">{progressDisplay}</span>
+        </div>
+      )}
 
       {/* Status / date */}
       <div
@@ -175,6 +185,8 @@ export function TableItem({
   onEdit,
   mobileTapAction = "edit",
   hideStatusDate,
+  hideScore,
+  hideProgress,
   stacked = false,
   isFirst = false,
   className,
@@ -219,6 +231,8 @@ export function TableItem({
           onEdit={onEdit}
           mobileTapAction={mobileTapAction}
           backLabel={backLabel}
+          hideScore={hideScore}
+          hideProgress={hideProgress}
         />
 
         <div

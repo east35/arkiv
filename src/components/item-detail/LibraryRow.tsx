@@ -18,7 +18,7 @@ interface LibraryGame {
 
 interface LibraryRowProps {
   item: FullItem
-  maxItems?: number
+  onEmpty?: () => void
 }
 
 /* Status bar colours — mirrors PosterItem */
@@ -41,7 +41,7 @@ const COVER_FALLBACK =
  * - External games are committed silently, then navigated to their new detail page.
  * - "Back to" label shows the current game's title.
  */
-export function LibraryRow({ item, maxItems = 10 }: LibraryRowProps) {
+export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
   const [games, setGames] = useState<LibraryGame[]>([])
   const [loading, setLoading] = useState(false)
   const items = useShelfStore((s) => s.items)
@@ -64,7 +64,11 @@ export function LibraryRow({ item, maxItems = 10 }: LibraryRowProps) {
       .then(({ data, error }) => {
         if (cancelled) return
         if (!error && Array.isArray(data)) {
-          setGames(data.filter((g: LibraryGame) => g.name !== item.title))
+          const filtered = data.filter((g: LibraryGame) => g.name !== item.title)
+          setGames(filtered)
+          if (filtered.length === 0) onEmpty?.()
+        } else {
+          onEmpty?.()
         }
       })
       .finally(() => {
@@ -74,7 +78,7 @@ export function LibraryRow({ item, maxItems = 10 }: LibraryRowProps) {
     return () => {
       cancelled = true
     }
-  }, [libraryName, item.title])
+  }, [libraryName, item.title, onEmpty])
 
   // Build a map of external IGDB IDs → library items for quick lookup
   const libraryByExternalId = new Map(
@@ -105,7 +109,7 @@ export function LibraryRow({ item, maxItems = 10 }: LibraryRowProps) {
         <div className="text-sm text-muted-foreground py-4">Loading…</div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-          {games.slice(0, maxItems).map((game) => {
+          {games.map((game) => {
             const libraryItem = libraryByExternalId.get(String(game.id))
             const isAdding = committingId === game.id
             const cover = libraryItem?.cover_url || game.cover || COVER_FALLBACK

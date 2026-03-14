@@ -206,11 +206,11 @@ export function ItemDetailContent({ item, itemCollections }: ItemDetailContentPr
         )}
 
         {/* Library / Series */}
-        <LibraryRow item={item} maxItems={10} />
-        <SeriesRow item={item} maxItems={10} />
+        <LibraryRow item={item} />
+        <SeriesRow item={item} />
 
         {/* Recommendations */}
-        <RecommendationsRow item={item} maxItems={10} />
+        <RecommendationsRow item={item} />
       </div>
     </div>
   );

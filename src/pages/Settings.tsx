@@ -7,6 +7,7 @@ import {
   IconLogout,
   IconChevronDown,
   IconCheck,
+  IconDeviceFloppy,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useShelfStore } from "@/store/useShelfStore";
 import { useItems } from "@/hooks/useItems";
+import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/components/theme-provider";
 import {
   useMetadataEnrich,
@@ -196,6 +198,42 @@ export default function Settings() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const [exportingDemo, setExportingDemo] = useState(false);
+
+  const handleExportDemoData = async () => {
+    setExportingDemo(true);
+    try {
+      const currentItems = await fetchItems();
+
+      const { data: collectionItemsData, error: ciError } = await supabase
+        .from("collection_items")
+        .select("*");
+      if (ciError) throw ciError;
+
+      const snapshot = {
+        items: currentItems,
+        collections: useShelfStore.getState().collections,
+        collectionItems: collectionItemsData ?? [],
+      };
+
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+        type: "application/json;charset=utf-8;",
+      });
+      const link = document.createElement("a");
+      link.setAttribute("href", URL.createObjectURL(blob));
+      link.setAttribute("download", "demo-data.json");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Demo data exported — place the file at public/demo-data.json");
+    } catch (err) {
+      toast.error("Failed to export demo data");
+      console.error(err);
+    } finally {
+      setExportingDemo(false);
+    }
   };
 
   const runEnrich = async (force = false) => {
@@ -622,6 +660,32 @@ export default function Settings() {
                     <Button variant="outline" onClick={handleExport}>
                       <IconDownload className="mr-2 h-4 w-4" />
                       Export CSV
+                    </Button>
+                  </div>
+
+                  <div className="bg-muted/50 p-4 rounded-lg border flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Export Demo Data</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Snapshot your library for the public demo. Place the
+                        downloaded file at{" "}
+                        <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                          public/demo-data.json
+                        </code>
+                        .
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={handleExportDemoData}
+                      disabled={exportingDemo}
+                    >
+                      {exportingDemo ? (
+                        <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <IconDeviceFloppy className="mr-2 h-4 w-4" />
+                      )}
+                      Export Demo
                     </Button>
                   </div>
                 </CardContent>

@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { BottomNav } from "./BottomNav";
 import { PageTransitionReveal } from "./PageTransitionReveal";
+import { useShelfStore } from "@/store/useShelfStore";
 import { cn } from "@/lib/utils";
 
 // Routes where the mobile bottom nav should be hidden entirely
@@ -12,6 +13,9 @@ const AUTO_COLLAPSE_BREAKPOINT = 1100;
 
 export default function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const isDemoMode = useShelfStore((s) => s.isDemoMode);
+  const exitDemoMode = useShelfStore((s) => s.exitDemoMode);
   const hideNav = hideNavPattern.test(location.pathname);
   const isCollectionRoute = collectionRoutes.includes(location.pathname);
   const isHomeRoute = location.pathname === "/";
@@ -112,6 +116,18 @@ export default function AppLayout() {
 
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 overflow-hidden">
+        {isDemoMode && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2 bg-yellow-400 text-yellow-950 text-xs font-medium shrink-0 z-30">
+            <span>Demo mode — changes are not saved</span>
+            <button
+              type="button"
+              className="underline underline-offset-2 hover:no-underline shrink-0"
+              onClick={() => { exitDemoMode(); navigate("/marketing"); }}
+            >
+              Exit Demo
+            </button>
+          </div>
+        )}
         <main
           ref={mainRef}
           className={cn(

@@ -11,14 +11,11 @@ import { IconLayoutGrid } from "@tabler/icons-react";
 import type { FullItem, Status } from "@/types";
 
 export default function Home() {
-  const { items, viewMode, sort } = useShelfStore();
+  const { items, viewMode, sort, homeStatuses, setHomeStatuses } = useShelfStore();
   const { fetchItems } = useItems();
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(!items.length);
-  const [selectedStatuses, setSelectedStatuses] = useState<Status[]>([
-    "in_progress",
-  ]);
 
   // Fetch on mount
   useEffect(() => {
@@ -26,7 +23,7 @@ export default function Home() {
   }, [fetchItems]);
 
   const filteredItems = items.filter((item) =>
-    selectedStatuses.includes(item.status),
+    homeStatuses.includes(item.status),
   );
 
   // Sort using the shared store sort state
@@ -107,8 +104,8 @@ export default function Home() {
           }
           hideSearch
           statusFilterMode="multi"
-          selectedStatuses={selectedStatuses}
-          onSelectedStatusesChange={setSelectedStatuses}
+          selectedStatuses={homeStatuses}
+          onSelectedStatusesChange={setHomeStatuses}
         />
       </div>
 
@@ -128,8 +125,8 @@ export default function Home() {
               <section
                 className={
                   filteredBooks.length > 0
-                    ? "px-4 sm:px-6 py-6 bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60"
-                    : `px-4 sm:px-6 pt-6 ${bottomClearanceClass} bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60`
+                    ? `px-4 sm:px-6 pt-6 ${viewMode === "poster" ? "pb-6" : ""} bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60`
+                    : `px-4 sm:px-6 pt-6 ${viewMode === "poster" ? bottomClearanceClass : ""} bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60`
                 }
               >
                 <h2 className="text-3xl font-semibold mb-6">Video Games</h2>
@@ -162,7 +159,7 @@ export default function Home() {
             )}
 
             {filteredBooks.length > 0 && (
-              <section className={`flex-1 px-4 sm:px-6 pt-6 ${bottomClearanceClass} bg-[#E8E8E8] dark:bg-[#212121]`}>
+              <section className={`flex-1 px-4 sm:px-6 pt-6 ${viewMode === "poster" ? bottomClearanceClass : ""} bg-[#E8E8E8] dark:bg-[#212121]`}>
                 <h2 className="text-3xl font-semibold mb-6">Books</h2>
                 {viewMode === "poster" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

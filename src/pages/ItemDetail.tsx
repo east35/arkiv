@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate, useLocation, Link, useOutletContext } from "react-router-dom"
 import {
   IconSearchOff,
@@ -32,6 +32,7 @@ import { statusIcons } from "@/components/status-icons"
 import { cn } from "@/lib/utils"
 import { formatDateTime } from "@/lib/utils"
 
+import { useMetadataEnrich } from "@/hooks/useMetadataEnrich"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { ItemDetailHeader } from "@/components/item-detail/ItemDetailHeader"
 import { ItemDetailSidebar } from "@/components/item-detail/ItemDetailSidebar"
@@ -70,6 +71,9 @@ export default function ItemDetail() {
   const [isNotesOpen, setIsNotesOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<"overview" | "notes">("overview")
   const [scrollbarW, setScrollbarW] = useState(0)
+  const [libraryEmpty, setLibraryEmpty] = useState(false)
+  const enrichedForItem = useRef<string | null>(null)
+  const { enrichSingle } = useMetadataEnrich()
 
   const handleDeleteSuccess = (deletedItem: FullItem) => {
     setItem(current => current?.id === deletedItem.id ? null : current)
@@ -117,6 +121,21 @@ export default function ItemDetail() {
       setItemCollectionIds(memberships.map((membership) => membership.collection_id))
     }).catch(() => {})
   }, [id, fetchItemMemberships, fetchCollections, collections.length])
+
+  // Reset per-item state when navigating to a different item
+  useEffect(() => {
+    setLibraryEmpty(false)
+    enrichedForItem.current = null
+  }, [id])
+
+  // Auto-enrich game silently when similar_games is missing
+  useEffect(() => {
+    if (!item || item.media_type !== "game") return
+    if (item.game.similar_games && item.game.similar_games.length > 0) return
+    if (enrichedForItem.current === item.id) return
+    enrichedForItem.current = item.id
+    void enrichSingle(item, true)
+  }, [item, enrichSingle])
 
   const itemCollections = collections.filter((collection) => itemCollectionIds.includes(collection.id))
 
@@ -389,19 +408,20 @@ export default function ItemDetail() {
                 </AccordionSection>
 
                 {/* Library / Series (games only) */}
-                {isGame && item.game.library && (
+                {isGame && item.game.library && !libraryEmpty && (
                   <AccordionSection title={`More in ${item.game.library}`} icon={IconStack2}>
                     <div>
-                      <LibraryRow item={item} maxItems={9} />
+                      <LibraryRow item={item} onEmpty={() => setLibraryEmpty(true)} />
                     </div>
                   </AccordionSection>
                 )}
 
                 {/* Series (books only) */}
-                {!isGame && item.book.series_name && (
+                {!isGame && item.book.series_name &&
+                  items.filter((i) => i.media_type === "book" && item.media_type === "book" && i.book.series_name === item.book.series_name && i.id !== item.id).length > 0 && (
                   <AccordionSection title={`More in ${item.book.series_name}`} icon={IconStack2}>
                     <div>
-                      <SeriesRow item={item} maxItems={9} />
+                      <SeriesRow item={item} />
                     </div>
                   </AccordionSection>
                 )}
@@ -410,7 +430,7 @@ export default function ItemDetail() {
                 {isGame && item.game.similar_games && item.game.similar_games.length > 0 && (
                   <AccordionSection title="Recommendations" icon={IconStarFilled}>
                     <div>
-                      <RecommendationsRow item={item} maxItems={9} />
+                      <RecommendationsRow item={item} />
                     </div>
                   </AccordionSection>
                 )}

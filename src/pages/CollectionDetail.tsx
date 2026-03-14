@@ -39,8 +39,12 @@ export default function CollectionDetail() {
   useOutletContext<{ scrolled?: boolean }>();
 
   const { collections, items: allItems, viewMode } = useShelfStore();
-  const { fetchCollections, fetchCollectionItems, deleteCollection, removeItemFromCollection } =
-    useCollections();
+  const {
+    fetchCollections,
+    fetchCollectionItems,
+    deleteCollection,
+    removeItemFromCollection,
+  } = useCollections();
   const { fetchItems } = useItems(); // To ensure we have items loaded
 
   const [collectionItems, setCollectionItems] = useState<CollectionItem[]>([]);
@@ -89,8 +93,10 @@ export default function CollectionDetail() {
   const hydratedItems = useMemo(
     () =>
       collectionItems
-      .map((membership) => allItems.find((item) => item.id === membership.item_id))
-      .filter((item): item is FullItem => !!item),
+        .map((membership) =>
+          allItems.find((item) => item.id === membership.item_id),
+        )
+        .filter((item): item is FullItem => !!item),
     [collectionItems, allItems],
   );
 
@@ -101,15 +107,22 @@ export default function CollectionDetail() {
     return hydratedItems.filter((i) => i.title.toLowerCase().includes(q));
   }, [hydratedItems, search]);
 
-  const gameCount = hydratedItems.filter((item) => item.media_type === "game").length;
-  const bookCount = hydratedItems.filter((item) => item.media_type === "book").length;
+  const gameCount = hydratedItems.filter(
+    (item) => item.media_type === "game",
+  ).length;
+  const bookCount = hydratedItems.filter(
+    (item) => item.media_type === "book",
+  ).length;
   const collectionMetaParts = collection
     ? [
         collection.description,
-        ...(gameCount > 0 ? [`${gameCount} ${gameCount === 1 ? "game" : "games"}`] : []),
-        ...(bookCount > 0 ? [`${bookCount} ${bookCount === 1 ? "book" : "books"}`] : []),
-      ]
-        .filter(Boolean)
+        ...(gameCount > 0
+          ? [`${gameCount} ${gameCount === 1 ? "game" : "games"}`]
+          : []),
+        ...(bookCount > 0
+          ? [`${bookCount} ${bookCount === 1 ? "book" : "books"}`]
+          : []),
+      ].filter(Boolean)
     : [];
 
   const handleDeleteCollection = async () => {
@@ -128,7 +141,9 @@ export default function CollectionDetail() {
     if (!collection) return;
     try {
       await removeItemFromCollection(collection.id, itemId);
-      setCollectionItems((prev) => prev.filter((membership) => membership.item_id !== itemId));
+      setCollectionItems((prev) =>
+        prev.filter((membership) => membership.item_id !== itemId),
+      );
       toast.success("Item removed from collection");
     } catch (error) {
       console.error(error);
@@ -174,7 +189,7 @@ export default function CollectionDetail() {
       {/* Header bar — matches ItemDetailHeader styling */}
       <ItemDetailHeader
         backLabel="Collections"
-desktopAction={
+        desktopAction={
           <button
             type="button"
             onClick={() => setIsDeleteDialogOpen(true)}
@@ -188,7 +203,9 @@ desktopAction={
       <div className="bg-background px-4 sm:px-6 py-5">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">{collection.name}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {collection.name}
+            </h1>
             {collectionMetaParts.length > 0 && (
               <div className="mt-2 flex flex-wrap items-center gap-y-1 text-sm text-muted-foreground">
                 {collectionMetaParts.map((part, index) => (
@@ -219,7 +236,7 @@ desktopAction={
         />
       </div>
 
-      <div className="flex-1 px-4 sm:px-6 pt-6 pb-8 bg-[#f5f5f5] dark:bg-[#171717]">
+      <div className={cn("flex-1 pb-8 bg-[#f5f5f5] dark:bg-[#171717]", viewMode === "poster" && "px-4 sm:px-6 pt-6")}>
         {displayItems.length === 0 ? (
           <EmptyState
             title="Empty Collection"
@@ -251,19 +268,17 @@ desktopAction={
                 ))}
               </div>
             ) : (
-              <div className="-mx-4 flex flex-col pb-8 sm:-mx-6">
+              <div className="flex flex-col pb-8">
                 {displayItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="group/collection-item relative"
-                  >
+                  <div key={item.id} className="group/collection-item relative">
                     <div className="flex-1 min-w-0">
                       <TableItem
                         item={item}
                         onEdit={handleEdit}
                         stacked
                         isFirst={index === 0}
-                        className="pr-10"
+                        hideScore
+                        hideProgress
                       />
                     </div>
                     <Button
@@ -297,8 +312,8 @@ desktopAction={
           <AlertDialogHeader>
             <AlertDialogTitle>Delete collection?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{collection.name}". This action cannot be
-              undone.
+              This will permanently delete "{collection.name}". This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

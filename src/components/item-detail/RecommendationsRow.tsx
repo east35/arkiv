@@ -11,7 +11,6 @@ import { toast } from "sonner"
 
 interface RecommendationsRowProps {
   item: FullItem
-  maxItems?: number
 }
 
 /* Status bar colours — mirrors PosterItem */
@@ -34,7 +33,7 @@ const COVER_FALLBACK =
  * - Clicking the "Add to Library" tag quick-adds the game without navigating.
  * - "Back to" label shows the current game's title.
  */
-export function RecommendationsRow({ item, maxItems = 10 }: RecommendationsRowProps) {
+export function RecommendationsRow({ item }: RecommendationsRowProps) {
   const [resolvingRecommendationName, setResolvingRecommendationName] = useState<string | null>(null)
   const items = useShelfStore((s) => s.items)
   const { commit, committingId } = useCommitItem()
@@ -119,7 +118,7 @@ export function RecommendationsRow({ item, maxItems = 10 }: RecommendationsRowPr
       <h3 className="text-sm font-semibold mb-3 hidden md:block">Recommendations</h3>
 
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-        {item.game.similar_games.slice(0, maxItems).map((rec) => {
+        {item.game.similar_games.map((rec) => {
           const libraryItem = rec.id ? libraryByExternalId.get(String(rec.id)) : undefined
           const isAdding = rec.id != null && committingId === rec.id
           const isResolving = resolvingRecommendationName === rec.name

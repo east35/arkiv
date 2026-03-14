@@ -3,6 +3,7 @@
  *
  * Supabase CRUD operations for items (with book/game extensions).
  * All queries are automatically user-scoped via RLS.
+ * In demo mode, all writes are intercepted and applied only to the in-memory store.
  */
 
 import { useCallback } from "react"
@@ -95,9 +96,18 @@ export function useItems() {
 
   /**
    * Fetch all items for the current user (with book/game extensions).
-   * Uses two parallel queries to avoid complex joins.
+   * In demo mode: returns the current store snapshot without hitting Supabase.
    */
   const fetchItems = useCallback(async (mediaTypes?: MediaType[]) => {
+    const { isDemoMode, items: storeItems } = useShelfStore.getState()
+
+    if (isDemoMode) {
+      const result = mediaTypes?.length
+        ? storeItems.filter((i) => mediaTypes.includes(i.media_type))
+        : storeItems
+      return result
+    }
+
     const normalizedTypes = mediaTypes?.length
       ? Array.from(new Set(mediaTypes))
       : null
@@ -160,12 +170,31 @@ export function useItems() {
 
   /**
    * Create a new item with its media-specific extension row.
-   * Returns the hydrated FullItem.
+   * In demo mode: generates a local ID and inserts into the in-memory store only.
    */
   const createItem = useCallback(async (
     itemData: Omit<Item, "id" | "user_id" | "created_at" | "updated_at">,
     extension: Omit<BookFields, "item_id"> | Omit<GameFields, "item_id">,
   ): Promise<FullItem> => {
+    if (useShelfStore.getState().isDemoMode) {
+      const id = crypto.randomUUID()
+      const now = new Date().toISOString()
+      const baseItem: Item = {
+        ...itemData,
+        id,
+        user_id: "demo",
+        created_at: now,
+        updated_at: now,
+      }
+      const hydrated = hydrateItem(
+        baseItem,
+        itemData.media_type === "book" ? { item_id: id, ...(extension as Omit<BookFields, "item_id">) } : null,
+        itemData.media_type === "game" ? { item_id: id, ...(extension as Omit<GameFields, "item_id">) } : null,
+      )
+      addItem(hydrated)
+      return hydrated
+    }
+
     // Insert the core item
     const { data: item, error: itemError } = await supabase
       .from("items")
@@ -185,7 +214,7 @@ export function useItems() {
 
     if (extError) throw extError
 
-    const hydrated = hydrateItem(item as Item, 
+    const hydrated = hydrateItem(item as Item,
       itemData.media_type === "book" ? ext as BookFields : null,
       itemData.media_type === "game" ? ext as GameFields : null,
     )
@@ -208,6 +237,9 @@ export function useItems() {
       .find((item) => item.external_id === externalId && item.media_type === mediaType)
 
     if (storeItem) return storeItem
+
+    // In demo mode there's no Supabase session — return null if not in store
+    if (useShelfStore.getState().isDemoMode) return null
 
     const { data: item, error: itemError } = await supabase
       .from("items")
@@ -248,7 +280,7 @@ export function useItems() {
 
   /**
    * Update an existing item's core fields and/or extension fields.
-   * Pass `extensionUpdate` to update book/game-specific fields.
+   * In demo mode: applies changes to the in-memory store only.
    */
   const editItem = useCallback(async (
     id: string,
@@ -257,6 +289,21 @@ export function useItems() {
   ) => {
     const existingItem = useShelfStore.getState().items.find((i) => i.id === id)
     if (!existingItem) throw new Error(`Item ${id} not found in store`)
+
+    if (useShelfStore.getState().isDemoMode) {
+      if (existingItem.media_type === "book") {
+        updateItem(id, {
+          ...itemUpdate,
+          ...(extensionUpdate ? { book: { ...existingItem.book, ...(extensionUpdate as Partial<BookFields>) } } : {}),
+        } as Partial<BookItem>)
+      } else {
+        updateItem(id, {
+          ...itemUpdate,
+          ...(extensionUpdate ? { game: { ...existingItem.game, ...(extensionUpdate as Partial<GameFields>) } } : {}),
+        } as Partial<GameItem>)
+      }
+      return
+    }
 
     // Update core item if there are fields to update
     if (Object.keys(itemUpdate).length > 0) {
@@ -313,7 +360,7 @@ export function useItems() {
 
   /**
    * Update an item's status with automatic date stamping.
-   * Also logs the transition to activity_log.
+   * In demo mode: applies to store only, skips activity_log.
    */
   const updateStatus = useCallback(async (id: string, newStatus: Status) => {
     const item = useShelfStore.getState().items.find((i) => i.id === id)
@@ -321,7 +368,6 @@ export function useItems() {
 
     const now = new Date().toISOString()
 
-    // Build date update based on new status
     const dateUpdate: Record<string, string | null> = { status: newStatus }
     switch (newStatus) {
       case "in_progress":
@@ -336,6 +382,11 @@ export function useItems() {
       case "dropped":
         dateUpdate.dropped_at = now
         break
+    }
+
+    if (useShelfStore.getState().isDemoMode) {
+      updateItem(id, dateUpdate as Partial<FullItem>)
+      return
     }
 
     // Update item
@@ -362,9 +413,15 @@ export function useItems() {
   }, [updateItem])
 
   /**
-   * Delete an item (cascades to extension + collection_items + activity_log via FK).
+   * Delete an item.
+   * In demo mode: removes from in-memory store only.
    */
   const deleteItem = useCallback(async (id: string) => {
+    if (useShelfStore.getState().isDemoMode) {
+      removeItem(id)
+      return
+    }
+
     const { error } = await supabase
       .from("items")
       .delete()

@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import AppLayout from "@/components/layout/AppLayout"
+import PublicLayout from "@/components/layout/PublicLayout"
 import { RequireAuth } from "@/components/auth/RequireAuth"
 import Home from "@/pages/Home"
 import Search from "@/pages/Search"
@@ -11,9 +12,12 @@ import Settings from "@/pages/Settings"
 import Import from "@/pages/Import"
 import ItemDetail from "@/pages/ItemDetail"
 import ExternalItemDetail from "@/pages/ExternalItemDetail"
-import Login from "@/pages/Login"
-import Register from "@/pages/Register"
+import AuthPage from "@/pages/AuthPage"
 import Marketing from "@/pages/Marketing"
+import Privacy from "@/pages/Privacy"
+import Legal from "@/pages/Legal"
+import Contact from "@/pages/Contact"
+import DemoEntry from "@/pages/DemoEntry"
 import DesignSystem from "@/pages/DesignSystem"
 
 import { ThemeProvider } from "@/components/theme-provider"
@@ -23,11 +27,19 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <Routes>
-        <Route path="/marketing" element={<Marketing />} />
+        {/* Public routes — share PublicLayout for pixel transition animations */}
+        <Route element={<PublicLayout />}>
+          <Route path="/marketing" element={<Marketing />} />
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/register" element={<AuthPage />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/legal" element={<Legal />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/demo" element={<DemoEntry />} />
+        </Route>
+
         <Route path="/design-system" element={<DesignSystem />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
+
         <Route element={
           <RequireAuth>
             <AppLayout />

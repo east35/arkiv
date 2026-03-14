@@ -255,7 +255,6 @@ export default function ExternalItemDetail() {
         if (posA !== posB) return posA - posB
         return a.title.localeCompare(b.title)
       })
-      .slice(0, 9)
     : []
 
   /* Metadata segments */
@@ -274,9 +273,9 @@ export default function ExternalItemDetail() {
       .filter((item) => item.media_type === "game" && item.external_id)
       .map((item) => [String(item.external_id), item]),
   )
-  const renderRecommendationCards = (maxItems: number, gridClassName: string) => (
+  const renderRecommendationCards = (gridClassName: string) => (
     <div className={gridClassName}>
-      {gameDetails?.similarGames.slice(0, maxItems).map((sg) => {
+      {gameDetails?.similarGames.map((sg) => {
         const isResolvingRecommendation = resolvingRecommendationName === sg.name
         const libraryItem = sg.id != null ? libraryByExternalId.get(String(sg.id)) : undefined
         const isAdding = sg.id != null && committingId === sg.id
@@ -452,7 +451,56 @@ export default function ExternalItemDetail() {
               {gameDetails?.similarGames && gameDetails.similarGames.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold mb-3">Recommendations</h3>
-                  {renderRecommendationCards(10, "grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3")}
+                  {renderRecommendationCards("grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3")}
+                </div>
+              )}
+
+              {/* Series (books only) */}
+              {!isGame && bookDetails?.seriesName && (
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">More in {bookDetails.seriesName}</h3>
+                  {seriesLibraryBooks.length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {seriesLibraryBooks.map((book) => (
+                        <Link
+                          key={book.id}
+                          to={`/item/${book.id}`}
+                          state={{ backLabel: title }}
+                          className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col"
+                        >
+                          <div className="relative aspect-[2/3] w-full overflow-hidden">
+                            <img
+                              src={book.cover_url || BOOK_COVER_FALLBACK}
+                              alt={book.title}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="px-2.5 pt-2 pb-1.5 flex-1">
+                            <h4 className="font-bold text-sm leading-tight line-clamp-1" title={book.title}>
+                              {book.title}
+                            </h4>
+                            <p className={cn("text-[11px] text-muted-foreground truncate mt-0.5 min-h-[1rem]", !book.book.author && "invisible")}>
+                              {book.book.author || " "}
+                            </p>
+                          </div>
+                          <div className={cn("w-full shrink-0 px-3 py-2 flex items-center gap-2 font-semibold text-[11px]", STATUS_BAR[book.status])}>
+                            <span className="[&>svg]:h-4 [&>svg]:w-4 shrink-0">{statusIcons[book.status]}</span>
+                            <span className="truncate">{statusLabels[book.status]}</span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-border/60 bg-card px-4 py-3 dark:bg-[#0A0A0A]">
+                      <div className="text-sm font-semibold">{bookDetails.seriesName}</div>
+                      {bookDetails.seriesPosition != null && (
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Book {bookDetails.seriesPosition}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -528,7 +576,7 @@ export default function ExternalItemDetail() {
           {gameDetails?.similarGames && gameDetails.similarGames.length > 0 && (
             <div className="pt-2">
               <h4 className="text-xs font-medium text-muted-foreground uppercase mb-3">Recommendations</h4>
-              {renderRecommendationCards(9, "grid grid-cols-3 gap-3")}
+              {renderRecommendationCards("grid grid-cols-3 gap-3")}
             </div>
           )}
 
@@ -552,10 +600,17 @@ export default function ExternalItemDetail() {
                           loading="lazy"
                         />
                       </div>
-                      <div className="px-2.5 pt-2 pb-1.5">
+                      <div className="px-2.5 pt-2 pb-1.5 flex-1">
                         <h4 className="font-bold text-sm leading-tight line-clamp-1" title={book.title}>
                           {book.title}
                         </h4>
+                        <p className={cn("text-[11px] text-muted-foreground truncate mt-0.5 min-h-[1rem]", !book.book.author && "invisible")}>
+                          {book.book.author || " "}
+                        </p>
+                      </div>
+                      <div className={cn("w-full shrink-0 px-3 py-2 flex items-center gap-2 font-semibold text-[11px]", STATUS_BAR[book.status])}>
+                        <span className="[&>svg]:h-4 [&>svg]:w-4 shrink-0">{statusIcons[book.status]}</span>
+                        <span className="truncate">{statusLabels[book.status]}</span>
                       </div>
                     </Link>
                   ))}

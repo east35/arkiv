@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   IconArrowRight,
   IconBrain,
@@ -239,7 +239,8 @@ function MarketingFeature({
 
 export default function Marketing() {
   const [showHeader, setShowHeader] = useState(false);
-  const handleViewDemo = () => window.alert("Coming soon");
+  const navigate = useNavigate();
+  const handleViewDemo = () => navigate("/demo");
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -267,7 +268,10 @@ export default function Marketing() {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setShowHeader(window.scrollY > 24);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setShowHeader((prev) => (prev ? y > 16 : y > 80));
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -476,13 +480,13 @@ export default function Marketing() {
                     src="/marketing/atx-black.svg"
                     alt=""
                     aria-hidden="true"
-                    className="h-4 w-auto dark:hidden"
+                    className="h-6 w-auto dark:hidden"
                   />
                   <img
                     src="/marketing/atx-white.svg"
                     alt=""
                     aria-hidden="true"
-                    className="hidden h-4 w-auto dark:block"
+                    className="hidden h-6 w-auto dark:block"
                   />
                 </a>
               </div>

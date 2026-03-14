@@ -79,7 +79,8 @@ function needsEnrichment(item: FullItem): boolean {
 
   if (item.media_type === "game") {
     const missingDev = !item.game.developer
-    return missingDescription || missingGenres || missingDev
+    const missingSimilarGames = !item.game.similar_games || item.game.similar_games.length === 0
+    return missingDescription || missingGenres || missingDev || missingSimilarGames
   }
 
   if (item.media_type === "book") {
@@ -447,19 +448,21 @@ export function useMetadataEnrich() {
    * Enrich a single item and refresh it in the store.
    * Returns true if metadata was updated, false if skipped or not found.
    */
-  const enrichSingle = useCallback(async (item: FullItem): Promise<boolean> => {
+  const enrichSingle = useCallback(async (item: FullItem, silent = false): Promise<boolean> => {
     try {
       const result = await enrichItem(item)
       await fetchItems()
-      if (result === "enriched") {
-        toast.success("Metadata updated.")
-      } else {
-        toast.warning("No additional metadata found.")
+      if (!silent) {
+        if (result === "enriched") {
+          toast.success("Metadata updated.")
+        } else {
+          toast.warning("No additional metadata found.")
+        }
       }
       return result === "enriched"
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      toast.error(`Enrichment failed: ${message}`)
+      if (!silent) toast.error(`Enrichment failed: ${message}`)
       return false
     }
   }, [fetchItems])
