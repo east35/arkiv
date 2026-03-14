@@ -25,7 +25,7 @@ export function HowLongToBeatSection({
     <section className={cn("space-y-5 md:space-y-6", className)}>
       <div className="text-foreground tx-sm mb-3">How Long To Beat</div>
       <div className="grid grid-cols-2 overflow-hidden  md:grid-cols-4">
-        {metrics.map((metric, index) => (
+        {metrics.map((metric) => (
           <div
             key={metric.key}
             // className={cn(
