@@ -34,23 +34,26 @@ export function ItemDetailSidebar({
 
       {/* Sidebar card — framed module below cover */}
       <div className="rounded-b-lg bg-[#e6e6e6] dark:bg-card">
-        {/* Your Progress */}
-        <div className="pt-5 pb-4 px-4">
-          <div className="text-muted-foreground tx-sm">Your Progress</div>
-          <div className="flex items-center justify-between">
-            <span className="text-3xl font-bold tracking-tight">
-              {isGame
-                ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
-                : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`}
-            </span>
-            {item.status === "completed" && (
-              <IconFlag className="h-5 w-5 text-green-500 fill-green-500" />
-            )}
-          </div>
+        {/* Progress */}
+        <div className="flex justify-between py-3 px-4 text-sm">
+          <span className="text-muted-foreground">
+            {isGame ? "Time Played" : "Pages Read"}
+          </span>
+          <span className="flex font-medium gap-2">
+            {isGame
+              ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
+              : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`}
+            <button
+              onClick={onEditClick}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <IconPencil className="h-3.5 w-3.5" />
+            </button>
+          </span>
         </div>
 
         {/* Platform / Format row */}
-        <div className="flex items-center justify-between py-3  px-4 border-t border-border/60">
+        <div className="flex items-center justify-between py-3 px-4 border-t border-border/60 text-sm">
           <span className="text-muted-foreground tx-sm">{platformLabel}</span>
           <span className="flex items-center gap-2 text-sm font-medium">
             {isGame
@@ -65,38 +68,30 @@ export function ItemDetailSidebar({
           </span>
         </div>
 
-        {/* Scores — side-by-side */}
-        <div className="grid grid-cols-2 gap-4 py-4  px-4 border-t border-border/60">
-          <div>
-            <div className="text-muted-foreground tx-sm">Your Score</div>
-            <div className="text-3xl font-bold tracking-tight">
-              {item.user_score ? (
-                <span>
-                  {item.user_score}
-                  <span className="text-sm text-muted-foreground font-normal">
-                    /10
-                  </span>
-                </span>
-              ) : (
-                <span className="text-muted-foreground/30">—</span>
-              )}
-            </div>
+        {/* Scores */}
+        <div className="border-t border-border/60 divide-y divide-border/60">
+          <div className="flex justify-between py-3 px-4 text-sm">
+            <span className="text-muted-foreground ">Your Score</span>
+            <span className="font-medium gap-2 flex">
+              {item.user_score != null ? `${item.user_score}/10` : "—"}
+              <button
+                onClick={onEditClick}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <IconPencil className="h-3.5 w-3.5" />
+              </button>
+            </span>
           </div>
-          <div>
-            <div className="text-muted-foreground tx-sm">IGBD Score</div>
-            <div className="text-3xl font-bold tracking-tight">
-              {item.source_score ? (
-                <span>
-                  {Math.round(item.source_score / 10)}
-                  <span className="text-sm text-muted-foreground font-normal">
-                    /10
-                  </span>
-                </span>
-              ) : (
-                <span className="text-muted-foreground/30">—</span>
-              )}
+          {isGame && (
+            <div className="flex justify-between py-3 px-4 text-sm">
+              <span className="text-muted-foreground">IGDB Score</span>
+              <span className="font-medium">
+                {item.source_score != null
+                  ? `${Math.round(item.source_score / 10)}/10`
+                  : "—"}
+              </span>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Dates */}

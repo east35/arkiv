@@ -42,13 +42,11 @@ export function ItemDetailHeader({
         style={{ height: "55px" }}
       >
         <IconArrowLeft className="h-5 w-5" />
-        <span>
-          {backLabel ? `Back to ${backLabel}` : "Back"}
-        </span>
+        <span>{backLabel ? `Back to ${backLabel}` : "Back"}</span>
       </button>
 
-      {desktopAction ?? (
-        item && onStatusClick ? (
+      {desktopAction ??
+        (item && onStatusClick ? (
           <button
             onClick={onStatusClick}
             className={cn(
@@ -69,8 +67,7 @@ export function ItemDetailHeader({
             <div className="h-5 w-px bg-white/30" />
             <IconEdit className="h-4 w-4" />
           </button>
-        ) : null
-      )}
+        ) : null)}
     </div>
   );
 }

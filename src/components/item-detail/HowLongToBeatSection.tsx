@@ -22,7 +22,7 @@ export function HowLongToBeatSection({
   const metrics = getHowLongToBeatMetrics(value);
 
   return (
-    <section className={cn("space-y-5 md:space-y-6", className)}>
+    <section className={cn("md:p-6 md:border-b space-y-5", className)}>
       <div className="text-foreground tx-sm mb-3">How Long To Beat</div>
       <div className="grid grid-cols-2 overflow-hidden  md:grid-cols-4">
         {metrics.map((metric) => (
@@ -48,7 +48,7 @@ export function HowLongToBeatSection({
                     {formatHowLongToBeatHours(metric.value).replace(/h$/, "")}
                   </span>
                   {metric.value != null && !Number.isNaN(metric.value) && (
-                    <span className="text-sm text-muted-foreground font-normal">
+                    <span className="text-lg text-muted-foreground font-normal">
                       h
                     </span>
                   )}
