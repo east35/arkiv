@@ -40,7 +40,7 @@ export function LibraryTypeSwitcher({
       fullWidth
       className={className}
       listClassName="!p-0 !gap-0 !border-0 !h-[55px]"
-      triggerClassName="!h-[55px] font-semibold text-sm text-foreground"
+      triggerClassName="!h-[55px] font-semibold text-sm"
     />
   );
 }

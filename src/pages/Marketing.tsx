@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useTheme } from "@/components/theme-provider";
 import { Link, useNavigate } from "react-router-dom";
 import {
   IconArrowRight,
@@ -241,30 +242,12 @@ export default function Marketing() {
   const [showHeader, setShowHeader] = useState(false);
   const navigate = useNavigate();
   const handleViewDemo = () => navigate("/demo");
+  const { theme, setTheme } = useTheme();
+  const prevTheme = useRef(theme);
 
+  // Force system theme for the entire unauthenticated flow — no restore on exit.
   useEffect(() => {
-    const root = window.document.documentElement;
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const previousClasses = {
-      light: root.classList.contains("light"),
-      dark: root.classList.contains("dark"),
-    };
-
-    const applySystemTheme = () => {
-      root.classList.remove("light", "dark");
-      root.classList.add(mediaQuery.matches ? "dark" : "light");
-    };
-
-    applySystemTheme();
-    mediaQuery.addEventListener("change", applySystemTheme);
-
-    return () => {
-      mediaQuery.removeEventListener("change", applySystemTheme);
-      root.classList.remove("light", "dark");
-
-      if (previousClasses.light) root.classList.add("light");
-      if (previousClasses.dark) root.classList.add("dark");
-    };
+    if (prevTheme.current !== "system") setTheme("system");
   }, []);
 
   useEffect(() => {

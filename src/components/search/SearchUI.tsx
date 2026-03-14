@@ -38,7 +38,50 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { LibraryTypeSwitcher } from "@/components/library/LibraryTypeSwitcher";
 import { useShelfStore } from "@/store/useShelfStore";
 
+function DemoSearchGate() {
+  const navigate = useNavigate();
+  return (
+    <div className="flex flex-col fixed md:relative inset-0 md:inset-auto md:h-full z-[60] md:z-auto bg-[#f5f5f5] dark:bg-[#171717]">
+      <div className="sticky top-0 z-20 bg-background px-4 sm:px-6 pt-4 sm:pt-6 sm:pb-6 pb-2">
+        <div className="flex items-center justify-between gap-2 py-3">
+          <h1 className="text-3xl font-bold tracking-tight">Add to Library</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-9 w-9 rounded-full text-muted-foreground hover:text-foreground"
+            onClick={() => navigate(-1)}
+          >
+            <IconX className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8 text-center pb-24 md:pb-0">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xl font-semibold">Create a free account to add items</h2>
+          <p className="text-muted-foreground text-sm max-w-xs">
+            Search millions of books and games and build your personal library.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Button className="w-full" onClick={() => navigate("/register")}>
+            Sign up — it's free
+          </Button>
+          <Button variant="outline" className="w-full" onClick={() => navigate("/login")}>
+            Log in
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SearchUI() {
+  const isDemoMode = useShelfStore((s) => s.isDemoMode);
+  if (isDemoMode) return <DemoSearchGate />;
+  return <SearchUIInner />;
+}
+
+function SearchUIInner() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [mediaType, setMediaType] = useState<MediaType>(

@@ -392,7 +392,7 @@ async function searchBooks(query: string, limit: number, offset: number) {
     }
   }
 
-  const gql = `
+  const metadataGql = `
     query SearchBookMetadata($ids: [Int!]!) {
       books(where: { id: { _in: $ids } }) {
         id
@@ -405,7 +405,7 @@ async function searchBooks(query: string, limit: number, offset: number) {
     }
   `
 
-  const metadata = await hardcoverQuery(gql, { ids }) as {
+  const metadata = await hardcoverQuery(metadataGql, { ids }) as {
     books?: Array<{
       id?: number
       title?: string

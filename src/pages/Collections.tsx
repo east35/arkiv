@@ -5,6 +5,7 @@ import {
 } from "@tabler/icons-react";
 import { useShelfStore } from "@/store/useShelfStore";
 import { useCollections } from "@/hooks/useCollections";
+import { useItems } from "@/hooks/useItems";
 import { CreateCollectionDialog } from "@/components/collections/CreateCollectionDialog";
 import { CollectionCard } from "@/components/collections/CollectionCard";
 import { CollectionTableRow } from "@/components/collections/CollectionTableRow";
@@ -33,6 +34,7 @@ function sortCollections(collections: Collection[], field: SortField, dir: SortD
 export default function Collections() {
   const { collections } = useShelfStore();
   const { fetchCollections } = useCollections();
+  const { fetchItems } = useItems();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(
     !useShelfStore.getState().collections.length,
@@ -43,8 +45,8 @@ export default function Collections() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchCollections().finally(() => setLoading(false));
-  }, [fetchCollections]);
+    Promise.all([fetchCollections(), fetchItems()]).finally(() => setLoading(false));
+  }, [fetchCollections, fetchItems]);
 
   const filteredCollections = useMemo(() => {
     const query = search.trim().toLowerCase();

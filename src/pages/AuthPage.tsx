@@ -119,11 +119,11 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-dvh p-4 overflow-hidden">
+    <div className="relative flex items-center justify-center min-h-dvh p-4">
       <img
         src="/signin-bg.svg"
         alt=""
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover pointer-events-none"
       />
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
         <div className="flex justify-center">
@@ -139,7 +139,7 @@ export default function AuthPage() {
           />
         </div>
 
-        <Card className="w-full">
+        <Card key={location.pathname} className="w-full">
           {isSignUp ? (
             <>
               <CardHeader>
@@ -153,6 +153,7 @@ export default function AuthPage() {
                   <form
                     onSubmit={signUpForm.handleSubmit(handleSignUp)}
                     className="space-y-4"
+                    autoComplete="on"
                   >
                     <FormField
                       control={signUpForm.control}
@@ -161,7 +162,14 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="m@example.com" {...field} />
+                            <Input
+                              type="email"
+                              placeholder="m@example.com"
+                              autoComplete="email"
+                              autoCapitalize="none"
+                              autoCorrect="off"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -174,7 +182,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input
+                              type="password"
+                              autoComplete="new-password"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -187,7 +199,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Confirm Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input
+                              type="password"
+                              autoComplete="new-password"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -206,6 +222,7 @@ export default function AuthPage() {
                 <Button
                   variant="outline"
                   className="w-full"
+                  type="button"
                   onClick={switchMode}
                 >
                   Sign In
@@ -231,6 +248,7 @@ export default function AuthPage() {
                   <form
                     onSubmit={signInForm.handleSubmit(handleSignIn)}
                     className="space-y-4"
+                    autoComplete="on"
                   >
                     <FormField
                       control={signInForm.control}
@@ -239,7 +257,16 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input
+                              type="email"
+                              placeholder="m@example.com"
+                              autoComplete="username"
+                              inputMode="email"
+                              autoCapitalize="none"
+                              autoCorrect="off"
+                              spellCheck={false}
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -252,7 +279,11 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" {...field} />
+                            <Input
+                              type="password"
+                              autoComplete="current-password"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -271,6 +302,7 @@ export default function AuthPage() {
                 <Button
                   variant="outline"
                   className="w-full"
+                  type="button"
                   onClick={switchMode}
                 >
                   Sign Up

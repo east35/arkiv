@@ -187,7 +187,7 @@ export default function ItemDetail() {
 
   return (
     <>
-      <div className="flex-1 relative bg-background max-md:flex max-md:flex-col max-md:h-dvh max-md:overflow-hidden">
+      <div className="flex-1 relative bg-background max-md:flex max-md:flex-col max-md:h-full max-md:overflow-hidden">
         {/* ═══════════════ Sticky Header ═══════════════ */}
         <ItemDetailHeader
           item={item}

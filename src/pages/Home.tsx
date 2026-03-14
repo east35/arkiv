@@ -126,7 +126,7 @@ export default function Home() {
                 className={
                   filteredBooks.length > 0
                     ? `px-4 sm:px-6 pt-6 ${viewMode === "poster" ? "pb-6" : ""} bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60`
-                    : `px-4 sm:px-6 pt-6 ${viewMode === "poster" ? bottomClearanceClass : ""} bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60`
+                    : `px-4 sm:px-6 pt-6 ${viewMode === "poster" ? bottomClearanceClass : "pb-24 md:pb-0"} bg-[#f5f5f5] dark:bg-[#171717] border-b border-border/60`
                 }
               >
                 <h2 className="text-3xl font-semibold mb-6">Video Games</h2>
@@ -159,7 +159,7 @@ export default function Home() {
             )}
 
             {filteredBooks.length > 0 && (
-              <section className={`flex-1 px-4 sm:px-6 pt-6 ${viewMode === "poster" ? bottomClearanceClass : ""} bg-[#E8E8E8] dark:bg-[#212121]`}>
+              <section className={`flex-1 px-4 sm:px-6 pt-6 ${viewMode === "poster" ? bottomClearanceClass : "pb-24 md:pb-0"} bg-[#E8E8E8] dark:bg-[#212121]`}>
                 <h2 className="text-3xl font-semibold mb-6">Books</h2>
                 {viewMode === "poster" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

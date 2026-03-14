@@ -69,7 +69,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
           ) : (
             <IconLayoutGrid className="h-5 w-5" />
           )}
-          <span className="text-[10px] font-medium">Home</span>
+          <span className={cn("text-[10px] font-medium", location.pathname !== "/home" && "text-muted-foreground")}>Home</span>
         </Link>
 
         {/* Library — navigates to last visited, defaults to /games */}
@@ -83,7 +83,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
           )}
         >
           <IconBooks className="h-5 w-5" />
-          <span className="text-[10px] font-medium">Library</span>
+          <span className={cn("text-[10px] font-medium", !isCollectionActive && "text-muted-foreground")}>Library</span>
         </button>
 
         <Link
@@ -136,7 +136,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
               )}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className={cn("text-[10px] font-medium", !isActive && "text-muted-foreground")}>{item.label}</span>
             </Link>
           );
         })}

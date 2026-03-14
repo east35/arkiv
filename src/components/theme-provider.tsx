@@ -31,7 +31,7 @@ export function ThemeProvider({
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   )
   
-  const { preferences } = useShelfStore()
+  const { preferences, isDemoMode } = useShelfStore()
   const { updatePreferences } = usePreferences()
 
   // Sync from DB when preferences load
@@ -40,6 +40,11 @@ export function ThemeProvider({
        setThemeState(preferences.theme)
     }
   }, [preferences?.theme])
+
+  // Demo mode always follows system theme
+  useEffect(() => {
+    if (isDemoMode) setThemeState("system")
+  }, [isDemoMode])
 
   useEffect(() => {
     const root = window.document.documentElement
