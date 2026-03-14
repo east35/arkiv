@@ -15,7 +15,6 @@
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 // ---------------------------------------------------------------------------
 // Security + CORS
@@ -51,14 +50,6 @@ const RATE_LIMIT_MAX_REQUESTS = 60
 
 const requestCounts = new Map<string, { count: number; resetAt: number }>()
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY secrets")
-}
-
-const authClient = createClient(supabaseUrl, supabaseAnonKey)
 
 class HttpError extends Error {
   status: number
@@ -125,14 +116,23 @@ function enforceRateLimit(key: string): void {
   requestCounts.set(key, entry)
 }
 
-async function getRequesterKey(req: Request): Promise<string> {
+function getRequesterKey(req: Request): string {
   const authHeader = req.headers.get("authorization")
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
     const token = authHeader.slice(7).trim()
     if (token) {
-      const { data, error } = await authClient.auth.getUser(token)
-      if (!error && data.user) {
-        return data.user.id
+      // Decode JWT payload locally — no outgoing network call needed for rate-limiting.
+      try {
+        const [, payloadB64] = token.split(".")
+        if (payloadB64) {
+          const padding = (4 - (payloadB64.length % 4)) % 4
+          const payload = JSON.parse(atob(payloadB64 + "=".repeat(padding)))
+          if (typeof payload.sub === "string" && payload.sub) {
+            return payload.sub
+          }
+        }
+      } catch {
+        // Fall through to anonymous key
       }
     }
   }
@@ -425,6 +425,86 @@ async function getLibraryGames(libraryName: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Discovery: new releases and upcoming games
+// ---------------------------------------------------------------------------
+
+function igdbCoverUrl(imageId: string): string {
+  return `https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}.jpg`
+}
+
+function formatGameSubtitle(platforms: string[]): string {
+  const clean = platforms.filter(Boolean)
+  if (!clean.length) return "Unknown Platform"
+  if (clean.length === 1) return clean[0]
+  if (clean.length === 2) return `${clean[0]}, ${clean[1]}`
+  return `${clean[0]} +${clean.length - 1} more`
+}
+
+async function getDiscoveryGames(mode: "new" | "upcoming", limit: number) {
+  const now = Math.floor(Date.now() / 1000)
+  const windowStart = now - 14 * 86400
+
+  const whereClause = mode === "new"
+    ? `where date >= ${windowStart} & date <= ${now}`
+    : `where date > ${now}`
+  const sortClause = mode === "new" ? "sort date desc" : "sort date asc"
+
+  const body = `
+    fields game.id, game.name, game.cover.image_id, game.slug, date, platform.name;
+    ${whereClause};
+    ${sortClause};
+    limit 200;
+  `
+
+  const rows = await igdbFetch("release_dates", body) as Array<Record<string, unknown>>
+
+  // Deduplicate by game.id — Strategy B: collapse by game, collect all platforms
+  const gameMap = new Map<number, { game: Record<string, unknown>; date: number; platforms: Set<string> }>()
+  for (const row of rows) {
+    const game = row.game as Record<string, unknown> | null
+    if (!game || typeof game.id !== "number") continue
+
+    const gameId = game.id as number
+    const rowDate = typeof row.date === "number" ? row.date : 0
+    const platformName = (row.platform as { name?: string } | null)?.name ?? null
+
+    const existing = gameMap.get(gameId)
+    if (!existing) {
+      gameMap.set(gameId, {
+        game,
+        date: rowDate,
+        platforms: platformName ? new Set([platformName]) : new Set(),
+      })
+    } else {
+      // For upcoming: keep earliest date; for new: keep latest date within window
+      if (mode === "upcoming" ? rowDate < existing.date : rowDate > existing.date) {
+        existing.date = rowDate
+      }
+      if (platformName) existing.platforms.add(platformName)
+    }
+  }
+
+  const results = Array.from(gameMap.values())
+    .slice(0, limit)
+    .map(({ game, date, platforms }) => {
+      const cover = game.cover as { image_id?: string } | null
+      const dateStr = date > 0 ? new Date(date * 1000).toISOString().split("T")[0] : null
+      return {
+        id: game.id as number,
+        title: (game.name as string) || "Unknown",
+        subtitle: formatGameSubtitle(Array.from(platforms)),
+        cover: cover?.image_id ? igdbCoverUrl(cover.image_id) : null,
+        year: dateStr ? dateStr.slice(0, 4) : null,
+        mediaType: "game" as const,
+        releaseDate: dateStr ?? "",
+        status: mode,
+      }
+    })
+
+  return { results }
+}
+
+// ---------------------------------------------------------------------------
 // Main handler
 // ---------------------------------------------------------------------------
 serve(async (req: Request) => {
@@ -445,7 +525,7 @@ serve(async (req: Request) => {
     }
 
     enforceBodyLimit(req)
-    const requesterKey = await getRequesterKey(req)
+    const requesterKey = getRequesterKey(req)
     enforceRateLimit(requesterKey)
 
     const body = await req.json()
@@ -453,7 +533,7 @@ serve(async (req: Request) => {
       throw new HttpError(400, "Invalid JSON payload")
     }
 
-    const { action, query, id, limit, offset } = body as Record<string, unknown>
+    const { action, query, id, limit, offset, mode } = body as Record<string, unknown>
 
     let data: unknown
 
@@ -475,8 +555,15 @@ serve(async (req: Request) => {
         data = await getLibraryGames(validateSearchQuery(query))
         break
 
+      case "discovery": {
+        const discoveryMode = mode === "upcoming" ? "upcoming" : "new"
+        const lim = typeof limit === "number" ? Math.min(limit, 50) : 20
+        data = await getDiscoveryGames(discoveryMode, lim)
+        break
+      }
+
       default:
-        throw new HttpError(400, 'Invalid action. Use "search", "details", or "library-games".')
+        throw new HttpError(400, 'Invalid action. Use "search", "details", "library-games", or "discovery".')
     }
 
     return jsonResponse(req, data)

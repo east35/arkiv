@@ -13,7 +13,6 @@
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 // ---------------------------------------------------------------------------
 // Security + CORS
@@ -54,14 +53,6 @@ const RETRY_BACKOFF_MS = 300
 
 const requestCounts = new Map<string, { count: number; resetAt: number }>()
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY secrets")
-}
-
-const authClient = createClient(supabaseUrl, supabaseAnonKey)
 
 class HttpError extends Error {
   status: number
@@ -130,14 +121,23 @@ function enforceRateLimit(userId: string): void {
   requestCounts.set(userId, entry)
 }
 
-async function getRequesterKey(req: Request): Promise<string> {
+function getRequesterKey(req: Request): string {
   const authHeader = req.headers.get("authorization")
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
     const token = authHeader.slice(7).trim()
     if (token) {
-      const { data, error } = await authClient.auth.getUser(token)
-      if (!error && data.user) {
-        return data.user.id
+      // Decode JWT payload locally — no outgoing network call needed for rate-limiting.
+      try {
+        const [, payloadB64] = token.split(".")
+        if (payloadB64) {
+          const padding = (4 - (payloadB64.length % 4)) % 4
+          const payload = JSON.parse(atob(payloadB64 + "=".repeat(padding)))
+          if (typeof payload.sub === "string" && payload.sub) {
+            return payload.sub
+          }
+        }
+      } catch {
+        // Fall through to anonymous key
       }
     }
   }
@@ -525,6 +525,82 @@ async function getBookDetails(id: number) {
 }
 
 // ---------------------------------------------------------------------------
+// Discovery: new releases and upcoming books
+// ---------------------------------------------------------------------------
+async function getDiscoveryBooks(mode: "new" | "upcoming", limit: number) {
+  const today = new Date().toISOString().slice(0, 10)
+  const startDate = new Date(Date.now() - 14 * 86400 * 1000).toISOString().slice(0, 10)
+
+  let gql: string
+  let variables: Record<string, unknown>
+
+  if (mode === "new") {
+    gql = `
+      query DiscoveryBooksNew($start: date!, $today: date!, $limit: Int!) {
+        books(
+          where: { release_date: { _gte: $start, _lte: $today } }
+          order_by: { release_date: desc }
+          limit: $limit
+        ) {
+          id
+          title
+          release_date
+          image { url }
+          contributions { author { name } }
+        }
+      }
+    `
+    variables = { start: startDate, today, limit }
+  } else {
+    gql = `
+      query DiscoveryBooksUpcoming($today: date!, $limit: Int!) {
+        books(
+          where: { release_date: { _gt: $today } }
+          order_by: { release_date: asc }
+          limit: $limit
+        ) {
+          id
+          title
+          release_date
+          image { url }
+          contributions { author { name } }
+        }
+      }
+    `
+    variables = { today, limit }
+  }
+
+  const data = await hardcoverQuery(gql, variables) as {
+    books?: Array<{
+      id?: number
+      title?: string
+      release_date?: string | null
+      image?: { url?: string } | null
+      contributions?: Array<{ author?: { name?: string } }> | null
+    }>
+  }
+
+  const books = data?.books ?? []
+  const results = books.map((book) => {
+    const authors = (book.contributions ?? []).map((c) => c.author?.name ?? "").filter(Boolean)
+    const releaseDate = book.release_date ?? ""
+    const year = releaseDate ? releaseDate.slice(0, 4) : null
+    return {
+      id: book.id as number,
+      title: book.title || "Untitled",
+      subtitle: authors.length ? authors.join(", ") : "Unknown Author",
+      cover: book.image?.url ?? null,
+      year,
+      mediaType: "book" as const,
+      releaseDate,
+      status: mode,
+    }
+  })
+
+  return { results }
+}
+
+// ---------------------------------------------------------------------------
 // Main handler
 // ---------------------------------------------------------------------------
 serve(async (req: Request) => {
@@ -545,14 +621,32 @@ serve(async (req: Request) => {
     }
 
     enforceBodyLimit(req)
-    const requesterKey = await getRequesterKey(req)
+    const requesterKey = getRequesterKey(req)
     enforceRateLimit(requesterKey)
 
-    const body = await req.json()
-    if (!body || typeof body !== "object") {
+    const rawBody = await req.text()
+    console.log("[debug] hardcover-proxy request:", {
+      method: req.method,
+      contentType: req.headers.get("content-type"),
+      contentLength: req.headers.get("content-length"),
+      bodyLength: rawBody.length,
+      bodyPreview: rawBody.slice(0, 100),
+    })
+    if (!rawBody.trim()) {
+      throw new HttpError(400, "Request body is required")
+    }
+    let body: Record<string, unknown>
+    try {
+      const parsed = JSON.parse(rawBody) as unknown
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new HttpError(400, "Invalid JSON payload")
+      }
+      body = parsed as Record<string, unknown>
+    } catch (e) {
+      if (e instanceof HttpError) throw e
       throw new HttpError(400, "Invalid JSON payload")
     }
-    const { action, query, id, limit, offset } = body as Record<string, unknown>
+    const { action, query, id, limit, offset, mode } = body as Record<string, unknown>
 
     let data: unknown
 
@@ -570,8 +664,15 @@ serve(async (req: Request) => {
         data = await getBookDetails(validateBookId(id))
         break
 
+      case "discovery": {
+        const discoveryMode = mode === "upcoming" ? "upcoming" : "new"
+        const lim = typeof limit === "number" ? Math.min(limit, 50) : 20
+        data = await getDiscoveryBooks(discoveryMode, lim)
+        break
+      }
+
       default:
-        throw new HttpError(400, 'Invalid action. Use "search" or "details".')
+        throw new HttpError(400, 'Invalid action. Use "search", "details", or "discovery".')
     }
 
     return jsonResponse(req, data)

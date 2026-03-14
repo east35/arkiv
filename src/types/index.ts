@@ -240,6 +240,22 @@ export interface HardcoverSearchResult {
   releaseYear: number | null
 }
 
+// ---------------------------------------------------------------------------
+// Discovery Types
+// ---------------------------------------------------------------------------
+
+/** A search result extended with discovery metadata */
+export interface DiscoveryResult {
+  id: string | number
+  title: string
+  subtitle: string
+  cover?: string | null
+  year?: string | null
+  mediaType: MediaType
+  releaseDate: string       // "YYYY-MM-DD"
+  status: "new" | "upcoming"
+}
+
 /** Hardcover full book details */
 export interface HardcoverBookDetails {
   id: number

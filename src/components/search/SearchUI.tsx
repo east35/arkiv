@@ -21,7 +21,9 @@ import {
   type SearchResult,
 } from "@/hooks/useExternalSearch";
 import { useCommitItem, SHEET_CLOSE_DELAY_MS } from "@/hooks/useCommitItem";
+import { useDiscovery } from "@/hooks/useDiscovery";
 import { useItems } from "@/hooks/useItems";
+import { DiscoveryPanel } from "./DiscoveryPanel";
 import { StatusSheet } from "@/components/status-sheet/StatusSheet";
 import {
   AlertDialog,
@@ -106,6 +108,7 @@ function SearchUIInner() {
   const debouncedQuery = useDebounce(query, SEARCH_DEBOUNCE_MS);
   const { results, loading, loadingMore, hasMore, search, loadMore, clearResults } = useExternalSearch();
   const { commit, committingId } = useCommitItem();
+  const { newReleases, upcoming, loading: discoveryLoading, error: discoveryError, fetch: fetchDiscovery } = useDiscovery();
   const { deleteItem } = useItems();
 
   // Attempt focus on mount — works reliably on desktop, best-effort on iOS
@@ -135,6 +138,10 @@ function SearchUIInner() {
   useEffect(() => {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [debouncedQuery, mediaType]);
+
+  useEffect(() => {
+    void fetchDiscovery(mediaType);
+  }, [mediaType, fetchDiscovery]);
 
   useEffect(() => {
     const root = scrollContainerRef.current;
@@ -282,7 +289,24 @@ function SearchUIInner() {
         className="flex-1 overflow-y-auto bg-[#f5f5f5] px-4 pb-8 dark:bg-[#171717] sm:px-6"
       >
         <div className="mx-auto w-full max-w-[1400px] py-6">
-          {!loading && debouncedQuery && results.length === 0 ? (
+          {!debouncedQuery ? (
+            <>
+              <DiscoveryPanel
+                newReleases={newReleases}
+                upcoming={upcoming}
+                loading={discoveryLoading}
+                onAdd={handleAdd}
+                committingId={committingId}
+              />
+              {!discoveryLoading && !newReleases.length && !upcoming.length && (
+                <div className="py-12 text-center text-muted-foreground">
+                  {discoveryError
+                    ? `Could not load discovery content — ${discoveryError}`
+                    : `Search for ${mediaType}s above`}
+                </div>
+              )}
+            </>
+          ) : !loading && results.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               No results found for "{query}"
             </div>

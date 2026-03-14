@@ -72,6 +72,14 @@ Vite will print the local URL (typically `http://localhost:5173`).
 - Create a Supabase project
 - Copy the project URL and anon key into `.env.local`
 - Run the app with `npm run dev`
+- Local `npm run dev` automatically proxies Edge Function requests through Vite,
+  so your browser does not need direct CORS access to `https://<project>.supabase.co/functions/v1`.
+- This uses the hosted functions and does not require Docker or `supabase start`.
+- Set `VITE_SUPABASE_FUNCTIONS_PROXY=false` only if you want to bypass the dev proxy.
+- Important: local edits under `supabase/functions/` do not run automatically in this mode.
+  Without Docker, your options are to deploy the function changes to a remote Supabase project
+  or keep testing against the last deployed function code.
+- Supabase CLI can deploy without Docker: `npx supabase functions deploy <function-name> --use-api`
 
 ### Edge Function security secrets
 
@@ -81,6 +89,8 @@ Set the following Supabase Edge Function secrets before deploying function calls
 - `TWITCH_CLIENT_SECRET`
 - `GOOGLE_BOOKS_API_KEY`
 - `CORS_ALLOWED_ORIGINS` (comma-separated allowlist, e.g. `https://app.example.com`)
+
+If you are not using the dev proxy, make sure `CORS_ALLOWED_ORIGINS` includes every local frontend origin you use.
  
 ### Option B: Local Supabase (CLI)
  
