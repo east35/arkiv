@@ -5,6 +5,8 @@ import { BottomNav } from "./BottomNav";
 import { PageTransitionReveal } from "./PageTransitionReveal";
 import { useShelfStore } from "@/store/useShelfStore";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { usePreferences } from "@/hooks/usePreferences";
 
 // Routes where the mobile bottom nav should be hidden entirely
 const hideNavPattern = /^\/(collections\/|item\/)/;
@@ -15,7 +17,10 @@ export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const navigationType = useNavigationType();
+  const { session } = useAuth();
+  const { fetchPreferences } = usePreferences();
   const isDemoMode = useShelfStore((s) => s.isDemoMode);
+  const userId = session?.user.id ?? null;
   const hideNav = hideNavPattern.test(location.pathname);
   const isCollectionRoute = collectionRoutes.includes(location.pathname);
   const isHomeRoute = location.pathname === "/home";
@@ -82,6 +87,14 @@ export default function AppLayout() {
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (isDemoMode || !userId) return;
+
+    void fetchPreferences().catch((error) => {
+      console.error("Failed to hydrate user preferences", error);
+    });
+  }, [fetchPreferences, isDemoMode, userId]);
 
   // Reset on route change
   useEffect(() => {

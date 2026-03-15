@@ -127,6 +127,7 @@ export default function Settings() {
   useEffect(() => {
     if (preferences) {
       setFormData(preferences);
+      setAiProvider(prev => prev || preferences.ai_provider || "");
     }
   }, [preferences]);
 
@@ -258,11 +259,12 @@ export default function Settings() {
   const handleAISave = async () => {
     setAiSaving(true);
     try {
+      const normalizedAiApiKey = aiApiKey.trim();
       await updatePreferences({
         ai_provider: aiProvider || null,
-        ai_api_key: aiApiKey || preferences?.ai_api_key || null,
+        ai_api_key: normalizedAiApiKey || preferences?.ai_api_key || null,
       });
-      if (aiApiKey) setAiApiKey(""); // clear after save; key is now stored server-side
+      if (normalizedAiApiKey) setAiApiKey(""); // clear after save; key is now stored server-side
       toast.success("AI settings saved");
     } catch (error) {
       console.error(error);

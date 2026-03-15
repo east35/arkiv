@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { IconArrowLeft, IconEdit, IconFlag } from "@tabler/icons-react";
 import { statusIcons } from "@/components/status-icons";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { FullItem, Status } from "@/types";
 
 interface ItemDetailHeaderProps {
@@ -11,8 +10,6 @@ interface ItemDetailHeaderProps {
   item?: FullItem;
   onStatusClick?: () => void;
   desktopAction?: ReactNode;
-  activeTab?: "overview" | "notes";
-  onTabChange?: (tab: "overview" | "notes") => void;
 }
 
 const statusBg: Record<Status, string> = {
@@ -29,8 +26,6 @@ export function ItemDetailHeader({
   item,
   onStatusClick,
   desktopAction,
-  activeTab,
-  onTabChange,
 }: ItemDetailHeaderProps) {
   const navigate = useNavigate();
 
@@ -48,27 +43,16 @@ export function ItemDetailHeader({
         <span>{backLabel ? `Back to ${backLabel}` : "Back"}</span>
       </button>
 
-      {/* Center: Overview / Notes tabs */}
-      {activeTab && onTabChange && (
-        <div className="hidden md:flex flex-1 items-center justify-end">
-          <SegmentedControl
-            value={activeTab}
-            onValueChange={(v) => onTabChange(v as "overview" | "notes")}
-            items={[
-              { value: "overview", label: "Overview", ariaLabel: "Overview" },
-              { value: "notes", label: "Notes", ariaLabel: "Notes" },
-            ]}
-          />
-        </div>
-      )}
+      {/* Spacer — pushes status button to the right */}
+      <div className="flex-1" />
 
-      {/* Right: status button / custom action */}
+      {/* Right: status button / custom action — visible on all sizes */}
       {desktopAction ??
         (item && onStatusClick ? (
           <button
             onClick={onStatusClick}
             className={cn(
-              "hidden md:flex items-center self-stretch px-5 gap-3 text-sm font-semibold transition-opacity hover:opacity-90 shrink-0",
+              "flex items-center self-stretch px-5 gap-3 text-sm font-semibold transition-opacity hover:opacity-90 shrink-0",
               statusBg[item.status],
             )}
           >

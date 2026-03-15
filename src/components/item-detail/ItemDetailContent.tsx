@@ -29,23 +29,23 @@ interface ItemDetailContentProps {
   isHltbLoading?: boolean;
 }
 
-export function ItemDetailContent({
-  item,
-  itemCollections,
-  isHltbLoading,
-}: ItemDetailContentProps) {
+// ─── Hero block (title, metadata, description) ───────────────────────────────
+
+interface ItemDetailHeroProps {
+  item: FullItem;
+}
+
+export function ItemDetailHero({ item }: ItemDetailHeroProps) {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isClamped, setIsClamped] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
   const isGame = item.media_type === "game";
-  const items = useShelfStore((s) => s.items);
 
   useEffect(() => {
     const el = descRef.current;
     if (el) setIsClamped(el.scrollHeight > el.clientHeight);
   }, [item.description]);
 
-  /* Build metadata segments with icons */
   const meta: {
     icon: React.ComponentType<{ className?: string }>;
     text: string;
@@ -73,59 +73,67 @@ export function ItemDetailContent({
     meta.push({ icon: IconDeviceGamepad2, text: selectedPlatformText });
 
   return (
-    <div className="min-w-0 bg-[efefef] dark:bg-card">
-      {/* ── Group 1: Hero block — title, metadata, description ── */}
-      {/* min-h matches the cover art (280px × 1.5 aspect ratio = 420px) */}
-      <div
-        className="bg-card rounded-lg p-8 flex flex-col overflow-hidden border-b"
-        style={{ height: 419, backgroundColor: "var(--muted)" }}
-      >
-        <h1 className="text-5xl font-bold tracking-tight mb-3">{item.title}</h1>
-        {meta.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-muted-foreground text-base mb-5">
-            {meta.map((m, i) => (
-              <span key={i} className="flex items-center gap-1.5">
-                <m.icon className="h-4 w-4 shrink-0" />
-                {m.text}
-              </span>
-            ))}
-          </div>
-        )}
-        {item.description && (
-          <div className="flex-1 min-h-0">
-            <p
-              ref={descRef}
-              className="text-base leading-relaxed text-muted-foreground whitespace-pre-line line-clamp-[10]"
+    <div
+      className="p-8 flex flex-col overflow-hidden"
+      style={{ height: 363, backgroundColor: "var(--muted)" }}
+    >
+      <h1 className="text-5xl font-bold tracking-tight mb-3">{item.title}</h1>
+      {meta.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-muted-foreground text-base mb-5">
+          {meta.map((m, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              <m.icon className="h-4 w-4 shrink-0" />
+              {m.text}
+            </span>
+          ))}
+        </div>
+      )}
+      {item.description && (
+        <div className="flex-1 min-h-0">
+          <p
+            ref={descRef}
+            className="text-base leading-relaxed text-muted-foreground whitespace-pre-line line-clamp-[8]"
+          >
+            {item.description}
+          </p>
+          {isClamped && (
+            <button
+              onClick={() => setIsDescriptionOpen(true)}
+              className="text-primary font-medium text-sm mt-1 hover:underline"
             >
-              {item.description}
-            </p>
-            {isClamped && (
-              <button
-                onClick={() => setIsDescriptionOpen(true)}
-                className="text-primary font-medium text-sm mt-1 hover:underline"
-              >
-                read more…
-              </button>
-            )}
-            <Dialog
-              open={isDescriptionOpen}
-              onOpenChange={setIsDescriptionOpen}
-            >
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{item.title}</DialogTitle>
-                  <DialogDescription>Full description</DialogDescription>
-                </DialogHeader>
-                <p className="whitespace-pre-line leading-relaxed mt-4">
-                  {item.description}
-                </p>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
-      </div>
+              read more…
+            </button>
+          )}
+          <Dialog open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{item.title}</DialogTitle>
+                <DialogDescription>Full description</DialogDescription>
+              </DialogHeader>
+              <p className="whitespace-pre-line leading-relaxed mt-4">
+                {item.description}
+              </p>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+    </div>
+  );
+}
 
-      {/* ── Group 2: Tags, collections, recommendations ── */}
+// ─── Body (tags, collections, recommendations) ────────────────────────────────
+
+export function ItemDetailContent({
+  item,
+  itemCollections,
+  isHltbLoading,
+}: ItemDetailContentProps) {
+  const isGame = item.media_type === "game";
+  const items = useShelfStore((s) => s.items);
+
+  return (
+    <div className="min-w-0 bg-[efefef] dark:bg-card">
+      {/* ── Tags, collections, recommendations ── */}
       <div className="bg-[#e6e6e6] dark:bg-card">
         {isGame && (
           <HowLongToBeatSection value={item.game} isLoading={isHltbLoading} />
@@ -178,7 +186,7 @@ export function ItemDetailContent({
                 return (
                   <div
                     key={collection.id}
-                    className="flex overflow-hidden border bg-background/50"
+                    className="flex overflow-hidden bg-background/50"
                   >
                     <div className="h-[88px] w-[72px] shrink-0 overflow-hidden bg-secondary/50">
                       {coverUrl ? (
@@ -216,11 +224,12 @@ export function ItemDetailContent({
             </div>
           </div>
         )}
-        <div className="p-6 border-b">
+        <div className="p-6 mb-3 border-b">
           {/* Library / Series */}
           <LibraryRow item={item} />
           <SeriesRow item={item} />
-
+        </div>
+        <div className="p-6 mb-3 border-b">
           {/* Recommendations */}
           <RecommendationsRow item={item} />
         </div>

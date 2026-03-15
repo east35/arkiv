@@ -12,7 +12,6 @@ import CollectionDetail from "@/pages/CollectionDetail"
 import Settings from "@/pages/Settings"
 import Import from "@/pages/Import"
 import ItemDetail from "@/pages/ItemDetail"
-import ItemDetailNotes from "@/pages/ItemDetailNotes"
 import ExternalItemDetail from "@/pages/ExternalItemDetail"
 import AuthPage from "@/pages/AuthPage"
 import Marketing from "@/pages/Marketing"
@@ -68,7 +67,6 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/search" element={<Search />} />
           <Route path="/item/:id" element={<ItemDetail />} />
-          <Route path="/item/:id/notes" element={<ItemDetailNotes />} />
           <Route path="/item/external/:mediaType/:externalId" element={<ExternalItemDetail />} />
           <Route path="/games" element={<Games />} />
           <Route path="/books" element={<Books />} />

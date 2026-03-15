@@ -252,7 +252,7 @@ export function PosterItem({
             className={overlayActionClassName}
             onClick={() => {
               setIsHovered(false);
-              navigate(`/item/${item.id}/notes`, { state: { backLabel } });
+              navigate(`/item/${item.id}`, { state: { backLabel, initialTab: "notes" } });
             }}
           >
             <IconNotes className="h-4 w-4 shrink-0" />

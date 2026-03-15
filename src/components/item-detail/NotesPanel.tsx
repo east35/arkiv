@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -23,14 +24,22 @@ import { NotesList } from "./NotesList";
 import { BookmarkList } from "./BookmarkList";
 import { ProgressTracker } from "./ProgressTracker";
 import { AIChat } from "./AIChat";
+import { AIPromptSuggestions } from "./AIPromptSuggestions";
 import type { MediaType } from "@/types";
 
 interface NotesPanelContentProps {
   itemId: string;
   mediaType?: MediaType;
+  variant?: "compact" | "sections";
+  onPromptClick?: (prompt: string) => void;
 }
 
-export function NotesPanelContent({ itemId }: NotesPanelContentProps) {
+export function NotesPanelContent({
+  itemId,
+  mediaType,
+  variant = "compact",
+  onPromptClick,
+}: NotesPanelContentProps) {
   const preferences = useShelfStore((s) => s.preferences);
   const hasAI = Boolean(preferences?.ai_provider && preferences?.ai_api_key);
 
@@ -39,55 +48,35 @@ export function NotesPanelContent({ itemId }: NotesPanelContentProps) {
   const { bookmarks, fetchBookmarks, createBookmark, deleteBookmark } =
     useItemBookmarks();
   const { progress, fetchProgress, upsertProgress } = useItemProgress();
-  const {
-    conversation,
-    loading: aiLoading,
-    error: aiError,
-    fetchConversation,
-    sendMessage,
-    setError: setAiError,
-  } = useAIChat();
-
-  const [lastMessage, setLastMessage] = useState("");
 
   useEffect(() => {
     fetchNotes(itemId);
     fetchBookmarks(itemId);
     fetchProgress(itemId);
-    if (hasAI) fetchConversation(itemId);
-  }, [itemId, hasAI]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [itemId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSendMessage = async (message: string) => {
-    setLastMessage(message);
-    await sendMessage(itemId, message);
-  };
-
-  const handleRetry = () => {
-    if (lastMessage) handleSendMessage(lastMessage);
-    else setAiError(null);
-  };
+  const isSections = variant === "sections";
+  const outer = isSections ? "bg-[#e6e6e6] dark:bg-card" : "space-y-6 px-3";
+  const section = (extra?: string) =>
+    cn(isSections ? "p-6 border-b" : "", extra);
 
   return (
-    <div className="space-y-6 px-3">
-      <ProgressTracker
-        progress={progress}
-        onSave={async (update) => {
-          await upsertProgress(itemId, update);
-        }}
-      />
-
-      <div className="border-t pt-6">
-        <NotesList
-          notes={notes}
-          onCreate={async (content) => {
-            await createNote(itemId, content);
+    <div className={outer}>
+      <div className={section()}>
+        <ProgressTracker
+          progress={progress}
+          onSave={async (update) => {
+            await upsertProgress(itemId, update);
           }}
-          onUpdate={updateNote}
-          onDelete={deleteNote}
         />
+        {hasAI && mediaType && onPromptClick && (
+          <div className="mt-4">
+            <AIPromptSuggestions mediaType={mediaType} onSelect={onPromptClick} />
+          </div>
+        )}
       </div>
 
-      <div className="border-t pt-6">
+      <div className={section(isSections ? "" : "border-t pt-6")}>
         <BookmarkList
           bookmarks={bookmarks}
           onCreate={async (title, url) => {
@@ -97,17 +86,79 @@ export function NotesPanelContent({ itemId }: NotesPanelContentProps) {
         />
       </div>
 
-      {hasAI && (
-        <div className="border-t pt-6">
-          <AIChat
-            conversation={conversation}
-            loading={aiLoading}
-            error={aiError}
-            onSend={handleSendMessage}
-            onRetry={handleRetry}
-          />
-        </div>
-      )}
+      <div className={section(isSections ? "" : "border-t pt-6")}>
+        <NotesList
+          notes={notes}
+          onCreate={async (content) => {
+            await createNote(itemId, content);
+          }}
+          onUpdate={updateNote}
+          onDelete={deleteNote}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Discuss tab content ──────────────────────────────────────────────────────
+
+export function DiscussContent({ itemId, pendingMessage, onPendingMessageSent }: {
+  itemId: string
+  pendingMessage?: string | null
+  onPendingMessageSent?: () => void
+}) {
+  const preferences = useShelfStore((s) => s.preferences);
+  const hasAI = Boolean(preferences?.ai_provider && preferences?.ai_api_key);
+  const {
+    conversation,
+    loading,
+    error,
+    fetchConversation,
+    sendMessage,
+    setError,
+  } = useAIChat();
+  const [lastMessage, setLastMessage] = useState("");
+
+  useEffect(() => {
+    if (hasAI) fetchConversation(itemId);
+  }, [itemId, hasAI]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSend = async (message: string) => {
+    if (!hasAI) return;
+    setLastMessage(message);
+    await sendMessage(itemId, message);
+  };
+
+  useEffect(() => {
+    if (!hasAI || !pendingMessage || loading) return;
+    queueMicrotask(() => {
+      void handleSend(pendingMessage);
+      onPendingMessageSent?.();
+    });
+  }, [pendingMessage, hasAI, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRetry = () => {
+    if (lastMessage) handleSend(lastMessage);
+    else setError(null);
+  };
+
+  if (!hasAI) {
+    return (
+      <div className="px-3 py-8 text-sm text-muted-foreground">
+        Configure an AI provider in Settings to use Discuss.
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-3">
+      <AIChat
+        conversation={conversation}
+        loading={loading}
+        error={error}
+        onSend={handleSend}
+        onRetry={handleRetry}
+      />
     </div>
   );
 }

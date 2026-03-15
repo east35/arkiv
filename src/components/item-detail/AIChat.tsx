@@ -17,14 +17,17 @@ export function AIChat({ conversation, loading, error, onSend, onRetry }: AIChat
   const [input, setInput] = useState("")
   const bottomRef = useRef<HTMLDivElement>(null)
   const messages: AIMessage[] = conversation?.messages ?? []
+  const userSentRef = useRef(false)
 
   useEffect(() => {
+    if (!userSentRef.current) return
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages.length, loading])
 
   const handleSend = async () => {
     const text = input.trim()
     if (!text || loading) return
+    userSentRef.current = true
     setInput("")
     await onSend(text)
   }

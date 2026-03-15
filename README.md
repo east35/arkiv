@@ -82,7 +82,10 @@ Vite will print the local URL (typically `http://localhost:5173`).
 
 - Install Deno locally.
 - Copy `.env.functions.example` to `.env.functions.local` and fill in the secrets needed by your functions.
-- By default the local runner starts `igdb-proxy` and `hardcover-proxy`. Only add `google-books-proxy` to `LOCAL_FUNCTIONS` if you still use it.
+- By default the local runner starts `igdb-proxy` and `hardcover-proxy`.
+- Add `ai-chat-proxy` to `LOCAL_FUNCTIONS` when testing Notes/Discuss AI locally.
+- `ai-chat-proxy` also requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.functions.local`.
+- Only add `google-books-proxy` to `LOCAL_FUNCTIONS` if you still use it.
 - Set `VITE_SUPABASE_FUNCTIONS_URL=http://127.0.0.1:54331/functions/v1` in `.env.local`.
 - Start the local function runner in one terminal:
 
@@ -109,6 +112,7 @@ Set the following Supabase Edge Function secrets before deploying function calls
 
 - `TWITCH_CLIENT_ID`
 - `TWITCH_CLIENT_SECRET`
+- `SUPABASE_SERVICE_ROLE_KEY` for `ai-chat-proxy`
 - `GOOGLE_BOOKS_API_KEY` only if you still deploy `google-books-proxy`
 - `CORS_ALLOWED_ORIGINS` (comma-separated allowlist, e.g. `https://app.example.com`)
 

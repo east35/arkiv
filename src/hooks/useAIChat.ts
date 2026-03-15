@@ -41,7 +41,11 @@ export function useAIChat() {
       const { data, error: invokeError } = await supabase.functions.invoke("ai-chat-proxy", {
         body: { itemId, message },
       })
-      if (invokeError) throw invokeError
+      if (invokeError) {
+        // Extract the actual error message from the response body
+        const body = await (invokeError as { context?: Response }).context?.json?.().catch(() => null)
+        throw new Error(body?.error ?? invokeError.message)
+      }
       const { reply } = data as { reply: string }
       if (!reply) throw new Error("Empty reply from AI")
 

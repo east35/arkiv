@@ -24,7 +24,7 @@ export function ItemDetailSidebar({
   return (
     <div className="space-y-0 border-r border-r-[#cecece] dark:border-r-border">
       {/* Cover Image — edge-to-edge, no rounding */}
-      <div className="w-full aspect-[2/3] overflow-hidden bg-muted border-b">
+      <div className="w-full aspect-[2/3] overflow-hidden bg-muted">
         <img
           src={coverUrl}
           alt={item.title}
@@ -35,7 +35,7 @@ export function ItemDetailSidebar({
       {/* Sidebar card — framed module below cover */}
       <div className="rounded-b-lg bg-[#e6e6e6] dark:bg-card">
         {/* Progress */}
-        <div className="flex justify-between py-3 px-4 text-sm">
+        <div className="flex justify-between p-4 text-sm">
           <span className="text-muted-foreground">
             {isGame ? "Time Played" : "Pages Read"}
           </span>
@@ -53,7 +53,7 @@ export function ItemDetailSidebar({
         </div>
 
         {/* Platform / Format row */}
-        <div className="flex items-center justify-between py-3 px-4 border-t border-border/60 text-sm">
+        <div className="flex items-center justify-between p-4 border-t border-border/60 text-sm">
           <span className="text-muted-foreground tx-sm">{platformLabel}</span>
           <span className="flex items-center gap-2 text-sm font-medium">
             {isGame
@@ -70,7 +70,7 @@ export function ItemDetailSidebar({
 
         {/* Scores */}
         <div className="border-t border-border/60 divide-y divide-border/60">
-          <div className="flex justify-between py-3 px-4 text-sm">
+          <div className="flex justify-between p-4 text-sm">
             <span className="text-muted-foreground ">Your Score</span>
             <span className="font-medium gap-2 flex">
               {item.user_score != null ? `${item.user_score}/10` : "—"}
@@ -83,7 +83,7 @@ export function ItemDetailSidebar({
             </span>
           </div>
           {isGame && (
-            <div className="flex justify-between py-3 px-4 text-sm">
+            <div className="flex justify-between p-4 text-sm">
               <span className="text-muted-foreground">IGDB Score</span>
               <span className="font-medium">
                 {item.source_score != null
@@ -96,7 +96,7 @@ export function ItemDetailSidebar({
 
         {/* Dates */}
         <div className="border-t border-border/60 divide-y divide-border/60">
-          <div className="flex justify-between py-3 px-4 text-sm">
+          <div className="flex justify-between p-4 text-sm">
             <span className="text-muted-foreground">Added</span>
             <span>
               {formatDateTime(
@@ -104,10 +104,16 @@ export function ItemDetailSidebar({
                 preferences?.date_format,
                 preferences?.time_format,
               )}
+              <button
+                onClick={onEditClick}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <IconPencil className="h-3.5 w-3.5" />
+              </button>
             </span>
           </div>
           {item.started_at && (
-            <div className="flex justify-between py-3 px-4 text-sm">
+            <div className="flex justify-between p-4 text-sm">
               <span className="text-muted-foreground">Started</span>
               <span>
                 {formatDateTime(
@@ -116,10 +122,16 @@ export function ItemDetailSidebar({
                   preferences?.time_format,
                 )}
               </span>
+              <button
+                onClick={onEditClick}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <IconPencil className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
           {item.completed_at && (
-            <div className="flex justify-between py-3 px-4 text-sm">
+            <div className="flex justify-between p-4 text-sm">
               <span className="text-muted-foreground">Completed</span>
               <span>
                 {formatDateTime(
@@ -128,6 +140,12 @@ export function ItemDetailSidebar({
                   preferences?.time_format,
                 )}
               </span>
+              <button
+                onClick={onEditClick}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <IconPencil className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
         </div>

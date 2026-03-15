@@ -1,4 +1,4 @@
-import { createClient } from "jsr:@supabase/supabase-js@2"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,7 +22,9 @@ function checkRateLimit(userId: string): boolean {
   return true
 }
 
-Deno.serve(async (req) => {
+const port = Number(Deno.env.get("PORT") || 8000)
+
+Deno.serve({ port }, async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
   }
@@ -190,8 +192,15 @@ Deno.serve(async (req) => {
     })
   } catch (err) {
     console.error("ai-chat-proxy error:", err)
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
+    const message = err instanceof Error ? err.message : "Internal server error"
+    const status = message === "Invalid Anthropic API key"
+      || message === "AI provider not configured"
+      || message.startsWith("Unknown AI provider:")
+      ? 400
+      : 500
+
+    return new Response(JSON.stringify({ error: message }), {
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })
   }
@@ -252,13 +261,35 @@ async function callAnthropic(apiKey: string, systemPrompt: string, messages: AIM
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-3-5-haiku-20241022",
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       max_tokens: 1024,
     }),
   })
-  if (!res.ok) throw new Error(`Anthropic error: ${await res.text()}`)
+  if (!res.ok) {
+    const errorText = await res.text()
+
+    try {
+      const parsed = JSON.parse(errorText)
+      const upstreamType = parsed?.error?.type
+      const upstreamMessage = parsed?.error?.message
+
+      if (upstreamType === "authentication_error") {
+        throw new Error("Invalid Anthropic API key")
+      }
+
+      if (upstreamMessage) {
+        throw new Error(`Anthropic error: ${upstreamMessage}`)
+      }
+    } catch (parseError) {
+      if (parseError instanceof Error && parseError.message !== errorText) {
+        throw parseError
+      }
+    }
+
+    throw new Error(`Anthropic error: ${errorText}`)
+  }
   const data = await res.json()
   return data.content[0].text
 }
