@@ -37,6 +37,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 export function useAuth() {
   const { user, session, loading, setAuth, setLoading } = useAuthStore()
 
+  const getEmailRedirectTo = useCallback(() => {
+    if (typeof window === "undefined") return undefined
+    return new URL("/login", window.location.origin).toString()
+  }, [])
+
   /**
    * Listen for auth state changes (sign-in, sign-out, token refresh).
    * Call this once in the app root.
@@ -63,13 +68,18 @@ export function useAuth() {
   const signUp = useCallback(async (email: string, password: string) => {
     setLoading(true)
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password })
+      const emailRedirectTo = getEmailRedirectTo()
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: emailRedirectTo ? { emailRedirectTo } : undefined,
+      })
       if (error) throw error
       return data
     } finally {
       setLoading(false)
     }
-  }, [setLoading])
+  }, [getEmailRedirectTo, setLoading])
 
   /**
    * Sign in with email and password.

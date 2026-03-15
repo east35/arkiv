@@ -59,7 +59,7 @@ type SignUpValues = z.infer<typeof signUpSchema>;
 // ---------------------------------------------------------------------------
 
 export default function AuthPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
@@ -75,6 +75,12 @@ export default function AuthPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const from = (location.state as any)?.from?.pathname || "/home";
+
+  useEffect(() => {
+    if (session) {
+      navigate(from, { replace: true });
+    }
+  }, [from, navigate, session]);
 
   const signInForm = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),

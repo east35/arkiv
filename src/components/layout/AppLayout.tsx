@@ -7,6 +7,7 @@ import { useShelfStore } from "@/store/useShelfStore";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { usePreferences } from "@/hooks/usePreferences";
+import { WelcomeDialog } from "@/components/WelcomeDialog";
 
 // Routes where the mobile bottom nav should be hidden entirely
 const hideNavPattern = /^\/(collections\/|item\/)/;
@@ -192,6 +193,7 @@ export default function AppLayout() {
         >
           <PageTransitionReveal targetScrollRef={targetScrollRef} />
           <Outlet context={{ navVisible, scrolled }} />
+          {!isDemoMode && userId && <WelcomeDialog userId={userId} />}
         </main>
 
         {!hideNav && <BottomNav visible={navVisible} />}

@@ -8,7 +8,21 @@
 import { useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import { useShelfStore } from "@/store/useShelfStore"
-import type { UserPreferences } from "@/types"
+import type { AIProvider, UserPreferences } from "@/types"
+
+const SUPPORTED_AI_PROVIDERS = new Set<AIProvider>(["openai", "gemini"])
+
+function normalizeUserPreferences(preferences: UserPreferences): UserPreferences {
+  const aiProvider = preferences.ai_provider
+  if (!aiProvider || SUPPORTED_AI_PROVIDERS.has(aiProvider)) {
+    return preferences
+  }
+
+  return {
+    ...preferences,
+    ai_provider: null,
+  }
+}
 
 export function usePreferences() {
   const { setPreferences } = useShelfStore()
@@ -29,8 +43,9 @@ export function usePreferences() {
 
     if (error) throw error
 
-    setPreferences(data as UserPreferences)
-    return data as UserPreferences
+    const normalized = normalizeUserPreferences(data as UserPreferences)
+    setPreferences(normalized)
+    return normalized
   }, [setPreferences])
 
   /**

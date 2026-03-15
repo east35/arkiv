@@ -102,11 +102,10 @@ export default function Settings() {
 
   const tabs = [
     { value: "account", label: "Account" },
-    { value: "linked", label: "Linked" },
     { value: "preferences", label: "Preferences" },
     { value: "activity", label: "Activity" },
     { value: "data", label: "Data" },
-    { value: "ai", label: "AI" },
+    { value: "ai", label: "Arkiv.AI" },
   ] as const;
 
   const activeTabLabel =
@@ -360,7 +359,7 @@ export default function Settings() {
           </TabsList>
         </div>
 
-        <div className="flex-1 px-4 sm:px-6 pb-8 pt-6">
+        <div className="flex-1 px-4 sm:px-6 pb-8 pt-6 dark:[--card:#242424]">
           <div className="max-w-5xl">
             {/* Account Section */}
             <TabsContent value="account">
@@ -562,7 +561,6 @@ export default function Settings() {
                     >
                       <option value="">None</option>
                       <option value="openai">OpenAI</option>
-                      <option value="anthropic">Anthropic</option>
                       <option value="gemini">Gemini</option>
                     </NativeSelect>
                   </FormFieldBlock>

@@ -163,7 +163,7 @@ export interface ActivityLogEntry {
 // User Preferences
 // ---------------------------------------------------------------------------
 
-export type AIProvider = "openai" | "anthropic" | "gemini"
+export type AIProvider = "openai" | "gemini"
 export type LinkType = "guide" | "wiki" | "review" | "forum" | "store" | "other"
 
 export interface UserPreferences {
