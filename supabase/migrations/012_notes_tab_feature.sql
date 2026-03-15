@@ -2,6 +2,16 @@
 -- Adds structured notes, bookmarks, progress tracking, and AI conversation tables.
 -- Migrates existing items.notes text into item_notes rows.
 
+-- ─── Teardown previous (incorrect) workspace migration ─────────────────────────
+
+DROP TABLE IF EXISTS item_ai_messages;
+DROP TABLE IF EXISTS item_ai_threads;
+DROP TABLE IF EXISTS user_ai_settings;
+DROP TABLE IF EXISTS ai_conversations;
+DROP TABLE IF EXISTS item_progress;
+DROP TABLE IF EXISTS item_bookmarks;
+DROP TABLE IF EXISTS item_notes;
+
 -- ─── item_notes ────────────────────────────────────────────────────────────────
 
 CREATE TABLE item_notes (
@@ -77,16 +87,23 @@ CREATE POLICY "Users manage their own conversations"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- ─── Migrate items.notes → item_notes ─────────────────────────────────────────
+-- ─── Migrate items.notes → item_notes (if column still exists) ────────────────
 
-INSERT INTO item_notes (item_id, user_id, content, created_at, updated_at)
-SELECT id, user_id, notes, created_at, updated_at
-FROM items
-WHERE notes IS NOT NULL AND notes <> '';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'items' AND column_name = 'notes'
+  ) THEN
+    INSERT INTO item_notes (item_id, user_id, content, created_at, updated_at)
+    SELECT id, user_id, notes, created_at, updated_at
+    FROM items
+    WHERE notes IS NOT NULL AND notes <> '';
 
--- ─── Drop legacy notes column ──────────────────────────────────────────────────
-
-ALTER TABLE items DROP COLUMN notes;
+    ALTER TABLE items DROP COLUMN notes;
+  END IF;
+END
+$$;
 
 -- ─── Add AI provider fields to user_preferences ────────────────────────────────
 
