@@ -6,6 +6,8 @@ import {
   IconCalendar,
   IconStack2,
   IconDeviceGamepad2,
+  IconDeviceTablet,
+  IconBook2,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -111,14 +113,24 @@ export function ItemDetailHero({ item }: ItemDetailHeroProps) {
   const selectedPlatformText = isGame
     ? item.game.active_platform || item.game.platforms[0] || null
     : item.book.format || null;
-  if (selectedPlatformText)
-    meta.push({ icon: IconDeviceGamepad2, text: selectedPlatformText });
+  if (selectedPlatformText) {
+    let platformIcon = IconDeviceGamepad2;
+    if (!isGame) {
+      const fmt = selectedPlatformText.toLowerCase();
+      platformIcon = fmt === "physical" ? IconBook2 : IconDeviceTablet;
+    }
+    const platformText = isGame
+      ? selectedPlatformText
+      : selectedPlatformText.charAt(0).toUpperCase() +
+        selectedPlatformText.slice(1).toLowerCase();
+    meta.push({ icon: platformIcon, text: platformText });
+  }
 
   return (
     <div
       ref={heroRef}
       className="p-8 flex flex-col overflow-hidden"
-      style={{ height: 363, backgroundColor: "var(--muted)" }}
+      style={{ height: 365, backgroundColor: "var(--muted)" }}
     >
       <div ref={titleMetaRef}>
         <h1 className="text-5xl font-bold tracking-tight mb-3">{item.title}</h1>
@@ -139,7 +151,11 @@ export function ItemDetailHero({ item }: ItemDetailHeroProps) {
             <p
               ref={descRef}
               className="overflow-hidden text-base leading-relaxed text-muted-foreground whitespace-pre-line"
-              style={maxDescHeight !== null ? { maxHeight: maxDescHeight } : undefined}
+              style={
+                maxDescHeight !== null
+                  ? { maxHeight: maxDescHeight }
+                  : undefined
+              }
             >
               {item.description}
             </p>
@@ -178,17 +194,8 @@ export function ItemDetailContent({
 }: ItemDetailContentProps) {
   const isGame = item.media_type === "game";
   const items = useShelfStore((s) => s.items);
-  const libraryStateKey =
-    item.media_type === "game" ? `${item.id}:${item.game.library ?? ""}` : item.id;
-  const [libraryState, setLibraryState] = useState(() => ({
-    key: libraryStateKey,
-    empty: false,
-  }));
-  const libraryEmpty =
-    libraryState.key === libraryStateKey ? libraryState.empty : false;
-
   const showLibraryRow =
-    item.media_type === "game" && Boolean(item.game.library) && !libraryEmpty;
+    item.media_type === "game" && Boolean(item.game.library);
   const showSeriesRow =
     item.media_type === "book" &&
     Boolean(item.book.series_name) &&
@@ -211,7 +218,7 @@ export function ItemDetailContent({
         )}
 
         {/* Genres & Themes */}
-        <div className="flex p-6 border-b flex-wrap gap-x-12 gap-y-6">
+        <div className="flex p-6 border-b border-[#cecece] dark:border-border/60 last:border-b-0 flex-wrap gap-x-12 gap-y-6">
           {item.genres.length > 0 && (
             <div>
               <h3 className="text-foreground tx-sm mb-3">Genres</h3>
@@ -248,7 +255,7 @@ export function ItemDetailContent({
 
         {/* Collections */}
         {itemCollections.length > 0 && (
-          <div className="p-6 border-b">
+          <div className="p-6 border-b border-[#cecece] dark:border-border/60 last:border-b-0">
             <h3 className="text-foreground tx-sm mb-3">Collections</h3>
             <div className="space-y-2">
               {itemCollections.map((collection) => {
@@ -285,7 +292,7 @@ export function ItemDetailContent({
                     </div>
                     <Link
                       to={`/collections/${collection.id}`}
-                      className="flex shrink-0 items-center border-l border-border/60 px-5 text-sm font-semibold transition-colors hover:bg-accent/40"
+                      className="flex shrink-0 items-center border-l border-[#cecece] dark:border-border/60 px-5 text-sm font-semibold transition-colors hover:bg-accent/40"
                     >
                       View Collection
                     </Link>
@@ -296,21 +303,14 @@ export function ItemDetailContent({
           </div>
         )}
         {(showLibraryRow || showSeriesRow) && (
-          <div className="p-6 mb-3 border-b">
+          <div className="p-6 mb-3 border-b border-[#cecece] dark:border-border/60 last:border-b-0">
             {/* Library / Series */}
-            {showLibraryRow && (
-              <LibraryRow
-                item={item}
-                onEmpty={() =>
-                  setLibraryState({ key: libraryStateKey, empty: true })
-                }
-              />
-            )}
+            {showLibraryRow && <LibraryRow key={item.id} item={item} />}
             {showSeriesRow && <SeriesRow item={item} />}
           </div>
         )}
         {showRecommendations && (
-          <div className="p-6 mb-3 border-b">
+          <div className="p-6 mb-3 border-b border-[#cecece] dark:border-border/60 last:border-b-0">
             {/* Recommendations */}
             <RecommendationsRow item={item} />
           </div>

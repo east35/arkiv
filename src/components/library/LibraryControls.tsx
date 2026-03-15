@@ -43,6 +43,7 @@ const STATUS_OPTIONS: Status[] = [
   "paused",
   "completed",
   "dropped",
+  "revisiting",
 ];
 
 const DEFAULT_SORT_OPTIONS = [

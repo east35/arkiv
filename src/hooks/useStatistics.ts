@@ -12,10 +12,10 @@
  */
 
 import { useState, useCallback } from "react"
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { useShelfStore } from "@/store/useShelfStore"
 import { useActivity } from "@/hooks/useActivity"
-import type { FullItem, Status, MediaType, ActivityLogEntry } from "@/types"
+import type { FullItem, BookItem, GameItem, Status, MediaType, ActivityLogEntry } from "@/types"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,6 +29,7 @@ export interface StatusCounts {
   completed: number
   paused: number
   dropped: number
+  revisiting: number
   total: number
 }
 
@@ -48,6 +49,14 @@ export interface ScoreByMediaTypeBucket {
 /** Day-level activity count for the heatmap (YYYY-MM-DD → count) */
 export type HeatmapData = Record<string, number>
 
+/** A single genre bucket for the taste profile bar */
+export interface GenreBucket {
+  genre: string
+  count: number
+  /** Percentage of total genre mentions (top-5 genres only) */
+  percent: number
+}
+
 /** A top-rated item (subset of fields for display) */
 export interface TopRatedItem {
   id: string
@@ -59,6 +68,7 @@ export interface TopRatedItem {
 
 /** Full statistics payload returned by the hook */
 export interface Statistics {
+  // Global
   statusCounts: StatusCounts
   mediaTypeCounts: DistributionBucket[]
   averageScore: number | null
@@ -73,6 +83,22 @@ export interface Statistics {
   heatmapData: HeatmapData
   totalActivity: number
   rawActivity: ActivityLogEntry[]
+  // Books metadata
+  booksCompleted: number
+  booksPagesRead: number
+  booksAverageScore: number | null
+  topBooks: FullItem[]
+  favoriteBookAuthor: string | null
+  favoriteBookGenre: string | null
+  bookGenreDistribution: GenreBucket[]
+  // Games metadata
+  gamesCompleted: number
+  gamesHoursPlayed: number
+  gamesAverageScore: number | null
+  topGames: FullItem[]
+  favoritePlatform: string | null
+  favoriteGameGenre: string | null
+  gameGenreDistribution: GenreBucket[]
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +114,7 @@ function computeStatusCounts(items: FullItem[]): StatusCounts {
     completed: 0,
     paused: 0,
     dropped: 0,
+    revisiting: 0,
     total: items.length,
   }
   for (const item of items) {
@@ -161,7 +188,7 @@ function computeScoreDistributionByMediaType(items: FullItem[]): ScoreByMediaTyp
 function computeStatusByMediaType(
   items: FullItem[],
 ): { status: Status; games: number; books: number }[] {
-  const statuses: Status[] = ["in_library", "backlog", "in_progress", "completed", "paused", "dropped"]
+  const statuses: Status[] = ["in_library", "backlog", "in_progress", "completed", "paused", "dropped", "revisiting"]
   return statuses.map((status) => {
     const matching = items.filter((i) => i.status === status)
     return {
@@ -290,8 +317,9 @@ function computeHeatmapData(activity: ActivityLogEntry[]): HeatmapData {
   const data: HeatmapData = {}
   const today = new Date()
 
+  // Use subDays (DST-safe) instead of raw ms arithmetic
   for (let i = 0; i < 365; i++) {
-    const d = new Date(today.getTime() - i * 86_400_000)
+    const d = subDays(today, i)
     data[format(d, "yyyy-MM-dd")] = 0
   }
 
@@ -303,6 +331,106 @@ function computeHeatmapData(activity: ActivityLogEntry[]): HeatmapData {
   }
 
   return data
+}
+
+// ---------------------------------------------------------------------------
+// Media-type metadata aggregations
+// ---------------------------------------------------------------------------
+
+/** Build a top-N genre distribution from an array of genre arrays. */
+function computeGenreDistribution(genreLists: string[][], limit = 5): GenreBucket[] {
+  const counts = new Map<string, number>()
+  for (const genres of genreLists) {
+    for (const g of genres) {
+      if (g) counts.set(g, (counts.get(g) ?? 0) + 1)
+    }
+  }
+  const total = Array.from(counts.values()).reduce((s, c) => s + c, 0)
+  if (total === 0) return []
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([genre, count]) => ({ genre, count, percent: Math.round((count / total) * 100) }))
+}
+
+/** Return the single most common string in an array, or null if empty. */
+function mostCommon(values: string[]): string | null {
+  if (values.length === 0) return null
+  const counts = new Map<string, number>()
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1)
+  let best: string | null = null
+  let bestN = 0
+  for (const [key, n] of counts) {
+    if (n > bestN) { bestN = n; best = key }
+  }
+  return best
+}
+
+function computeBooksMetadata(items: FullItem[], completedInRangeIds?: Set<string> | null) {
+  const books = items.filter((i): i is BookItem => i.media_type === "book")
+  const currentlyCompleted = books.filter((i) => i.status === "completed")
+
+  // When date range is active, count only books whose completion event fell in
+  // the range. Otherwise count all books currently in "completed" status.
+  const booksCompleted = completedInRangeIds
+    ? books.filter((i) => completedInRangeIds.has(i.id)).length
+    : currentlyCompleted.length
+
+  // Pages read: when filtering by range, sum page_count of books completed in
+  // that range. All-time: completed page_count + in-progress progress values.
+  const booksPagesRead = completedInRangeIds
+    ? books
+        .filter((i) => completedInRangeIds.has(i.id))
+        .reduce((s, i) => s + (i.book.page_count ?? 0), 0)
+    : currentlyCompleted.reduce((s, i) => s + (i.book.page_count ?? 0), 0) +
+      books
+        .filter((i) => i.status !== "completed" && i.book.progress != null)
+        .reduce((s, i) => s + (i.book.progress ?? 0), 0)
+
+  const scored = books.filter((i) => i.user_score != null)
+  const booksAverageScore = scored.length
+    ? Math.round((scored.reduce((s, i) => s + i.user_score!, 0) / scored.length) * 10) / 10
+    : null
+
+  const topBooks = books
+    .filter((i) => i.user_score != null)
+    .sort((a, b) => b.user_score! - a.user_score!)
+    .slice(0, 3)
+
+  const favoriteBookAuthor = mostCommon(books.map((i) => i.book.author).filter(Boolean) as string[])
+  const favoriteBookGenre = mostCommon(books.flatMap((i) => i.genres))
+  const bookGenreDistribution = computeGenreDistribution(books.map((i) => i.genres))
+
+  return { booksCompleted, booksPagesRead, booksAverageScore, topBooks, favoriteBookAuthor, favoriteBookGenre, bookGenreDistribution }
+}
+
+function computeGamesMetadata(items: FullItem[], completedInRangeIds?: Set<string> | null) {
+  const games = items.filter((i): i is GameItem => i.media_type === "game")
+  const currentlyCompleted = games.filter((i) => i.status === "completed")
+
+  const gamesCompleted = completedInRangeIds
+    ? games.filter((i) => completedInRangeIds.has(i.id)).length
+    : currentlyCompleted.length
+
+  const gamesHoursPlayed = Math.round(
+    games.reduce((s, i) => s + (i.game.progress_hours ?? 0) + (i.game.progress_minutes ?? 0) / 60, 0) * 10,
+  ) / 10
+
+  const scored = games.filter((i) => i.user_score != null)
+  const gamesAverageScore = scored.length
+    ? Math.round((scored.reduce((s, i) => s + i.user_score!, 0) / scored.length) * 10) / 10
+    : null
+
+  const topGames = games
+    .filter((i) => i.user_score != null)
+    .sort((a, b) => b.user_score! - a.user_score!)
+    .slice(0, 3)
+
+  const favoritePlatform = mostCommon(games.flatMap((i) => i.game.platforms ?? []))
+  const favoriteGameGenre = mostCommon(games.flatMap((i) => i.genres))
+  const gameGenreDistribution = computeGenreDistribution(games.map((i) => i.genres))
+
+  return { gamesCompleted, gamesHoursPlayed, gamesAverageScore, topGames, favoritePlatform, favoriteGameGenre, gameGenreDistribution }
 }
 
 // ---------------------------------------------------------------------------
@@ -324,25 +452,85 @@ export function useStatistics() {
       try {
         const items = useShelfStore.getState().items
 
-        const activity = dateRange
-          ? await fetchActivityInRange(dateRange.start, dateRange.end)
-          : await fetchActivity()
+        let activity: ActivityLogEntry[] = []
+        try {
+          activity = dateRange
+            ? await fetchActivityInRange(dateRange.start, dateRange.end)
+            : await fetchActivity()
+        } catch (activityError) {
+          console.error("[useStatistics] activity_log fetch failed:", activityError)
+          // Continue with empty activity — item-based stats still render
+        }
+
+        // When a date range is active, scope all item-based aggregations to items
+        // that had any recorded activity in the window. We use item timestamp fields
+        // (completed_at, started_at, paused_at, dropped_at, revisit_started_at,
+        // created_at) rather than activity_log so filtering works even for items
+        // added before the log table was populated.
+        const scopedItems = dateRange
+          ? (() => {
+              const start = new Date(`${dateRange.start}T00:00:00`)
+              const end = new Date(`${dateRange.end}T23:59:59`)
+              return items.filter((item) => {
+                const inRange = (ts: string | null) => {
+                  if (!ts) return false
+                  const d = new Date(ts)
+                  return d >= start && d <= end
+                }
+                return (
+                  inRange(item.created_at) ||
+                  inRange(item.started_at) ||
+                  inRange(item.completed_at) ||
+                  inRange(item.paused_at) ||
+                  inRange(item.dropped_at) ||
+                  inRange(item.revisit_started_at)
+                )
+              })
+            })()
+          : items
+
+        // Items completed within the window — uses completed_at timestamp so it
+        // works independently of the activity_log being populated.
+        const completedInRangeIds = dateRange
+          ? (() => {
+              const start = new Date(`${dateRange.start}T00:00:00`)
+              const end = new Date(`${dateRange.end}T23:59:59`)
+              return new Set(
+                items
+                  .filter((item) => {
+                    if (!item.completed_at) return false
+                    const d = new Date(item.completed_at)
+                    return d >= start && d <= end
+                  })
+                  .map((item) => item.id),
+              )
+            })()
+          : null
+
+        const completedCount = completedInRangeIds
+          ? completedInRangeIds.size
+          : items.filter((i) => i.status === "completed").length
+
+        const booksMetadata = computeBooksMetadata(scopedItems, completedInRangeIds)
+        const gamesMetadata = computeGamesMetadata(scopedItems, completedInRangeIds)
 
         const result: Statistics = {
-          statusCounts: computeStatusCounts(items),
-          mediaTypeCounts: computeMediaTypeCounts(items),
-          averageScore: computeAverageScore(items),
-          scoreDistribution: computeScoreDistribution(items),
-          scoreDistributionByMediaType: computeScoreDistributionByMediaType(items),
-          statusByMediaType: computeStatusByMediaType(items),
-          topRated: computeTopRated(items),
-          completedCount: items.filter((i) => i.status === "completed").length,
+          statusCounts: computeStatusCounts(scopedItems),
+          mediaTypeCounts: computeMediaTypeCounts(scopedItems),
+          averageScore: computeAverageScore(scopedItems),
+          scoreDistribution: computeScoreDistribution(scopedItems),
+          scoreDistributionByMediaType: computeScoreDistributionByMediaType(scopedItems),
+          statusByMediaType: computeStatusByMediaType(scopedItems),
+          topRated: computeTopRated(scopedItems),
+          completedCount,
           currentStreak: computeStreak(activity),
           longestStreak: computeLongestStreak(activity),
           mostActiveDayOfWeek: computeMostActiveDayOfWeek(activity),
           heatmapData: computeHeatmapData(activity),
           totalActivity: activity.length,
           rawActivity: activity,
+          ...booksMetadata,
+          ...gamesMetadata,
         }
 
         setStats(result)

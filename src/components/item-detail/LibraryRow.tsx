@@ -18,7 +18,6 @@ interface LibraryGame {
 
 interface LibraryRowProps {
   item: FullItem;
-  onEmpty?: () => void;
 }
 
 /* Status bar colours — mirrors PosterItem */
@@ -29,10 +28,44 @@ const STATUS_BAR: Record<Status, string> = {
   completed: "bg-green-500 text-green-950",
   paused: "bg-yellow-400 text-yellow-950",
   dropped: "bg-red-500 text-red-950",
+  revisiting: "bg-[#64FFFC] text-neutral-900",
 };
 
 const COVER_FALLBACK =
   "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png";
+
+const libraryGamesCache = new Map<string, LibraryGame[]>();
+const libraryGamesRequests = new Map<string, Promise<LibraryGame[]>>();
+
+function normalizeLibraryKey(libraryName: string): string {
+  return libraryName.trim().toLowerCase();
+}
+
+async function fetchLibraryGames(libraryName: string): Promise<LibraryGame[]> {
+  const cacheKey = normalizeLibraryKey(libraryName);
+  const cached = libraryGamesCache.get(cacheKey);
+  if (cached) return cached;
+
+  const inFlight = libraryGamesRequests.get(cacheKey);
+  if (inFlight) return inFlight;
+
+  const request = supabase.functions
+    .invoke("igdb-proxy", {
+      body: { action: "library-games", query: libraryName },
+    })
+    .then(({ data, error }) => {
+      if (error) throw error;
+      const games = Array.isArray(data) ? (data as LibraryGame[]) : [];
+      libraryGamesCache.set(cacheKey, games);
+      return games;
+    })
+    .finally(() => {
+      libraryGamesRequests.delete(cacheKey);
+    });
+
+  libraryGamesRequests.set(cacheKey, request);
+  return request;
+}
 
 /**
  * Displays all games in the same IGDB library as the current game.
@@ -41,21 +74,27 @@ const COVER_FALLBACK =
  * - External games are committed silently, then navigated to their new detail page.
  * - "Back to" label shows the current game's title.
  */
-export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
-  const [games, setGames] = useState<LibraryGame[]>([]);
+export function LibraryRow({ item }: LibraryRowProps) {
+  const libraryName = item.media_type === "game" ? item.game.library : null;
+  const cacheKey = libraryName ? normalizeLibraryKey(libraryName) : null;
+  const [games, setGames] = useState<LibraryGame[]>(() =>
+    cacheKey ? libraryGamesCache.get(cacheKey) ?? [] : [],
+  );
   const [loading, setLoading] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [visible, setVisible] = useState(() =>
+    cacheKey ? libraryGamesCache.has(cacheKey) : false,
+  );
+  const [retryKey, setRetryKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const items = useShelfStore((s) => s.items);
   const { commit, committingId } = useCommitItem();
   const navigate = useNavigate();
 
-  const libraryName = item.media_type === "game" ? item.game.library : null;
-
   // Defer fetch until the row scrolls into view to avoid racing with the
   // details fetch and hitting IGDB's 4 req/sec rate limit.
   useEffect(() => {
-    if (!libraryName) return;
+    if (!libraryName || visible) return;
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -64,29 +103,51 @@ export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [libraryName]);
+  }, [libraryName, visible]);
 
   useEffect(() => {
     if (!libraryName || !visible) return;
 
     let cancelled = false;
-    setLoading(true);
+    const currentExternalId =
+      item.media_type === "game" && item.external_id ? item.external_id : null;
 
-    supabase.functions
-      .invoke("igdb-proxy", {
-        body: { action: "library-games", query: libraryName },
-      })
-      .then(({ data, error }) => {
+    const applyGames = (nextGames: LibraryGame[]) => {
+      const filtered = nextGames.filter(
+        (game) =>
+          currentExternalId
+            ? String(game.id) !== currentExternalId
+            : game.name !== item.title,
+      );
+      setGames(filtered);
+    };
+
+    const cachedGames = cacheKey ? libraryGamesCache.get(cacheKey) : undefined;
+    if (cachedGames) {
+      applyGames(cachedGames);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setError(null);
+    });
+
+    fetchLibraryGames(libraryName)
+      .then((nextGames) => {
         if (cancelled) return;
-        if (!error && Array.isArray(data)) {
-          const filtered = data.filter(
-            (g: LibraryGame) => g.name !== item.title,
-          );
-          setGames(filtered);
-          if (filtered.length === 0) onEmpty?.();
-        } else {
-          onEmpty?.();
-        }
+        applyGames(nextGames);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : "Could not load this row right now.";
+        setError(message);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -95,7 +156,7 @@ export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
     return () => {
       cancelled = true;
     };
-  }, [libraryName, item.title, onEmpty, visible]);
+  }, [cacheKey, item.external_id, item.media_type, item.title, libraryName, retryKey, visible]);
 
   // Build a map of external IGDB IDs → library items for quick lookup
   const libraryByExternalId = new Map(
@@ -115,7 +176,6 @@ export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
   };
 
   if (!libraryName) return null;
-  if (!loading && visible && games.length === 0) return null;
 
   return (
     <div ref={containerRef}>
@@ -125,6 +185,23 @@ export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
 
       {loading || !visible ? (
         <div className="text-sm text-muted-foreground py-4">Loading…</div>
+      ) : error ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 py-4">
+          <p className="text-sm text-muted-foreground">
+            Could not load more games right now.
+          </p>
+          <button
+            type="button"
+            onClick={() => setRetryKey((value) => value + 1)}
+            className="text-xs font-semibold text-foreground/80 transition-colors hover:text-foreground"
+          >
+            Retry
+          </button>
+        </div>
+      ) : games.length === 0 ? (
+        <div className="text-sm text-muted-foreground py-4">
+          No other games found in this collection.
+        </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
           {games.map((game) => {

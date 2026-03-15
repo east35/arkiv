@@ -115,6 +115,7 @@ export function useCommitItem() {
         completed_at: null,
         paused_at: null,
         dropped_at: null,
+        revisit_started_at: null,
       };
 
       // 4. Map to extension fields
@@ -130,6 +131,7 @@ export function useCommitItem() {
           format: "digital",
           themes: [],
           isbn: bookDetails.isbn ?? null,
+          hardcover_slug: bookDetails.slug ?? null,
           library: null,
           series_name: bookDetails.seriesName ?? null,
           series_position: bookDetails.seriesPosition ?? null,

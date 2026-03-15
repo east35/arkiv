@@ -80,12 +80,96 @@ interface ThumbnailCandidate {
   weak: boolean
 }
 
+type MutationResult<T> = {
+  data: T | null
+  error: unknown
+}
+
 function isLocalhostOrigin(origin: string): boolean {
   try {
     const { hostname } = new URL(origin)
     return hostname === "localhost" || hostname === "127.0.0.1"
   } catch {
     return false
+  }
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function getErrorText(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (!error || typeof error !== "object") return ""
+
+  return [
+    typeof (error as { message?: unknown }).message === "string"
+      ? (error as { message: string }).message
+      : "",
+    typeof (error as { details?: unknown }).details === "string"
+      ? (error as { details: string }).details
+      : "",
+    typeof (error as { hint?: unknown }).hint === "string"
+      ? (error as { hint: string }).hint
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n")
+}
+
+function getMissingOptionalColumn(
+  error: unknown,
+  table: string,
+  optionalColumns: string[],
+): string | null {
+  const errorText = getErrorText(error).toLowerCase()
+  if (!errorText || !errorText.includes(table.toLowerCase())) {
+    return null
+  }
+
+  const isMissingColumnError = errorText.includes("schema cache")
+    || errorText.includes("does not exist")
+    || errorText.includes("unknown column")
+  if (!isMissingColumnError) return null
+
+  for (const column of optionalColumns) {
+    const columnPattern = new RegExp(
+      `('${escapeRegex(column)}'|"${escapeRegex(column)}"|\\b${escapeRegex(table)}\\.${escapeRegex(column)}\\b|\\b${escapeRegex(column)}\\b)`,
+      "i",
+    )
+    if (columnPattern.test(errorText)) {
+      return column
+    }
+  }
+
+  return null
+}
+
+async function executeBookmarkMutationWithFallback<T>(
+  optionalColumns: string[],
+  mutation: (supportedOptionalColumns: Set<string>) => Promise<MutationResult<T>>,
+): Promise<T> {
+  const supportedOptionalColumns = new Set(optionalColumns)
+
+  while (true) {
+    const { data, error } = await mutation(supportedOptionalColumns)
+    if (!error) {
+      if (data == null) {
+        throw new Error("Bookmark mutation returned no data")
+      }
+      return data
+    }
+
+    const missingColumn = getMissingOptionalColumn(
+      error,
+      "item_bookmarks",
+      Array.from(supportedOptionalColumns),
+    )
+    if (!missingColumn) {
+      throw error
+    }
+
+    supportedOptionalColumns.delete(missingColumn)
   }
 }
 
@@ -382,22 +466,37 @@ async function createBookmark(
   linkType: string,
 ): Promise<ItemBookmarkRow> {
   const thumbnailUrl = await resolveBookmarkThumbnail(url)
-  const { data, error } = await userClient
-    .from("item_bookmarks")
-    .insert({
-      item_id: itemId,
-      user_id: userId,
-      title,
-      url,
-      note,
-      link_type: linkType,
-      thumbnail_url: thumbnailUrl,
-    })
-    .select("*")
-    .single()
+  const bookmark = await executeBookmarkMutationWithFallback<ItemBookmarkRow>(
+    ["note", "link_type", "thumbnail_url"],
+    async (supportedOptionalColumns) => {
+      const payload: Record<string, unknown> = {
+        item_id: itemId,
+        user_id: userId,
+        title,
+        url,
+      }
 
-  if (error) throw error
-  return data as ItemBookmarkRow
+      if (supportedOptionalColumns.has("note")) {
+        payload.note = note
+      }
+      if (supportedOptionalColumns.has("link_type")) {
+        payload.link_type = linkType
+      }
+      if (supportedOptionalColumns.has("thumbnail_url")) {
+        payload.thumbnail_url = thumbnailUrl
+      }
+
+      const { data, error } = await userClient
+        .from("item_bookmarks")
+        .insert(payload)
+        .select("*")
+        .single()
+
+      return { data: data as ItemBookmarkRow | null, error }
+    },
+  )
+
+  return bookmark
 }
 
 async function updateBookmark(
@@ -419,25 +518,48 @@ async function updateBookmark(
   const shouldRefreshThumbnail = nextUrl !== existingBookmark.url
     || !existingBookmark.thumbnail_url
     || isLikelyWeakThumbnailUrl(existingBookmark.thumbnail_url)
+  let refreshedThumbnail: string | null | undefined
 
-  const { data, error } = await userClient
-    .from("item_bookmarks")
-    .update({
-      title: nextTitle,
-      url: nextUrl,
-      note: nextNote,
-      link_type: nextLinkType,
-      thumbnail_url: shouldRefreshThumbnail
-        ? await resolveBookmarkThumbnail(nextUrl)
-        : existingBookmark.thumbnail_url,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", existingBookmark.id)
-    .select("*")
-    .single()
+  const bookmark = await executeBookmarkMutationWithFallback<ItemBookmarkRow>(
+    ["note", "link_type", "thumbnail_url", "updated_at"],
+    async (supportedOptionalColumns) => {
+      const payload: Record<string, unknown> = {
+        title: nextTitle,
+        url: nextUrl,
+      }
 
-  if (error) throw error
-  return data as ItemBookmarkRow
+      if (supportedOptionalColumns.has("note")) {
+        payload.note = nextNote
+      }
+      if (supportedOptionalColumns.has("link_type")) {
+        payload.link_type = nextLinkType
+      }
+      if (supportedOptionalColumns.has("thumbnail_url")) {
+        if (shouldRefreshThumbnail) {
+          if (refreshedThumbnail === undefined) {
+            refreshedThumbnail = await resolveBookmarkThumbnail(nextUrl)
+          }
+          payload.thumbnail_url = refreshedThumbnail
+        } else {
+          payload.thumbnail_url = existingBookmark.thumbnail_url
+        }
+      }
+      if (supportedOptionalColumns.has("updated_at")) {
+        payload.updated_at = new Date().toISOString()
+      }
+
+      const { data, error } = await userClient
+        .from("item_bookmarks")
+        .update(payload)
+        .eq("id", existingBookmark.id)
+        .select("*")
+        .single()
+
+      return { data: data as ItemBookmarkRow | null, error }
+    },
+  )
+
+  return bookmark
 }
 
 async function checkBookmarkEmbeddable(

@@ -15,6 +15,8 @@ import {
   IconCalendar,
   IconStack2,
   IconDeviceGamepad2,
+  IconDeviceTablet,
+  IconBook2,
   IconBookmark,
   IconInfoCircle,
   IconList,
@@ -88,7 +90,6 @@ export default function ItemDetail() {
     initialTab,
   );
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
-  const [libraryEmpty, setLibraryEmpty] = useState(false);
   const [hltbLoading, setHltbLoading] = useState(false);
   const enrichedForItem = useRef<string | null>(null);
   const { enrichSingle } = useMetadataEnrich();
@@ -139,7 +140,6 @@ export default function ItemDetail() {
 
   // Reset per-item state when navigating to a different item
   useEffect(() => {
-    setLibraryEmpty(false);
     enrichedForItem.current = null;
   }, [id]);
 
@@ -154,6 +154,15 @@ export default function ItemDetail() {
     enrichedForItem.current = item.id;
     if (missingHltb) setHltbLoading(true);
     void enrichSingle(item, true).finally(() => setHltbLoading(false));
+  }, [item, enrichSingle]);
+
+  // Auto-enrich book silently when hardcover_slug is missing (needed for the Hardcover link).
+  useEffect(() => {
+    if (!item || item.media_type !== "book") return;
+    if (item.book.hardcover_slug) return;
+    if (enrichedForItem.current === item.id) return;
+    enrichedForItem.current = item.id;
+    void enrichSingle(item, true);
   }, [item, enrichSingle]);
 
   const itemCollections = collections.filter((collection) =>
@@ -187,9 +196,12 @@ export default function ItemDetail() {
       ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
       : "https://books.google.com/googlebooks/images/no_cover_thumb.gif");
 
+  const rawFormat = isGame ? null : item.book.format;
   const selectedPlatformDisplay = isGame
     ? item.game.active_platform || item.game.platforms[0] || "—"
-    : item.book.format || "Digital";
+    : rawFormat
+      ? rawFormat.charAt(0).toUpperCase() + rawFormat.slice(1).toLowerCase()
+      : "Digital";
 
   const minimizedHeader = (
     <div className="flex items-center gap-3 bg-background">
@@ -234,8 +246,14 @@ export default function ItemDetail() {
   const selectedPlatformText = isGame
     ? item.game.active_platform || item.game.platforms[0] || null
     : item.book.format || null;
-  if (selectedPlatformText)
-    mobileMeta.push({ icon: IconDeviceGamepad2, text: selectedPlatformText });
+  if (selectedPlatformText) {
+    let platformIcon = IconDeviceGamepad2;
+    if (!isGame) {
+      const fmt = selectedPlatformText.toLowerCase();
+      platformIcon = fmt === "physical" ? IconBook2 : IconDeviceTablet;
+    }
+    mobileMeta.push({ icon: platformIcon, text: selectedPlatformText });
+  }
 
   const mobileDetailLabelClass =
     "text-sm font-medium leading-tight text-muted-foreground/75";
@@ -265,7 +283,7 @@ export default function ItemDetail() {
             />
 
             {/* Right column — hero always visible, tabs + content below */}
-            <div className="min-w-0">
+            <div className="min-w-0 flex flex-col self-stretch">
               <ItemDetailHero item={item} />
 
               {/* Segmented control between hero and content */}
@@ -309,6 +327,7 @@ export default function ItemDetail() {
                 <NotesPanelContent
                   itemId={item.id}
                   mediaType={item.media_type}
+                  status={item.status}
                   variant="sections"
                   onPromptClick={(prompt) => {
                     setPendingPrompt(prompt);
@@ -317,11 +336,13 @@ export default function ItemDetail() {
                 />
               )}
               {hasAI && activeDesktopTab === "discuss" && (
-                <div className="bg-[#e6e6e6] dark:bg-card">
+                <div className="flex flex-1 min-h-0 bg-[#e6e6e6] dark:bg-card">
                   <DiscussContent
                     itemId={item.id}
+                    title={item.title}
                     pendingMessage={pendingPrompt}
                     onPendingMessageSent={() => setPendingPrompt(null)}
+                    fillHeight
                   />
                 </div>
               )}
@@ -402,7 +423,7 @@ export default function ItemDetail() {
                           ? item.game.active_platform ||
                             item.game.platforms[0] ||
                             "—"
-                          : item.book.format || "Digital"}
+                          : selectedPlatformDisplay}
                         <IconPencil className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
                     </div>
@@ -612,16 +633,13 @@ export default function ItemDetail() {
                 </AccordionSection>
 
                 {/* Library / Series (games only) */}
-                {isGame && item.game.library && !libraryEmpty && (
+                {isGame && item.game.library && (
                   <AccordionSection
                     title={`More in ${item.game.library}`}
                     icon={IconStack2}
                   >
                     <div>
-                      <LibraryRow
-                        item={item}
-                        onEmpty={() => setLibraryEmpty(true)}
-                      />
+                      <LibraryRow key={item.id} item={item} />
                     </div>
                   </AccordionSection>
                 )}
@@ -662,10 +680,12 @@ export default function ItemDetail() {
               </MobileAccordion>
             </div>
           ) : (
-            <div className="px-4 pt-6 pb-6">
+            <div className="bg-[#e6e6e6] pb-6 dark:bg-card">
               <NotesPanelContent
                 itemId={item.id}
                 mediaType={item.media_type}
+                status={item.status}
+                variant="sections"
                 onPromptClick={(prompt) => {
                   setPendingPrompt(prompt);
                   setMobileTab("discuss");
@@ -678,10 +698,11 @@ export default function ItemDetail() {
 
         {/* ═══════════════ Mobile Layout — Discuss ═══════════════ */}
         {activeMobileTab === "discuss" && (
-        <div className="md:hidden flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="md:hidden flex-1 flex flex-col min-h-0 overflow-hidden bg-[#e6e6e6] dark:bg-card">
           {minimizedHeader}
           <DiscussContent
             itemId={item.id}
+            title={item.title}
             pendingMessage={pendingPrompt}
             onPendingMessageSent={() => setPendingPrompt(null)}
             fillHeight

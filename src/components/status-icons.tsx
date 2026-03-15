@@ -4,6 +4,7 @@ import {
   IconFlagFilled,
   IconPlayerPauseFilled,
   IconPlayerPlayFilled,
+  IconRefresh,
   IconTrashXFilled,
 } from "@tabler/icons-react"
 import type { Status } from "@/types"
@@ -15,6 +16,7 @@ export const statusIcons: Record<Status, React.ReactNode> = {
   completed: <IconFlagFilled className="h-4 w-4" />,
   paused: <IconPlayerPauseFilled className="h-4 w-4" />,
   dropped: <IconTrashXFilled className="h-4 w-4" />,
+  revisiting: <IconRefresh className="h-4 w-4" />,
 }
 
 export const statusLabels: Record<string, string> = {
@@ -25,6 +27,7 @@ export const statusLabels: Record<string, string> = {
   paused: "Paused",
   completed: "Completed",
   dropped: "Dropped",
+  revisiting: "Revisiting",
 }
 
 export const mediaTypeColors = {
@@ -39,4 +42,5 @@ export const statusColors: Record<Status, string> = {
   completed: "bg-green-600 text-white border-green-700",
   paused: "bg-yellow-600 text-white border-yellow-700",
   dropped: "bg-red-600 text-white border-red-700",
+  revisiting: "bg-[#64FFFC] text-neutral-900 border-[#64FFFC]",
 }

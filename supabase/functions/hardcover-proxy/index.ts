@@ -466,6 +466,7 @@ async function getBookDetails(id: number) {
         release_date
         rating
         ratings_count
+        slug
         image { url }
         contributions { author { name } }
         cached_tags
@@ -519,6 +520,7 @@ async function getBookDetails(id: number) {
     isbn: firstEdition?.isbn_13 ?? null,
     rating: (book.rating as number) ?? null, // 0–5 scale
     ratingsCount: (book.ratings_count as number) ?? null,
+    slug: (book.slug as string) ?? null,
     seriesName: series?.series?.name ?? null,
     seriesPosition: series?.position ?? null,
   }

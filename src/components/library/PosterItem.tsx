@@ -30,6 +30,7 @@ interface PosterItemProps {
   onEdit: (item: FullItem) => void;
   mobileTapAction?: "edit" | "details";
   hideStatusDate?: boolean;
+  compact?: boolean;
 }
 
 const STATUS_BAR: Record<Status, string> = {
@@ -39,6 +40,7 @@ const STATUS_BAR: Record<Status, string> = {
   completed: "bg-green-500 text-green-950",
   paused: "bg-yellow-400 text-yellow-950",
   dropped: "bg-red-500 text-red-950",
+  revisiting: "bg-[#64FFFC] text-neutral-900",
 };
 
 function getProgressLabel(item: FullItem): string | null {
@@ -156,6 +158,7 @@ export function PosterItem({
   onEdit,
   mobileTapAction = "details",
   hideStatusDate,
+  compact,
 }: PosterItemProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -173,7 +176,7 @@ export function PosterItem({
       ? formatDate(statusDate, preferences?.date_format)
       : statusLabels[item.status];
   const overlayActionClassName =
-    "flex items-center gap-3 px-3 flex-1 text-left w-full transition-colors hover:bg-black/10 dark:hover:bg-white/10";
+    "flex items-center gap-3 px-3 flex-1 text-left w-full transition-colors hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer";
 
   // Cancel hover on scroll
   useEffect(() => {
@@ -237,7 +240,7 @@ export function PosterItem({
             onClick={() => setIsHovered(false)}
           >
             <IconEye className="h-4 w-4 shrink-0" />
-            <span className="text-sm font-semibold whitespace-nowrap">View Details</span>
+            <span className="text-sm font-semibold whitespace-nowrap">{compact ? "Details" : "View Details"}</span>
           </Link>
 
           <button
@@ -245,7 +248,7 @@ export function PosterItem({
             onClick={() => { setIsHovered(false); onEdit(item); }}
           >
             <IconPencil className="h-4 w-4 shrink-0" />
-            <span className="text-sm font-semibold whitespace-nowrap">Edit Status</span>
+            <span className="text-sm font-semibold whitespace-nowrap">{compact ? "Status" : "Edit Status"}</span>
           </button>
 
           <button
@@ -264,11 +267,11 @@ export function PosterItem({
             onClick={() => { setIsHovered(false); setIsManageCollectionsOpen(true); }}
           >
             <IconPlaylistAdd className="h-4 w-4 shrink-0" />
-            <span className="text-sm font-semibold whitespace-nowrap">Add to Collection…</span>
+            <span className="text-sm font-semibold whitespace-nowrap">{compact ? "Add to…" : "Add to Collection…"}</span>
           </button>
 
           <button
-            className="flex items-center gap-3 px-3 flex-1 bg-destructive text-destructive-foreground text-left w-full transition-colors hover:bg-destructive/90"
+            className="flex items-center gap-3 px-3 flex-1 bg-destructive text-destructive-foreground text-left w-full transition-colors hover:bg-destructive/90 cursor-pointer"
             onClick={() => { setIsHovered(false); setIsDeleteOpen(true); }}
           >
             <IconTrash className="h-4 w-4 shrink-0" />

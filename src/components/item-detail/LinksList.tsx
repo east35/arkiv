@@ -177,6 +177,7 @@ export function LinksList({
           <NativeSelect
             value={draft.linkType ?? "other"}
             onValueChange={(value) => setDraft((current) => ({ ...current, linkType: value as LinkType }))}
+            variant="detail"
             className="border-0"
           >
             {LINK_TYPE_OPTIONS.map((option) => (

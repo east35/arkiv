@@ -121,6 +121,7 @@ function getStatusDate(item: FullItem): string | null {
     paused: item.paused_at,
     completed: item.completed_at,
     dropped: item.dropped_at,
+    revisiting: item.revisit_started_at,
   }
   return dateMap[item.status]
 }

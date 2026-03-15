@@ -61,6 +61,7 @@ const statusSchema = z.enum([
   "paused",
   "completed",
   "dropped",
+  "revisiting",
 ]);
 
 // We allow string | number | null for form inputs to handle the "empty" state of number inputs
@@ -76,6 +77,7 @@ const formSchema = z.object({
   completed_at: z.date().nullable().optional(),
   paused_at: z.date().nullable().optional(),
   dropped_at: z.date().nullable().optional(),
+  revisit_started_at: z.date().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -132,6 +134,7 @@ export function StatusSheet({
       completed_at: null,
       paused_at: null,
       dropped_at: null,
+      revisit_started_at: null,
     },
   });
 
@@ -173,6 +176,7 @@ export function StatusSheet({
         completed_at: item.completed_at ? new Date(item.completed_at) : null,
         paused_at: item.paused_at ? new Date(item.paused_at) : null,
         dropped_at: item.dropped_at ? new Date(item.dropped_at) : null,
+        revisit_started_at: item.revisit_started_at ? new Date(item.revisit_started_at) : null,
       });
     }
   }, [item, form]);
@@ -205,6 +209,7 @@ export function StatusSheet({
         completed_at: values.completed_at?.toISOString() ?? null,
         paused_at: values.paused_at?.toISOString() ?? null,
         dropped_at: values.dropped_at?.toISOString() ?? null,
+        revisit_started_at: values.revisit_started_at?.toISOString() ?? null,
       };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -263,6 +268,8 @@ export function StatusSheet({
       form.setValue("paused_at", now, { shouldDirty: true });
     } else if (value === "dropped" && !form.getValues("dropped_at")) {
       form.setValue("dropped_at", now, { shouldDirty: true });
+    } else if (value === "revisiting" && !form.getValues("revisit_started_at")) {
+      form.setValue("revisit_started_at", now, { shouldDirty: true });
     }
   };
 
@@ -296,6 +303,7 @@ export function StatusSheet({
                   <option value="paused">Paused</option>
                   <option value="completed">Completed</option>
                   <option value="dropped">Dropped</option>
+                  <option value="revisiting">Revisiting</option>
                 </NativeSelect>
               </FormControl>
               <FormMessage />
@@ -519,6 +527,19 @@ export function StatusSheet({
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Dropped</FormLabel>
+                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            {watchedStatus === "revisiting" && (
+              <FormField
+                control={form.control}
+                name="revisit_started_at"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Revisit Started</FormLabel>
                     <DatePicker date={field.value} setDate={field.onChange} />
                     <FormMessage />
                   </FormItem>

@@ -247,7 +247,7 @@ export default function CollectionDetail() {
         ) : (
           <>
             {viewMode === "poster" ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 pb-8">
+              <div className="poster-grid grid grid-cols-2 gap-4 pb-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {displayItems.map((item) => (
                   <div key={item.id} className="relative group/collection-item">
                     <PosterItem item={item} onEdit={handleEdit} />

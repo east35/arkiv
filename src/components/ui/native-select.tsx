@@ -5,6 +5,7 @@ interface NativeSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement
   onValueChange?: (value: string) => void
   wrapperClassName?: string
   icon?: React.ReactNode
+  variant?: "default" | "detail"
 }
 
 export function NativeSelect({
@@ -13,11 +14,16 @@ export function NativeSelect({
   className,
   wrapperClassName,
   icon,
+  variant = "default",
   children,
   ...props
 }: NativeSelectProps) {
   const baseClassName =
-    "h-11 min-h-[44px] w-full appearance-none bg-[#F1F1F1] hover:bg-[#D5D5D5] py-2 pr-8 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [color-scheme:light] dark:bg-[#262626] dark:hover:bg-[#262626] dark:[color-scheme:dark]"
+    "h-11 min-h-[44px] w-full appearance-none py-2 pr-8 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [color-scheme:light] dark:[color-scheme:dark]"
+
+  const variantClassName = variant === "detail"
+    ? "bg-[#F1F1F1] hover:bg-[#D5D5D5] dark:bg-[#262626] dark:hover:bg-[#262626]"
+    : "bg-[#F1F1F1] hover:bg-[#D5D5D5] dark:bg-[#171717] dark:hover:bg-[#252525]"
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onValueChange?.(e.target.value)
@@ -34,6 +40,7 @@ export function NativeSelect({
           onChange={handleChange}
           className={cn(
             baseClassName,
+            variantClassName,
             "pl-9",
             className
           )}
@@ -54,6 +61,7 @@ export function NativeSelect({
         onChange={handleChange}
         className={cn(
           baseClassName,
+          variantClassName,
           "pl-3",
           className
         )}

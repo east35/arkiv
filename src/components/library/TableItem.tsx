@@ -42,6 +42,7 @@ const STATUS_BLOCK: Record<Status, string> = {
   completed: "bg-green-500 text-green-950",
   paused: "bg-yellow-400 text-yellow-950",
   dropped: "bg-red-500 text-red-950",
+  revisiting: "bg-[#64FFFC] text-neutral-900",
 };
 
 const STATUS_STRIP: Record<Status, string> = {
@@ -51,6 +52,7 @@ const STATUS_STRIP: Record<Status, string> = {
   completed: "bg-green-500",
   paused: "bg-yellow-400",
   dropped: "bg-red-500",
+  revisiting: "bg-[#64FFFC]",
 };
 
 function formatGameProgress(hours: number, minutes: number): string {

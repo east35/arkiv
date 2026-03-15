@@ -1,6 +1,6 @@
 import { IconPencil, IconExternalLink } from "@tabler/icons-react";
 import { formatDateTime } from "@/lib/utils";
-import type { FullItem, UserPreferences } from "@/types";
+import type { FullItem, BookItem, UserPreferences } from "@/types";
 import type { StatusSheetFocusField } from "@/components/status-sheet/StatusSheet";
 
 interface ItemDetailSidebarProps {
@@ -28,7 +28,7 @@ function SidebarRow({
         {onEdit && (
           <button
             onClick={onEdit}
-            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0 cursor-pointer"
           >
             <IconPencil className="h-3.5 w-3.5" />
           </button>
@@ -45,6 +45,11 @@ function igdbSlug(title: string): string {
     .replace(/['']/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function hardcoverUrl(item: BookItem): string {
+  const slug = item.book.hardcover_slug ?? igdbSlug(item.title);
+  return `https://hardcover.app/books/${slug}`;
 }
 
 export function ItemDetailSidebar({
@@ -74,7 +79,7 @@ export function ItemDetailSidebar({
       </div>
 
       {/* Sidebar card — framed module below cover */}
-      <div className="rounded-b-lg bg-[#e6e6e6] dark:bg-card border-r border-r-[#cecece] dark:border-r-border divide-y divide-border/60">
+      <div className="rounded-b-lg bg-[#e6e6e6] dark:bg-card border-r border-r-[#cecece] dark:border-r-border divide-y divide-[#cecece] dark:divide-border/60">
         <SidebarRow
           label={isGame ? "Time Played" : "Pages Read"}
           value={
@@ -90,7 +95,9 @@ export function ItemDetailSidebar({
           value={
             isGame
               ? item.game.active_platform || item.game.platforms[0] || "—"
-              : item.book.format || "Digital"
+              : item.book.format
+                ? item.book.format.charAt(0).toUpperCase() + item.book.format.slice(1).toLowerCase()
+                : "Digital"
           }
           onEdit={() => onEditField("platform")}
         />
@@ -120,6 +127,27 @@ export function ItemDetailSidebar({
                   <IconExternalLink className="h-3.5 w-3.5" />
                 </a>
               ) : undefined
+            }
+          />
+        )}
+
+        {!isGame && (
+          <SidebarRow
+            label="Hardcover"
+            value={
+              item.source_score != null
+                ? `${(item.source_score / 2).toFixed(1)} / 5`
+                : "—"
+            }
+            action={
+              <a
+                href={hardcoverUrl(item as BookItem)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              >
+                <IconExternalLink className="h-3.5 w-3.5" />
+              </a>
             }
           />
         )}

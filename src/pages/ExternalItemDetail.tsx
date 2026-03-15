@@ -8,6 +8,7 @@ import {
   IconStack2,
   IconDeviceGamepad2,
   IconLoader2,
+  IconExternalLink,
 } from "@tabler/icons-react"
 
 import { supabase } from "@/lib/supabase"
@@ -35,6 +36,7 @@ const STATUS_BAR: Record<Status, string> = {
   completed: "bg-green-500 text-green-950",
   paused: "bg-yellow-400 text-yellow-950",
   dropped: "bg-red-500 text-red-950",
+  revisiting: "bg-[#64FFFC] text-neutral-900",
 }
 
 /**
@@ -267,8 +269,11 @@ export default function ExternalItemDetail() {
   if (gameDetails?.library) meta.push({ icon: IconStack2, text: gameDetails.library })
   if (gameDetails?.platforms?.[0]) meta.push({ icon: IconDeviceGamepad2, text: gameDetails.platforms[0] })
 
-  const sourceScore = gameDetails?.sourceScore ?? (bookDetails?.rating ? Math.round(bookDetails.rating * 10) : null)
+  const sourceScore = gameDetails?.sourceScore ?? (bookDetails?.rating ?? null)
   const ratingsCount = gameDetails?.ratingsCount ?? bookDetails?.ratingsCount ?? null
+  const hardcoverUrl = bookDetails
+    ? `https://hardcover.app/books/${bookDetails.slug ?? title.toLowerCase().replace(/['']/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`
+    : null
   const libraryByExternalId = new Map(
     items
       .filter((item) => item.media_type === "game" && item.external_id)
@@ -374,9 +379,19 @@ export default function ExternalItemDetail() {
               {/* Community score */}
               {sourceScore != null && (
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Community Score</div>
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    {gameDetails ? "IGDB Score" : "Hardcover"}
+                    {hardcoverUrl && (
+                      <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                        <IconExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
                   <div className="text-2xl font-bold">
-                    {Math.round(sourceScore / 10)}<span className="text-sm text-muted-foreground font-normal">/10</span>
+                    {gameDetails
+                      ? <>{Math.round(sourceScore / 10)}<span className="text-sm text-muted-foreground font-normal">/10</span></>
+                      : <>{(sourceScore as number).toFixed(1)}<span className="text-sm text-muted-foreground font-normal">/5</span></>
+                    }
                   </div>
                   {ratingsCount != null && ratingsCount > 0 && (
                     <div className="text-xs text-muted-foreground">{ratingsCount.toLocaleString()} Votes</div>
@@ -572,9 +587,19 @@ export default function ExternalItemDetail() {
           {/* Community score */}
           {sourceScore != null && (
             <div className="pt-2">
-              <div className="text-xs font-medium text-muted-foreground uppercase mb-1">Community Score</div>
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase mb-1">
+                {gameDetails ? "IGDB Score" : "Hardcover"}
+                {hardcoverUrl && (
+                  <a href={hardcoverUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                    <IconExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
               <div className="text-2xl font-bold">
-                {Math.round(sourceScore / 10)}<span className="text-sm text-muted-foreground font-normal">/10</span>
+                {gameDetails
+                  ? <>{Math.round(sourceScore / 10)}<span className="text-sm text-muted-foreground font-normal">/10</span></>
+                  : <>{(sourceScore as number).toFixed(1)}<span className="text-sm text-muted-foreground font-normal">/5</span></>
+                }
               </div>
               {ratingsCount != null && ratingsCount > 0 && (
                 <div className="text-xs text-muted-foreground">{ratingsCount.toLocaleString()} Votes</div>

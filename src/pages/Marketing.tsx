@@ -90,8 +90,10 @@ const featureSurfaceStyles = [
 ] as const;
 
 const aiShowcase = {
-  desktop: "/marketing/ai/desktop-20.png",
-  mobile: "/marketing/ai/mobile-10.png",
+  lightDesktop: "/marketing/ai/desktop-21.png",
+  darkDesktop: "/marketing/ai/desktop-20.png",
+  lightMobile: "/marketing/ai/mobile-10.png",
+  darkMobile: "/marketing/ai/mobile-11.png",
 } as const;
 
 type FeatureSection = (typeof featureSections)[number];
@@ -263,7 +265,7 @@ export default function Marketing() {
   return (
     <div className="min-h-screen bg-background pb-36 text-foreground md:pb-0">
       <header
-        className={`hidden md:block sticky top-0 z-50 border-b border-black/8 bg-background/92 backdrop-blur-md transition-all duration-300 dark:border-white/8 ${
+        className={`hidden md:block sticky top-0 z-50 bg-background/92 backdrop-blur-md transition-all duration-300 ${
           showHeader
             ? "translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-full opacity-0"
@@ -287,7 +289,7 @@ export default function Marketing() {
               variant="ghost"
               size="sm"
               onClick={handleViewDemo}
-              className="h-full rounded-none border-l px-6 font-medium hover:bg-black/[0.03]  dark:hover:bg-white/[0.04]"
+              className="h-full rounded-none px-6 font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
             >
               View Demo
             </Button>
@@ -313,12 +315,11 @@ export default function Marketing() {
             className="mb-10 h-14 md:hidden dark:invert"
           />
 
-          <h1 className="max-w-[18ch] text-[2.3rem] font-semibold leading-[2.55rem] tracking-tight md:mx-auto md:max-w-[900px] md:text-[4rem] md:leading-[4.25rem]">
+          <h1 className="max-w-[18ch] text-[2.3rem] font-semibold leading-[2.55rem] tracking-tight md:mx-auto md:max-w-[800px] md:text-[4rem] md:leading-[4.25rem]">
             Your books &amp; games.
-            <br />
-            A library that remembers what matters.
+            <br />A library that remembers what matters.
           </h1>
-          <p className="mt-5 max-w-[34ch] text-lg leading-7 text-muted-foreground md:mx-auto md:mt-6 md:max-w-[600px] md:text-lg">
+          <p className="mt-5 max-w-[34ch] text-xl leading-7 text-muted-foreground md:mx-auto md:mt-6 md:max-w-[600px]">
             Track progress and habits, then turn each book or game into its own
             AI context for themes, character refreshers, spoiler-safe catchups,
             and saved reference links.
@@ -362,7 +363,7 @@ export default function Marketing() {
             <h2 className="mx-auto max-w-[12ch] text-[2rem] font-semibold leading-[2.25rem] tracking-tight [text-wrap:balance] md:max-w-[16ch] md:text-[3rem] md:leading-[3.25rem]">
               Every item becomes its own AI context.
             </h2>
-            <p className="mx-auto mt-4 max-w-[58ch] text-lg leading-7 text-primary-foreground/80 md:text-lg">
+            <p className="mx-auto mt-4 max-w-[58ch] text-xl leading-7 text-primary-foreground/80">
               Ask what themes keep surfacing, who a character is, or what
               happened last without spoilers, then pull in outside links and
               notes for quick reference without losing the thread.
@@ -370,16 +371,22 @@ export default function Marketing() {
           </div>
 
           <div className="mt-10 flex justify-center md:mt-14">
-            <img
-              src={aiShowcase.mobile}
-              alt="AI library mobile view"
-              className="w-full md:hidden"
-            />
-            <img
-              src={aiShowcase.desktop}
-              alt="AI library desktop view"
-              className="hidden w-full max-w-[1368px] md:block"
-            />
+            <div className="w-full md:hidden">
+              <ThemeImage
+                lightSrc={aiShowcase.lightMobile}
+                darkSrc={aiShowcase.darkMobile}
+                alt="AI library mobile view"
+                className="w-full"
+              />
+            </div>
+            <div className="hidden w-full max-w-[1368px] md:block">
+              <ThemeImage
+                lightSrc={aiShowcase.lightDesktop}
+                darkSrc={aiShowcase.darkDesktop}
+                alt="AI library desktop view"
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
       </section>

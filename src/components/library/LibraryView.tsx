@@ -114,7 +114,7 @@ export default function LibraryView({
           ) : (
             <>
               {viewMode === "poster" ? (
-                <div className="poster-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="poster-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {items.map((item) => (
                     <PosterItem
                       key={item.id}

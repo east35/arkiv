@@ -1,11 +1,11 @@
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Link, useNavigate } from "react-router-dom"
-import { useAuth } from "@/hooks/useAuth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -13,30 +13,40 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "sonner"
+} from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "sonner";
 
-const passwordSchema = z.string()
+const passwordSchema = z
+  .string()
   .min(12, { message: "Password must be at least 12 characters" })
   .regex(/[a-z]/, { message: "Password must include a lowercase letter" })
   .regex(/[A-Z]/, { message: "Password must include an uppercase letter" })
   .regex(/\d/, { message: "Password must include a number" })
-  .regex(/[^A-Za-z0-9]/, { message: "Password must include a symbol" })
+  .regex(/[^A-Za-z0-9]/, { message: "Password must include a symbol" });
 
-const formSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: passwordSchema,
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-})
+const formSchema = z
+  .object({
+    email: z.string().email({ message: "Invalid email address" }),
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 export default function Register() {
-  const { signUp } = useAuth()
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,19 +55,19 @@ export default function Register() {
       password: "",
       confirmPassword: "",
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setLoading(true)
+    setLoading(true);
     try {
-      await signUp(values.email, values.password)
-      toast.success("Account created! You can now sign in.")
-      navigate("/login")
+      await signUp(values.email, values.password);
+      toast.success("Account created! You can now sign in.");
+      navigate("/login");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to sign up")
-      console.error(error)
+      toast.error(error instanceof Error ? error.message : "Failed to sign up");
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -65,7 +75,7 @@ export default function Register() {
     <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardTitle className="text-2xl py-4">Create Account</CardTitle>
           <CardDescription>
             Enter your email below to create a new account.
           </CardDescription>
@@ -128,5 +138,5 @@ export default function Register() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

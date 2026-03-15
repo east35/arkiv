@@ -145,7 +145,7 @@ export function AppSidebar({
   return (
     <div
       className={cn(
-        "h-full border-r border-black/10 bg-[#FBFBFB] text-[#0A0A0A] dark:border-white/10 dark:bg-[#050505] dark:text-white",
+        "h-full  border-black/10 bg-[#FBFBFB] text-[#0A0A0A] dark:border-white/10 dark:bg-[#050505] dark:text-white",
         className,
       )}
     >
@@ -286,7 +286,7 @@ export function AppSidebar({
                     <button
                       type="button"
                       onClick={() => navigate("/register")}
-                      className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                      className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
                     >
                       Sign Up Free
                     </button>

@@ -47,6 +47,7 @@ function hydrateItem(item: Item, book: BookFields | null, game: GameFields | nul
       format: null,
       themes: [],
       isbn: null,
+      hardcover_slug: null,
       library: null,
       series_name: null,
       series_position: null,
@@ -224,6 +225,13 @@ export function useItems() {
     )
 
     addItem(hydrated)
+
+    // Log the initial library addition (non-fatal if it fails)
+    const { error: logError } = await supabase
+      .from("activity_log")
+      .insert({ item_id: item.id, from_status: null, to_status: "in_library" })
+    if (logError) console.warn("[useItems] activity_log insert on create failed:", logError)
+
     return hydrated
   }, [addItem])
 
@@ -385,6 +393,9 @@ export function useItems() {
         break
       case "dropped":
         dateUpdate.dropped_at = now
+        break
+      case "revisiting":
+        dateUpdate.revisit_started_at = now
         break
     }
 

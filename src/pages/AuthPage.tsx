@@ -103,9 +103,14 @@ export default function AuthPage() {
   const handleSignUp = async (values: SignUpValues) => {
     setLoading(true);
     try {
-      await signUp(values.email, values.password);
-      toast.success("Account created! You can now sign in.");
-      navigate("/login");
+      const authData = await signUp(values.email, values.password);
+      if (authData.session) {
+        toast.success("Account created!");
+        navigate(from, { replace: true });
+      } else {
+        toast.success("Account created. Check your email to confirm it, then sign in.");
+        navigate("/login", { replace: true });
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to sign up");
       console.error(error);
@@ -121,25 +126,29 @@ export default function AuthPage() {
   return (
     <div className="relative flex items-center justify-center min-h-dvh p-4">
       <img
-        src="/signin-bg.svg"
+        src="/signin-bg.gif"
         alt=""
         className="absolute inset-0 h-full w-full object-cover pointer-events-none"
       />
+      <img
+        src="/signin-bg-light.gif"
+        alt=""
+        className="absolute dark:hidden inset-0 h-full w-full object-repeat pointer-events-none"
+      />
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
-        <div className="flex justify-center">
-          <img
-            src="/logo/arkiv-logo-white.svg"
-            alt="Arkiv"
-            className="h-12 hidden dark:block"
-          />
-          <img
-            src="/logo/arkiv-logo-black.svg"
-            alt="Arkiv"
-            className="h-12 dark:hidden"
-          />
-        </div>
-
         <Card key={location.pathname} className="w-full">
+          <div className="flex justify-start px-4 pb-4">
+            <img
+              src="/logo/arkiv-logo-white.svg"
+              alt="Arkiv"
+              className="h-12 hidden dark:block"
+            />
+            <img
+              src="/logo/arkiv-logo-black.svg"
+              alt="Arkiv"
+              className="h-12 dark:hidden"
+            />
+          </div>
           {isSignUp ? (
             <>
               <CardHeader>

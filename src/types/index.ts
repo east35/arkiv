@@ -13,7 +13,7 @@
 export type MediaType = "game" | "book"
 
 /** Item tracking statuses */
-export type Status = "in_library" | "backlog" | "in_progress" | "paused" | "completed" | "dropped"
+export type Status = "in_library" | "backlog" | "in_progress" | "paused" | "completed" | "dropped" | "revisiting"
 
 /** Data source for an item */
 export type Source = "igdb" | "google_books" | "hardcover" | "manual"
@@ -56,6 +56,7 @@ export interface Item {
   completed_at: string | null
   paused_at: string | null
   dropped_at: string | null
+  revisit_started_at: string | null
   created_at: string
   updated_at: string
 }
@@ -71,6 +72,7 @@ export interface BookFields {
   format: string | null
   themes: string[]
   isbn: string | null
+  hardcover_slug: string | null
   library: string | null
   series_name: string | null
   series_position: number | null
@@ -220,14 +222,34 @@ export interface AIMessage {
   timestamp: string
 }
 
-export interface AIConversation {
+export interface AIConversationThread {
   id: string
   item_id: string
   user_id: string
+  title: string
+  title_source: "auto" | "manual"
   messages: AIMessage[]
   summary: string | null
+  summary_message_count: number
+  spoiler_scope: string | null
   created_at: string
   updated_at: string
+}
+
+export interface AIItemMemory {
+  id: string
+  item_id: string
+  user_id: string
+  spoiler_preference: string | null
+  response_style: string | null
+  durable_preferences: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface PromptSuggestionsResponse {
+  prompts: string[]
+  cached: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -335,6 +357,7 @@ export interface HardcoverBookDetails {
   isbn: string | null
   rating: number | null  // 0–5 scale (community average)
   ratingsCount: number | null
+  slug: string | null
   seriesName: string | null
   seriesPosition: number | null
 }

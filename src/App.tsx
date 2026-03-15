@@ -72,7 +72,8 @@ function App() {
           <Route path="/item/external/:mediaType/:externalId" element={<ExternalItemDetail />} />
           <Route path="/games" element={<Games />} />
           <Route path="/books" element={<Books />} />
-          <Route path="/statistics" element={<Navigate to="/settings?tab=statistics" replace />} />
+          <Route path="/statistics" element={<Navigate to="/settings?tab=activity" replace />} />
+          <Route path="/activity" element={<Navigate to="/settings?tab=activity" replace />} />
           <Route path="/collections" element={<Collections />} />
           <Route path="/collections/:id" element={<CollectionDetail />} />
           <Route path="/settings" element={<Settings />} />

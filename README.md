@@ -82,7 +82,7 @@ Vite will print the local URL (typically `http://localhost:5173`).
 
 - Install Deno locally.
 - Copy `.env.functions.example` to `.env.functions.local` and fill in the secrets needed by your functions.
-- By default the local runner starts `igdb-proxy` and `hardcover-proxy`.
+- By default the local runner starts `igdb-proxy`, `hardcover-proxy`, and `bookmark-metadata`.
 - Add `ai-chat-proxy` to `LOCAL_FUNCTIONS` when testing Notes/Discuss AI locally.
 - `ai-chat-proxy` also requires `SUPABASE_SERVICE_ROLE_KEY` in `.env.functions.local`.
 - Only add `google-books-proxy` to `LOCAL_FUNCTIONS` if you still use it.
@@ -137,3 +137,4 @@ Then update `.env.local` to point at the local API URL and anon key printed by t
 - `npm run build` — typecheck + production build
 - `npm run preview` — preview production build locally
 - `npm run lint` — run ESLint
+- `npm run dev:functions` — start local functions dev server

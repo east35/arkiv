@@ -31,7 +31,14 @@ function getRequestUrl(input: RequestInfo | URL): string {
   return input.url
 }
 
-const supabaseFetch: typeof fetch = (input, init) => {
+async function shouldRetryDirectFunctionCall(response: Response): Promise<boolean> {
+  if (response.status !== 404) return false
+
+  const payload = await response.clone().json().catch(() => null) as { error?: unknown } | null
+  return typeof payload?.error === "string" && payload.error.startsWith("Unknown function:")
+}
+
+const supabaseFetch: typeof fetch = async (input, init) => {
   const url = new URL(getRequestUrl(input))
 
   if (!proxyFunctionsInDev || url.origin !== supabaseOrigin || !url.pathname.startsWith(FUNCTIONS_PATH)) {
@@ -41,7 +48,13 @@ const supabaseFetch: typeof fetch = (input, init) => {
   // Route edge-function calls through the local dev server to avoid browser CORS
   // failures when the frontend is served from a local hostname or LAN IP.
   const proxiedUrl = `${DEV_FUNCTIONS_PROXY_PATH}${url.pathname.slice(FUNCTIONS_PATH.length)}${url.search}`
-  return fetch(proxiedUrl, init)
+  const proxyResponse = await fetch(proxiedUrl, init)
+
+  if (await shouldRetryDirectFunctionCall(proxyResponse)) {
+    return fetch(input, init)
+  }
+
+  return proxyResponse
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

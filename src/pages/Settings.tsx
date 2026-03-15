@@ -22,7 +22,7 @@ import {
   useMetadataEnrich,
   type EnrichReport,
 } from "@/hooks/useMetadataEnrich";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormFieldBlock } from "@/components/ui/form-field-block";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -54,8 +54,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { StatisticsDashboard } from "@/pages/Statistics";
-import type { AIProvider, DateFormat, TimeFormat, UserPreferences } from "@/types";
+import { ActivityDashboard } from "@/pages/Activity";
+import type {
+  AIProvider,
+  DateFormat,
+  TimeFormat,
+  UserPreferences,
+} from "@/types";
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -66,22 +71,23 @@ export default function Settings() {
   const { setTheme } = useTheme();
   const navigate = useNavigate();
   const isDemoMode = useShelfStore((s) => s.isDemoMode);
-
-  if (isDemoMode) {
-    navigate("/", { replace: true });
-    return null;
-  }
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab = [
     "account",
     "linked",
     "preferences",
-    "statistics",
+    "activity",
     "data",
     "ai",
   ].includes(tabParam ?? "")
-    ? (tabParam as "account" | "linked" | "preferences" | "statistics" | "data" | "ai")
+    ? (tabParam as
+        | "account"
+        | "linked"
+        | "preferences"
+        | "activity"
+        | "data"
+        | "ai")
     : "account";
   const {
     progress: enrichProgress,
@@ -97,7 +103,7 @@ export default function Settings() {
     { value: "account", label: "Account" },
     { value: "linked", label: "Linked" },
     { value: "preferences", label: "Preferences" },
-    { value: "statistics", label: "Statistics" },
+    { value: "activity", label: "Activity" },
     { value: "data", label: "Data" },
     { value: "ai", label: "AI" },
   ] as const;
@@ -108,9 +114,17 @@ export default function Settings() {
   const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({});
   const [sparseCount, setSparseCount] = useState<number | null>(null);
   const [enrichReport, setEnrichReport] = useState<EnrichReport | null>(null);
-  const [aiProvider, setAiProvider] = useState<AIProvider | "">(preferences?.ai_provider ?? "");
+  const [aiProvider, setAiProvider] = useState<AIProvider | "">(
+    preferences?.ai_provider ?? "",
+  );
   const [aiApiKey, setAiApiKey] = useState("");
   const [aiSaving, setAiSaving] = useState(false);
+
+  useEffect(() => {
+    if (isDemoMode) {
+      navigate("/", { replace: true });
+    }
+  }, [isDemoMode, navigate]);
 
   // Fetch prefs on mount.
   useEffect(() => {
@@ -127,7 +141,7 @@ export default function Settings() {
   useEffect(() => {
     if (preferences) {
       setFormData(preferences);
-      setAiProvider(prev => prev || preferences.ai_provider || "");
+      setAiProvider((prev) => prev || preferences.ai_provider || "");
     }
   }, [preferences]);
 
@@ -239,7 +253,9 @@ export default function Settings() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success("Demo data exported — place the file at public/demo-data.json");
+      toast.success(
+        "Demo data exported — place the file at public/demo-data.json",
+      );
     } catch (err) {
       toast.error("Failed to export demo data");
       console.error(err);
@@ -274,6 +290,10 @@ export default function Settings() {
     }
   };
 
+  if (isDemoMode) {
+    return null;
+  }
+
   if (!preferences) {
     return <LoadingState className="h-full" />;
   }
@@ -291,16 +311,16 @@ export default function Settings() {
           {/* Title row */}
           <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6">
             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your account, preferences, and data.
-            </p>
             {/* Mobile: sheet picker */}
             <Sheet open={tabSheetOpen} onOpenChange={setTabSheetOpen}>
-              <SheetTrigger className="w-full mt-4 md:hidden">
-                <Button variant="outline" className="w-full justify-between">
-                  {activeTabLabel}
-                  <IconChevronDown className="h-4 w-4 text-muted-foreground" />
-                </Button>
+              <SheetTrigger
+                className={buttonVariants({
+                  variant: "outline",
+                  className: "w-full mt-4 justify-between md:hidden",
+                })}
+              >
+                {activeTabLabel}
+                <IconChevronDown className="h-4 w-4 text-muted-foreground" />
               </SheetTrigger>
               <SheetContent side="bottom">
                 <SheetHeader>
@@ -520,8 +540,8 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="statistics">
-              <StatisticsDashboard embedded />
+            <TabsContent value="activity">
+              <ActivityDashboard embedded />
             </TabsContent>
 
             {/* AI Settings */}
@@ -530,7 +550,8 @@ export default function Settings() {
                 <CardHeader>
                   <CardTitle>AI Discussion</CardTitle>
                   <CardDescription>
-                    Configure an AI provider to enable in-context discussions on item detail pages.
+                    Configure an AI provider to enable in-context discussions on
+                    item detail pages.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -538,7 +559,9 @@ export default function Settings() {
                     <NativeSelect
                       id="ai-provider"
                       value={aiProvider}
-                      onValueChange={(val) => setAiProvider(val as AIProvider | "")}
+                      onValueChange={(val) =>
+                        setAiProvider(val as AIProvider | "")
+                      }
                     >
                       <option value="">None</option>
                       <option value="openai">OpenAI</option>
@@ -562,7 +585,9 @@ export default function Settings() {
                         type="password"
                         value={aiApiKey}
                         onChange={(e) => setAiApiKey(e.target.value)}
-                        placeholder={preferences?.ai_api_key ? "••••••••••••••••" : "sk-…"}
+                        placeholder={
+                          preferences?.ai_api_key ? "••••••••••••••••" : "sk-…"
+                        }
                         autoComplete="off"
                       />
                     </FormFieldBlock>
@@ -781,11 +806,14 @@ export default function Settings() {
           {/* Mobile Sign Out */}
           <div className="md:hidden mt-8">
             <AlertDialog>
-              <AlertDialogTrigger className="w-full">
-                <Button variant="destructive" className="w-full">
-                  <IconLogout className="mr-2 h-4 w-4" />
-                  Sign Out
-                </Button>
+              <AlertDialogTrigger
+                className={buttonVariants({
+                  variant: "destructive",
+                  className: "w-full",
+                })}
+              >
+                <IconLogout className="mr-2 h-4 w-4" />
+                Sign Out
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>

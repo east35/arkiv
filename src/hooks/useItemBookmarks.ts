@@ -11,7 +11,6 @@ import { useShelfStore } from "@/store/useShelfStore"
 import type { ItemBookmark, LinkType } from "@/types"
 
 const BOOKMARK_TYPE_STORAGE_KEY = "arkiv-bookmark-types"
-const weakThumbnailPattern = /(favicon|apple-touch-icon|mask-icon|mstile|android-chrome|logo|avatar|badge|sprite|brandmark|site-icon|app-icon)/i
 const linkTypes = new Set<LinkType>(["guide", "wiki", "review", "forum", "store", "other"])
 type BookmarkTypeMap = Record<string, LinkType>
 
@@ -100,14 +99,6 @@ function mergeBookmarks(
   return current.map((bookmark) => updateMap.get(bookmark.id) ?? normalizeBookmark(bookmark, bookmarkTypes))
 }
 
-async function getFunctionErrorMessage(error: Error): Promise<string> {
-  const body = await (error as { context?: Response }).context?.json?.().catch(() => null)
-  return body?.error ?? error.message
-}
-
-function hasWeakThumbnail(bookmark: ItemBookmark): boolean {
-  return !bookmark.thumbnail_url || weakThumbnailPattern.test(bookmark.thumbnail_url)
-}
 
 export function useItemBookmarks() {
   const isDemoMode = useShelfStore((s) => s.isDemoMode)
@@ -115,7 +106,6 @@ export function useItemBookmarks() {
   const [bookmarkTypes, setBookmarkTypes] = useState<BookmarkTypeMap>(() => loadStoredBookmarkTypes())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const hydratedItemsRef = useRef(new Set<string>())
   const bookmarkTypesRef = useRef(bookmarkTypes)
 
   const setStoredBookmarkTypes = useCallback((
@@ -150,21 +140,6 @@ export function useItemBookmarks() {
     })
   }, [setStoredBookmarkTypes])
 
-  const backfillMissingThumbnails = useCallback(async (itemId: string): Promise<void> => {
-    const { data, error } = await supabase.functions.invoke("bookmark-metadata", {
-      body: { action: "backfill_missing", itemId },
-    })
-    if (error) {
-      console.warn("bookmark thumbnail backfill failed", await getFunctionErrorMessage(error))
-      return
-    }
-
-    const updatedBookmarks = ((data as { bookmarks?: ItemBookmark[] } | null)?.bookmarks ?? [])
-      .map((bookmark) => normalizeBookmark(bookmark, bookmarkTypesRef.current))
-    if (!updatedBookmarks.length) return
-
-    setBookmarks((prev) => mergeBookmarks(prev, updatedBookmarks, bookmarkTypesRef.current))
-  }, [])
 
   const fetchBookmarks = useCallback(async (itemId: string): Promise<ItemBookmark[]> => {
     setLoading(true)
@@ -184,15 +159,6 @@ export function useItemBookmarks() {
       const result = ((data as ItemBookmark[]) ?? [])
         .map((bookmark) => normalizeBookmark(bookmark, bookmarkTypesRef.current))
       setBookmarks(result)
-
-      if (
-        result.some(hasWeakThumbnail)
-        && !hydratedItemsRef.current.has(itemId)
-      ) {
-        hydratedItemsRef.current.add(itemId)
-        void backfillMissingThumbnails(itemId)
-      }
-
       return result
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load saved links"
@@ -201,7 +167,7 @@ export function useItemBookmarks() {
     } finally {
       setLoading(false)
     }
-  }, [backfillMissingThumbnails, isDemoMode])
+  }, [isDemoMode])
 
   const createBookmark = useCallback(async (
     itemId: string,
@@ -230,41 +196,33 @@ export function useItemBookmarks() {
     }
 
     setError(null)
-    const { data, error } = await supabase.functions.invoke("bookmark-metadata", {
-      body: {
-        action: "create",
-        itemId,
+    const { data, error } = await supabase
+      .from("item_bookmarks")
+      .insert({
+        item_id: itemId,
         title: draft.title,
         url: draft.url,
         note: draft.note?.trim() || null,
-        linkType: normalizedLinkType,
-      },
-    })
+        link_type: normalizedLinkType,
+      })
+      .select("*")
+      .single()
     if (error) {
-      const message = await getFunctionErrorMessage(error)
-      setError(message)
-      throw new Error(message)
+      setError(error.message)
+      throw error
     }
 
-    const bookmark = (data as { bookmark?: ItemBookmark } | null)?.bookmark
-    if (!bookmark) {
-      const message = "Failed to create bookmark"
-      setError(message)
-      throw new Error(message)
-    }
-
-    assignBookmarkType(bookmark.id, draft.linkType)
-    const normalizedBookmark = normalizeBookmark(bookmark, {
+    assignBookmarkType(data.id, draft.linkType)
+    const normalizedBookmark = normalizeBookmark(data as ItemBookmark, {
       ...bookmarkTypesRef.current,
-      [bookmark.id]: normalizedLinkType,
+      [data.id]: normalizedLinkType,
     })
-    hydratedItemsRef.current.add(itemId)
     setBookmarks((prev) => [...prev, normalizedBookmark])
     return normalizedBookmark
   }, [assignBookmarkType, isDemoMode])
 
   const updateBookmark = useCallback(async (
-    itemId: string,
+    _itemId: string,
     bookmarkId: string,
     updates: Partial<BookmarkDraft>,
   ): Promise<ItemBookmark> => {
@@ -295,39 +253,29 @@ export function useItemBookmarks() {
     }
 
     setError(null)
-    const { data, error } = await supabase.functions.invoke("bookmark-metadata", {
-      body: {
-        action: "update",
-        itemId,
-        bookmarkId,
-        title: updates.title,
-        url: updates.url,
-        note: updates.note,
-        linkType: updates.linkType,
-      },
-    })
-    if (error) {
-      const message = await getFunctionErrorMessage(error)
-      setError(message)
-      throw new Error(message)
-    }
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    if (updates.title !== undefined) payload.title = updates.title
+    if (updates.url !== undefined) payload.url = updates.url
+    if (updates.note !== undefined) payload.note = updates.note?.trim() || null
+    if (updates.linkType !== undefined) payload.link_type = normalizeLinkTypeValue(updates.linkType)
 
-    const bookmark = (data as { bookmark?: ItemBookmark } | null)?.bookmark
-    if (!bookmark) {
-      const message = "Failed to update saved link"
-      setError(message)
-      throw new Error(message)
+    const { data, error } = await supabase
+      .from("item_bookmarks")
+      .update(payload)
+      .eq("id", bookmarkId)
+      .select("*")
+      .single()
+    if (error) {
+      setError(error.message)
+      throw error
     }
 
     if (updates.linkType != null) {
-      assignBookmarkType(bookmark.id, updates.linkType)
+      assignBookmarkType(data.id, updates.linkType)
     }
 
-    const normalizedBookmark = normalizeBookmark(bookmark, updates.linkType != null
-      ? {
-        ...bookmarkTypesRef.current,
-        [bookmark.id]: normalizeLinkTypeValue(updates.linkType),
-      }
+    const normalizedBookmark = normalizeBookmark(data as ItemBookmark, updates.linkType != null
+      ? { ...bookmarkTypesRef.current, [data.id]: normalizeLinkTypeValue(updates.linkType) }
       : bookmarkTypesRef.current)
     setBookmarks((prev) => mergeBookmarks(prev, [normalizedBookmark], bookmarkTypesRef.current))
     return normalizedBookmark

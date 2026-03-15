@@ -47,6 +47,9 @@ const DEFAULT_SEARCH_LIMIT = 20
 const MAX_SEARCH_LIMIT = 50
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_REQUESTS = 60
+const IGDB_RETRY_ATTEMPTS = 4
+const LIBRARY_COLLECTION_CACHE_TTL_MS = 6 * 60 * 60 * 1000
+const LIBRARY_GAMES_CACHE_TTL_MS = 30 * 60 * 1000
 const HLTB_BASE_URL = "https://howlongtobeat.com"
 const HLTB_FINDER_INIT_PATH = "/api/finder/init"
 const HLTB_FINDER_PATH = "/api/finder"
@@ -56,6 +59,8 @@ const HLTB_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWe
 
 const requestCounts = new Map<string, { count: number; resetAt: number }>()
 const hltbCache = new Map<string, HltbTimes | null>()
+const libraryCollectionCache = new Map<string, CacheEntry<LibraryCollectionMatch | null>>()
+const libraryGamesCache = new Map<string, CacheEntry<LibraryGameSummary[]>>()
 
 let cachedHltbAuthToken: string | null = null
 let hltbAuthTokenExpiresAt = 0
@@ -67,6 +72,55 @@ class HttpError extends Error {
     super(message)
     this.status = status
   }
+}
+
+type CacheEntry<T> = {
+  value: T
+  expiresAt: number
+}
+
+type LibraryCollectionMatch = {
+  id: number
+  name: string
+  gameIds: number[]
+}
+
+type LibraryGameSummary = {
+  id: number
+  name: string
+  cover: string | null
+  releaseDate: string | null
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function readCacheEntry<T>(
+  cache: Map<string, CacheEntry<T>>,
+  key: string,
+): T | undefined {
+  const entry = cache.get(key)
+  if (!entry) return undefined
+  if (Date.now() > entry.expiresAt) {
+    cache.delete(key)
+    return undefined
+  }
+  return entry.value
+}
+
+function writeCacheEntry<T>(
+  cache: Map<string, CacheEntry<T>>,
+  key: string,
+  value: T,
+  ttlMs: number,
+): T {
+  cache.set(key, { value, expiresAt: Date.now() + ttlMs })
+  return value
+}
+
+function normalizeLibraryCacheKey(value: string): string {
+  return value.trim().toLowerCase()
 }
 
 function isLocalhostOrigin(origin: string): boolean {
@@ -253,7 +307,11 @@ async function getTwitchToken(): Promise<string> {
  * Make a request to the IGDB API.
  * IGDB uses Apicalypse query language sent as the POST body.
  */
-async function igdbFetch(endpoint: string, body: string, retries = 2): Promise<unknown> {
+async function igdbFetch(
+  endpoint: string,
+  body: string,
+  retries = IGDB_RETRY_ATTEMPTS,
+): Promise<unknown> {
   const token = await getTwitchToken()
   const clientId = Deno.env.get("TWITCH_CLIENT_ID")!
 
@@ -268,9 +326,14 @@ async function igdbFetch(endpoint: string, body: string, retries = 2): Promise<u
   })
 
   if (!res.ok) {
-    // Retry on 429 with a short backoff
+    // Retry on 429 with exponential backoff and respect Retry-After when present.
     if (res.status === 429 && retries > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const attempt = IGDB_RETRY_ATTEMPTS - retries + 1
+      const retryAfterHeader = Number(res.headers.get("retry-after"))
+      const retryDelayMs = Number.isFinite(retryAfterHeader) && retryAfterHeader > 0
+        ? retryAfterHeader * 1000
+        : Math.min(4_000, 500 * 2 ** attempt)
+      await sleep(retryDelayMs)
       return igdbFetch(endpoint, body, retries - 1)
     }
     // If unauthorized, clear cache so next request re-authenticates
@@ -670,25 +733,50 @@ async function getGameDetails(id: number) {
 // Library Games: returns all games in a named IGDB collection
 // ---------------------------------------------------------------------------
 async function getLibraryGames(libraryName: string) {
-  // Step 1: Find the IGDB collection ID by name (exact match, case-insensitive)
-  const searchBody = `
-    search "${libraryName.replace(/"/g, '\\"')}";
-    fields id, name, games;
-    limit 5;
-  `
-  const igdbCollections = await igdbFetch("collections", searchBody) as Array<Record<string, unknown>>
-  if (!igdbCollections.length) return []
+  const cacheKey = normalizeLibraryCacheKey(libraryName)
+  const cachedGames = readCacheEntry(libraryGamesCache, cacheKey)
+  if (cachedGames) return cachedGames
 
-  // Pick the best match (prefer exact name match)
-  const exact = igdbCollections.find(
-    (c) => (c.name as string).toLowerCase() === libraryName.toLowerCase()
-  )
-  const igdbCollection = exact || igdbCollections[0]
-  const gameIds = (igdbCollection.games as number[]) || []
-  if (!gameIds.length) return []
+  // Step 1: Find the IGDB collection ID by name (exact match, case-insensitive)
+  let collectionMatch = readCacheEntry(libraryCollectionCache, cacheKey)
+  if (collectionMatch === undefined) {
+    const searchBody = `
+      search "${libraryName.replace(/"/g, '\\"')}";
+      fields id, name, games;
+      limit 5;
+    `
+    const igdbCollections = await igdbFetch("collections", searchBody) as Array<Record<string, unknown>>
+
+    if (!igdbCollections.length) {
+      return writeCacheEntry(libraryGamesCache, cacheKey, [], LIBRARY_GAMES_CACHE_TTL_MS)
+    }
+
+    // Pick the best match (prefer exact name match)
+    const exact = igdbCollections.find(
+      (collection) => (collection.name as string).toLowerCase() === cacheKey,
+    )
+    const igdbCollection = exact || igdbCollections[0]
+    collectionMatch = writeCacheEntry(
+      libraryCollectionCache,
+      cacheKey,
+      igdbCollection
+        ? {
+            id: igdbCollection.id as number,
+            name: igdbCollection.name as string,
+            gameIds: ((igdbCollection.games as number[]) || []).slice(0, 50),
+          }
+        : null,
+      LIBRARY_COLLECTION_CACHE_TTL_MS,
+    )
+  }
+
+  const gameIds = collectionMatch?.gameIds ?? []
+  if (!gameIds.length) {
+    return writeCacheEntry(libraryGamesCache, cacheKey, [], LIBRARY_GAMES_CACHE_TTL_MS)
+  }
 
   // Step 2: Fetch game details for all games in the matched IGDB collection (up to 50)
-  const idsClause = gameIds.slice(0, 50).join(",")
+  const idsClause = gameIds.join(",")
   const gamesBody = `
     where id = (${idsClause});
     fields id, name, cover.image_id, first_release_date;
@@ -697,16 +785,21 @@ async function getLibraryGames(libraryName: string) {
   `
   const games = await igdbFetch("games", gamesBody) as Array<Record<string, unknown>>
 
-  return games.map((game) => ({
-    id: game.id,
-    name: game.name,
-    cover: game.cover
-      ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${(game.cover as Record<string, string>).image_id}.jpg`
-      : null,
-    releaseDate: game.first_release_date
-      ? new Date((game.first_release_date as number) * 1000).toISOString().split("T")[0]
-      : null,
-  }))
+  return writeCacheEntry(
+    libraryGamesCache,
+    cacheKey,
+    games.map((game) => ({
+      id: game.id as number,
+      name: game.name as string,
+      cover: game.cover
+        ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${(game.cover as Record<string, string>).image_id}.jpg`
+        : null,
+      releaseDate: game.first_release_date
+        ? new Date((game.first_release_date as number) * 1000).toISOString().split("T")[0]
+        : null,
+    })),
+    LIBRARY_GAMES_CACHE_TTL_MS,
+  )
 }
 
 // ---------------------------------------------------------------------------

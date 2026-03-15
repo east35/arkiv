@@ -68,14 +68,6 @@ export function NotesList({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">Notes</h3>
-
-      {notes.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No notes yet. Add your thoughts below.
-        </p>
-      )}
-
       {notes.map((note) => (
         <div key={note.id} className="bg-background/80 p-4 space-y-1">
           {editingId === note.id ? (
@@ -140,7 +132,7 @@ export function NotesList({
           placeholder="Add a note…"
           value={newContent}
           onChange={(e) => setNewContent(e.target.value)}
-          className="min-h-[80px] resize-none text-sm dark:bg-[#262626]"
+          className="min-h-[80px] resize-none text-sm bg-[#f5f5f5] dark:bg-[#262626]"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();

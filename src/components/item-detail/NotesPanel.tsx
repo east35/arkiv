@@ -17,6 +17,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useItemNotes } from "@/hooks/useItemNotes";
 import { useItemProgress } from "@/hooks/useItemProgress";
+import { useItemBookmarks } from "@/hooks/useItemBookmarks";
 import { useAIChat } from "@/hooks/useAIChat";
 import { useShelfStore } from "@/store/useShelfStore";
 import { NotesList } from "./NotesList";
@@ -24,11 +25,12 @@ import { ProgressTracker } from "./ProgressTracker";
 import { AIChat } from "./AIChat";
 import { AIPromptSuggestions } from "./AIPromptSuggestions";
 import { LinksPanel } from "./LinksPanel";
-import type { MediaType } from "@/types";
+import type { MediaType, Status } from "@/types";
 
 interface NotesPanelContentProps {
   itemId: string;
   mediaType?: MediaType;
+  status?: Status;
   variant?: "compact" | "sections";
   onPromptClick?: (prompt: string) => void;
 }
@@ -36,6 +38,7 @@ interface NotesPanelContentProps {
 export function NotesPanelContent({
   itemId,
   mediaType,
+  status,
   variant = "compact",
   onPromptClick,
 }: NotesPanelContentProps) {
@@ -45,20 +48,73 @@ export function NotesPanelContent({
   const { notes, fetchNotes, createNote, updateNote, deleteNote } =
     useItemNotes();
   const { progress, fetchProgress, upsertProgress } = useItemProgress();
+  const {
+    bookmarks,
+    loading: bookmarksLoading,
+    error: bookmarksError,
+    fetchBookmarks,
+    createBookmark,
+    deleteBookmark,
+  } = useItemBookmarks();
+  const [contextReady, setContextReady] = useState({
+    itemId,
+    notes: false,
+    progress: false,
+    bookmarks: false,
+  });
 
   useEffect(() => {
-    fetchNotes(itemId);
-    fetchProgress(itemId);
-  }, [itemId]); // eslint-disable-line react-hooks/exhaustive-deps
+    let cancelled = false;
+
+    const markReady = (key: "notes" | "progress" | "bookmarks") => {
+      if (cancelled) return;
+      setContextReady((current) => {
+        const nextBase = current.itemId === itemId
+          ? current
+          : {
+              itemId,
+              notes: false,
+              progress: false,
+              bookmarks: false,
+            };
+
+        return { ...nextBase, [key]: true };
+      });
+    };
+
+    void fetchNotes(itemId).catch((err) => {
+      console.error(err);
+    }).finally(() => markReady("notes"));
+
+    void fetchProgress(itemId).catch((err) => {
+      console.error(err);
+    }).finally(() => markReady("progress"));
+
+    void fetchBookmarks(itemId).catch((err) => {
+      console.error(err);
+    }).finally(() => markReady("bookmarks"));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchBookmarks, fetchNotes, fetchProgress, itemId]);
 
   const isSections = variant === "sections";
   const outer = isSections ? "bg-[#e6e6e6] dark:bg-card" : "space-y-6 px-3";
   const section = (extra?: string) =>
-    cn(isSections ? "p-6 border-b" : "", extra);
+    cn(isSections ? "p-6 border-b border-[#cecece] dark:border-border/60 last:border-b-0" : "", extra);
+  const suggestionContextReady =
+    contextReady.itemId === itemId
+    && contextReady.notes
+    && contextReady.progress
+    && contextReady.bookmarks;
+
   return (
     <div className={outer}>
       <div className={section()}>
+        <h3 className="text-foreground tx-sm mb-3">Progress</h3>
         <ProgressTracker
+          key={`${itemId}:${progress?.type ?? "chapter"}:${progress?.value ?? ""}`}
           progress={progress}
           onSave={async (update) => {
             await upsertProgress(itemId, update);
@@ -67,7 +123,13 @@ export function NotesPanelContent({
         {hasAI && mediaType && onPromptClick && (
           <div className="mt-4">
             <AIPromptSuggestions
+              itemId={itemId}
               mediaType={mediaType}
+              status={status}
+              progress={progress}
+              notes={notes}
+              bookmarks={bookmarks}
+              ready={suggestionContextReady}
               onSelect={onPromptClick}
             />
           </div>
@@ -75,14 +137,22 @@ export function NotesPanelContent({
       </div>
 
       <div className={section(isSections ? "" : "border-t pt-6")}>
+        <h3 className="text-foreground tx-sm mb-3">Bookmarks</h3>
         <LinksPanel
           itemId={itemId}
-          itemHref={`/item/${itemId}`}
           mode="embedded"
+          bookmarks={bookmarks}
+          loading={bookmarksLoading}
+          error={bookmarksError}
+          onCreateBookmark={async (draft) => {
+            await createBookmark(itemId, draft);
+          }}
+          onDeleteBookmark={deleteBookmark}
         />
       </div>
 
       <div className={section(isSections ? "" : "border-t pt-6")}>
+        <h3 className="text-foreground tx-sm mb-3">Notes</h3>
         <NotesList
           notes={notes}
           onCreate={async (content) => {
@@ -114,18 +184,28 @@ export function DiscussContent({
   const preferences = useShelfStore((s) => s.preferences);
   const hasAI = Boolean(preferences?.ai_provider && preferences?.ai_api_key);
   const {
-    conversation,
+    threads,
+    activeThread,
+    activeThreadId,
+    supportsThreading,
     loading,
+    threadLoading,
     error,
-    fetchConversation,
+    fetchThreads,
+    createThread,
+    renameThread,
+    deleteThread,
+    selectThread,
     sendMessage,
     setError,
   } = useAIChat();
   const [lastMessage, setLastMessage] = useState("");
 
   useEffect(() => {
-    if (hasAI) fetchConversation(itemId);
-  }, [itemId, hasAI]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (hasAI) {
+      void fetchThreads(itemId);
+    }
+  }, [fetchThreads, hasAI, itemId]);
 
   const handleSend = async (message: string) => {
     if (!hasAI) return;
@@ -134,15 +214,15 @@ export function DiscussContent({
   };
 
   useEffect(() => {
-    if (!hasAI || !pendingMessage || loading) return;
+    if (!hasAI || !pendingMessage || loading || threadLoading) return;
     queueMicrotask(() => {
       void handleSend(pendingMessage);
       onPendingMessageSent?.();
     });
-  }, [pendingMessage, hasAI, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pendingMessage, hasAI, loading, threadLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRetry = () => {
-    if (lastMessage) handleSend(lastMessage);
+    if (lastMessage) void handleSend(lastMessage);
     else setError(null);
   };
 
@@ -157,12 +237,26 @@ export function DiscussContent({
   return (
     <div className={fillHeight ? "flex flex-col flex-1 min-h-0" : ""}>
       <AIChat
-        conversation={conversation}
+        threads={threads}
+        activeThread={activeThread}
+        supportsThreading={supportsThreading}
         loading={loading}
+        threadLoading={threadLoading}
         error={error}
         onSend={handleSend}
         onRetry={handleRetry}
+        onCreateThread={async () => {
+          await createThread(itemId);
+        }}
+        onSelectThread={(threadId) => {
+          if (threadId !== activeThreadId) {
+            selectThread(itemId, threadId);
+          }
+        }}
+        onRenameThread={renameThread}
+        onDeleteThread={(threadId) => deleteThread(itemId, threadId)}
         fillHeight={fillHeight}
+        title={title}
       />
     </div>
   );

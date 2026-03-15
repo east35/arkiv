@@ -53,7 +53,6 @@ export default function ItemLinks() {
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 md:px-6">
         <LinksPanel
           itemId={item.id}
-          itemHref={`/item/${item.id}`}
           mode="page"
         />
       </div>

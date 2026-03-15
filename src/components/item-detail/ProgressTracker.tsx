@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { toast } from "sonner";
@@ -27,11 +27,6 @@ export function ProgressTracker({ progress, onSave }: ProgressTrackerProps) {
   const [type, setType] = useState(progress?.type ?? "chapter");
   const [value, setValue] = useState(progress?.value ?? "");
 
-  useEffect(() => {
-    setType(progress?.type ?? "chapter");
-    setValue(progress?.value ?? "");
-  }, [progress?.type, progress?.value]);
-
   const handleSave = async () => {
     const trimmed = value.trim();
     if (!trimmed || (trimmed === progress?.value && type === progress?.type))
@@ -56,11 +51,11 @@ export function ProgressTracker({ progress, onSave }: ProgressTrackerProps) {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-foreground">Progress</h3>
       <div className="flex">
         <NativeSelect
           value={type}
           onValueChange={handleTypeChange}
+          variant="detail"
           wrapperClassName="flex-1"
         >
           {PROGRESS_TYPES.map((t) => (
