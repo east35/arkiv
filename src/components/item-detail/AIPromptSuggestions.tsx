@@ -1,4 +1,4 @@
-import type { MediaType } from "@/types"
+import type { MediaType } from "@/types";
 
 const PROMPTS: Record<MediaType, string[]> = {
   game: [
@@ -13,23 +13,26 @@ const PROMPTS: Record<MediaType, string[]> = {
     "What themes are emerging in the story?",
     "What are the key plot points I should remember?",
   ],
-}
+};
 
 interface AIPromptSuggestionsProps {
-  mediaType: MediaType
-  onSelect: (prompt: string) => void
+  mediaType: MediaType;
+  onSelect: (prompt: string) => void;
 }
 
-export function AIPromptSuggestions({ mediaType, onSelect }: AIPromptSuggestionsProps) {
-  const prompts = PROMPTS[mediaType].slice(0, 2)
+export function AIPromptSuggestions({
+  mediaType,
+  onSelect,
+}: AIPromptSuggestionsProps) {
+  const prompts = PROMPTS[mediaType].slice(0, 2);
 
   return (
-    <div className="divide-y divide-border/60 border rounded-sm overflow-hidden">
+    <div className="divide-y rounded-sm overflow-hidden">
       {prompts.map((prompt) => (
         <button
           key={prompt}
           onClick={() => onSelect(prompt)}
-          className="w-full flex items-center gap-3 px-4 py-3 text-left bg-background/50 hover:bg-accent/40 transition-colors cursor-pointer"
+          className="w-full flex items-center gap-3 px-4 py-3 text-left bg-background/80 hover:bg-accent/40 transition-colors cursor-pointer"
         >
           <img
             src="/logo/arkiv-icon-white.svg"
@@ -40,5 +43,5 @@ export function AIPromptSuggestions({ mediaType, onSelect }: AIPromptSuggestions
         </button>
       ))}
     </div>
-  )
+  );
 }

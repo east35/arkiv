@@ -1,55 +1,66 @@
-import { useEffect, useRef, useState } from "react"
-import { IconSend, IconLoader2, IconRefresh } from "@tabler/icons-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
-import type { AIConversation, AIMessage } from "@/types"
+import { useEffect, useRef, useState } from "react";
+import { IconSend, IconLoader2, IconRefresh } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import type { AIConversation, AIMessage } from "@/types";
 
 interface AIChatProps {
-  conversation: AIConversation | null
-  loading: boolean
-  error: string | null
-  onSend: (message: string) => Promise<void>
-  onRetry: () => void
+  conversation: AIConversation | null;
+  loading: boolean;
+  error: string | null;
+  onSend: (message: string) => Promise<void>;
+  onRetry: () => void;
+  fillHeight?: boolean;
+  title?: string;
 }
 
-export function AIChat({ conversation, loading, error, onSend, onRetry }: AIChatProps) {
-  const [input, setInput] = useState("")
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const messages: AIMessage[] = conversation?.messages ?? []
-  const userSentRef = useRef(false)
+export function AIChat({
+  conversation,
+  loading,
+  error,
+  onSend,
+  onRetry,
+  fillHeight = false,
+  title,
+}: AIChatProps) {
+  const [input, setInput] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const messages: AIMessage[] = conversation?.messages ?? [];
+  const userSentRef = useRef(false);
 
   useEffect(() => {
-    if (!userSentRef.current) return
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages.length, loading])
+    if (!userSentRef.current) return;
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length, loading]);
 
   const handleSend = async () => {
-    const text = input.trim()
-    if (!text || loading) return
-    userSentRef.current = true
-    setInput("")
-    await onSend(text)
-  }
+    const text = input.trim();
+    if (!text || loading) return;
+    userSentRef.current = true;
+    setInput("");
+    await onSend(text);
+  };
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">AI Discussion</h3>
-
+    <div className={fillHeight ? "flex flex-col flex-1 min-h-0" : "flex flex-col"}>
       {/* Message thread */}
-      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+      <div className={cn("space-y-2 overflow-y-auto p-4", fillHeight ? "flex-1 min-h-0" : "max-h-[400px]")}>
         {messages.length === 0 && !loading && (
-          <p className="text-sm text-muted-foreground">
-            Ask anything about this title — the AI respects your progress boundary and won't spoil what's ahead.
-          </p>
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center text-muted-foreground">
+            <img src="/logo/arkiv-icon-black.svg" alt="" className="h-10 w-10 opacity-30 dark:hidden" />
+            <img src="/logo/arkiv-icon-white.svg" alt="" className="h-10 w-10 opacity-30 hidden dark:block" />
+            <p className="text-sm leading-relaxed max-w-[220px]">
+              {title ? `Ready to discuss ${title} when you are…` : "Ready to discuss when you are…"}
+            </p>
+          </div>
         )}
-
         {messages.map((msg, i) => (
           <div
             key={i}
             className={cn(
               "flex",
-              msg.role === "user" ? "justify-end" : "justify-start",
+              msg.role === "user" ? "justify-end pt-6" : "justify-start",
             )}
           >
             <div
@@ -87,17 +98,17 @@ export function AIChat({ conversation, loading, error, onSend, onRetry }: AIChat
       </div>
 
       {/* Input */}
-      <div className="flex gap-2">
+      <div className="flex items-end gap-0">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about this title…"
-          className="resize-none min-h-[60px] text-sm flex-1"
+          className="min-h-[88px] flex-1 resize-none text-sm"
           disabled={loading}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault()
-              handleSend()
+              e.preventDefault();
+              handleSend();
             }
           }}
         />
@@ -105,7 +116,7 @@ export function AIChat({ conversation, loading, error, onSend, onRetry }: AIChat
           size="icon"
           onClick={handleSend}
           disabled={loading || !input.trim()}
-          className="self-end shrink-0"
+          className="max-md:self-stretch max-md:h-auto md:w-[52px] md:h-[52px] shrink-0 border-0 rounded-none flex items-center justify-center"
         >
           {loading ? (
             <IconLoader2 className="h-4 w-4 animate-spin" />
@@ -115,5 +126,5 @@ export function AIChat({ conversation, loading, error, onSend, onRetry }: AIChat
         </Button>
       </div>
     </div>
-  )
+  );
 }

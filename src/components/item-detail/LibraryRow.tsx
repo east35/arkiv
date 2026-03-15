@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IconPlus, IconLoader2 } from "@tabler/icons-react";
 import { supabase } from "@/lib/supabase";
@@ -44,14 +44,30 @@ const COVER_FALLBACK =
 export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
   const [games, setGames] = useState<LibraryGame[]>([]);
   const [loading, setLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const items = useShelfStore((s) => s.items);
   const { commit, committingId } = useCommitItem();
   const navigate = useNavigate();
 
   const libraryName = item.media_type === "game" ? item.game.library : null;
 
+  // Defer fetch until the row scrolls into view to avoid racing with the
+  // details fetch and hitting IGDB's 4 req/sec rate limit.
   useEffect(() => {
     if (!libraryName) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [libraryName]);
+
+  useEffect(() => {
+    if (!libraryName || !visible) return;
 
     let cancelled = false;
     setLoading(true);
@@ -79,7 +95,7 @@ export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
     return () => {
       cancelled = true;
     };
-  }, [libraryName, item.title, onEmpty]);
+  }, [libraryName, item.title, onEmpty, visible]);
 
   // Build a map of external IGDB IDs → library items for quick lookup
   const libraryByExternalId = new Map(
@@ -98,15 +114,16 @@ export function LibraryRow({ item, onEmpty }: LibraryRowProps) {
     }
   };
 
-  if (!libraryName || (!loading && games.length === 0)) return null;
+  if (!libraryName) return null;
+  if (!loading && visible && games.length === 0) return null;
 
   return (
-    <div>
+    <div ref={containerRef}>
       <h3 className="text-foreground tx-sm mb-3 hidden md:block">
         More in {libraryName}
       </h3>
 
-      {loading ? (
+      {loading || !visible ? (
         <div className="text-sm text-muted-foreground py-4">Loading…</div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">

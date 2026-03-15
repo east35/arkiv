@@ -25,6 +25,7 @@ import { useShelfStore } from "@/store/useShelfStore";
 import { useItems } from "@/hooks/useItems";
 import { useCollections } from "@/hooks/useCollections";
 import { StatusSheet } from "@/components/status-sheet/StatusSheet";
+import type { StatusSheetFocusField } from "@/components/status-sheet/StatusSheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ManageCollectionsDialog } from "@/components/collections/ManageCollectionsDialog";
@@ -67,25 +68,35 @@ export default function ItemDetail() {
     openNotes?: boolean;
   } | null;
   const backLabel: string | null = locationState?.backLabel ?? null;
-  const initialTab = (locationState?.initialTab ?? "overview") as "overview" | "notes" | "discuss";
+  const initialTab = (locationState?.initialTab ?? "overview") as
+    | "overview"
+    | "notes"
+    | "discuss";
   const { items, collections, preferences } = useShelfStore();
   const { fetchItems } = useItems();
   const { fetchItemMemberships, fetchCollections } = useCollections();
 
   const [item, setItem] = useState<FullItem | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [sheetFocusField, setSheetFocusField] = useState<StatusSheetFocusField | undefined>();
   const [isManageCollectionsOpen, setIsManageCollectionsOpen] = useState(false);
   const [itemCollectionIds, setItemCollectionIds] = useState<string[]>([]);
-  const [desktopTab, setDesktopTab] = useState<"overview" | "notes" | "discuss">(initialTab);
-  const [mobileTab, setMobileTab] = useState<"overview" | "notes" | "discuss">(initialTab);
+  const [desktopTab, setDesktopTab] = useState<
+    "overview" | "notes" | "discuss"
+  >(initialTab);
+  const [mobileTab, setMobileTab] = useState<"overview" | "notes" | "discuss">(
+    initialTab,
+  );
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [libraryEmpty, setLibraryEmpty] = useState(false);
   const [hltbLoading, setHltbLoading] = useState(false);
   const enrichedForItem = useRef<string | null>(null);
   const { enrichSingle } = useMetadataEnrich();
   const hasAI = Boolean(preferences?.ai_provider && preferences?.ai_api_key);
-  const activeDesktopTab = !hasAI && desktopTab === "discuss" ? "notes" : desktopTab;
-  const activeMobileTab = !hasAI && mobileTab === "discuss" ? "notes" : mobileTab;
+  const activeDesktopTab =
+    !hasAI && desktopTab === "discuss" ? "notes" : desktopTab;
+  const activeMobileTab =
+    !hasAI && mobileTab === "discuss" ? "notes" : mobileTab;
 
   const handleDeleteSuccess = (deletedItem: FullItem) => {
     setItem((current) => (current?.id === deletedItem.id ? null : current));
@@ -176,6 +187,28 @@ export default function ItemDetail() {
       ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
       : "https://books.google.com/googlebooks/images/no_cover_thumb.gif");
 
+  const selectedPlatformDisplay = isGame
+    ? item.game.active_platform || item.game.platforms[0] || "—"
+    : item.book.format || "Digital";
+
+  const minimizedHeader = (
+    <div className="flex items-center gap-3 bg-background">
+      <div className="h-[52px] w-[35px] shrink-0 overflow-hidden bg-muted">
+        <img
+          src={coverUrl}
+          alt={item.title}
+          className="h-full w-full object-cover"
+        />
+      </div>
+      <div className="min-w-0">
+        <p className="font-bold text-sm leading-tight truncate">{item.title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {selectedPlatformDisplay}
+        </p>
+      </div>
+    </div>
+  );
+
   /* Build mobile metadata segments (pipe-separated) */
   const mobileMeta: {
     icon: React.ComponentType<{ className?: string }>;
@@ -218,17 +251,17 @@ export default function ItemDetail() {
         <ItemDetailHeader
           item={item}
           backLabel={backLabel}
-          onStatusClick={() => setIsSheetOpen(true)}
+          onStatusClick={() => { setSheetFocusField(undefined); setIsSheetOpen(true); }}
         />
 
         {/* ═══════════════ Desktop Layout ═══════════════ */}
         <div className="hidden md:block">
-          <div className="max-w-5xl mx-auto grid grid-cols-[280px_1fr] pb-20">
+          <div className="max-w-5xl mx-auto grid grid-cols-[280px_1fr] items-start pb-20">
             {/* Left column — sidebar (always visible) */}
             <ItemDetailSidebar
               item={item}
               preferences={preferences}
-              onEditClick={() => setIsSheetOpen(true)}
+              onEditField={(field) => { setSheetFocusField(field); setIsSheetOpen(true); }}
             />
 
             {/* Right column — hero always visible, tabs + content below */}
@@ -250,11 +283,13 @@ export default function ItemDetail() {
                     },
                     { value: "notes", label: "Notes", ariaLabel: "Notes" },
                     ...(hasAI
-                      ? [{
-                          value: "discuss",
-                          label: "Discuss",
-                          ariaLabel: "Discuss",
-                        }]
+                      ? [
+                          {
+                            value: "discuss",
+                            label: "Discuss",
+                            ariaLabel: "Discuss",
+                          },
+                        ]
                       : []),
                   ]}
                   fullWidth
@@ -275,11 +310,14 @@ export default function ItemDetail() {
                   itemId={item.id}
                   mediaType={item.media_type}
                   variant="sections"
-                  onPromptClick={(prompt) => { setPendingPrompt(prompt); setDesktopTab("discuss") }}
+                  onPromptClick={(prompt) => {
+                    setPendingPrompt(prompt);
+                    setDesktopTab("discuss");
+                  }}
                 />
               )}
               {hasAI && activeDesktopTab === "discuss" && (
-                <div className="py-6">
+                <div className="bg-[#e6e6e6] dark:bg-card">
                   <DiscussContent
                     itemId={item.id}
                     pendingMessage={pendingPrompt}
@@ -291,35 +329,42 @@ export default function ItemDetail() {
           </div>
         </div>
 
-        {/* ═══════════════ Mobile Layout ═══════════════ */}
+        {/* ═══════════════ Mobile Layout — Overview & Notes ═══════════════ */}
+        {activeMobileTab !== "discuss" && (
         <div className="md:hidden flex-1 overflow-y-auto min-h-0">
-          {/* Cover — centered, large */}
-          <div className="flex justify-center px-8 pt-4">
-            <div className="w-[200px] aspect-[2/3] overflow-hidden rounded-lg">
-              <img
-                src={coverUrl}
-                alt={item.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-
-          {/* Title + metadata — centered */}
-          <div className="text-center px-6 pt-5 pb-2">
-            <h1 className="text-2xl font-bold tracking-tight mb-2">
-              {item.title}
-            </h1>
-            {mobileMeta.length > 0 && (
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                {mobileMeta.map((m, i) => (
-                  <span key={i} className="flex items-center gap-1">
-                    <m.icon className="h-3.5 w-3.5 shrink-0" />
-                    {m.text}
-                  </span>
-                ))}
+          {activeMobileTab === "overview" ? (
+            <>
+              {/* Cover — centered, large */}
+              <div className="flex justify-center px-8 pt-4">
+                <div className="w-[200px] aspect-[2/3] overflow-hidden rounded-lg">
+                  <img
+                    src={coverUrl}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Title + metadata — centered */}
+              <div className="text-center px-6 pt-5 pb-2">
+                <h1 className="text-2xl font-bold tracking-tight mb-2">
+                  {item.title}
+                </h1>
+                {mobileMeta.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                    {mobileMeta.map((m, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        <m.icon className="h-3.5 w-3.5 shrink-0" />
+                        {m.text}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            minimizedHeader
+          )}
 
           {activeMobileTab === "overview" ? (
             <div className="pt-4">
@@ -616,24 +661,33 @@ export default function ItemDetail() {
                   )}
               </MobileAccordion>
             </div>
-          ) : activeMobileTab === "notes" ? (
+          ) : (
             <div className="px-4 pt-6 pb-6">
               <NotesPanelContent
                 itemId={item.id}
                 mediaType={item.media_type}
-                onPromptClick={(prompt) => { setPendingPrompt(prompt); setMobileTab("discuss") }}
-              />
-            </div>
-          ) : (
-            <div className="px-4 pt-6 pb-6">
-              <DiscussContent
-                itemId={item.id}
-                pendingMessage={pendingPrompt}
-                onPendingMessageSent={() => setPendingPrompt(null)}
+                onPromptClick={(prompt) => {
+                  setPendingPrompt(prompt);
+                  setMobileTab("discuss");
+                }}
               />
             </div>
           )}
         </div>
+        )}
+
+        {/* ═══════════════ Mobile Layout — Discuss ═══════════════ */}
+        {activeMobileTab === "discuss" && (
+        <div className="md:hidden flex-1 flex flex-col min-h-0 overflow-hidden">
+          {minimizedHeader}
+          <DiscussContent
+            itemId={item.id}
+            pendingMessage={pendingPrompt}
+            onPendingMessageSent={() => setPendingPrompt(null)}
+            fillHeight
+          />
+        </div>
+        )}
 
         {/* ═══════════════ Mobile Bottom Bar ═══════════════ */}
         <div className="md:hidden flex-shrink-0 bg-background">
@@ -661,6 +715,7 @@ export default function ItemDetail() {
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
           onDeleteSuccess={handleDeleteSuccess}
+          focusField={sheetFocusField}
         />
         <ManageCollectionsDialog
           itemId={item.id}

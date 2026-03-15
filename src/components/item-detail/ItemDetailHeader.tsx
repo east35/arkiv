@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { IconArrowLeft, IconEdit, IconFlag } from "@tabler/icons-react";
+import { IconArrowLeft, IconFlag } from "@tabler/icons-react";
 import { statusIcons } from "@/components/status-icons";
 import type { FullItem, Status } from "@/types";
 
@@ -66,8 +66,6 @@ export function ItemDetailHeader({
                 .replace("_", " ")
                 .replace(/\b\w/g, (l) => l.toUpperCase())}
             </span>
-            <div className="h-5 w-px bg-white/30" />
-            <IconEdit className="h-4 w-4" />
           </button>
         ) : null)}
     </div>

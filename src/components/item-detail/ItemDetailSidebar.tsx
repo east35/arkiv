@@ -1,17 +1,56 @@
-import { IconFlag, IconPencil } from "@tabler/icons-react";
+import { IconPencil, IconExternalLink } from "@tabler/icons-react";
 import { formatDateTime } from "@/lib/utils";
 import type { FullItem, UserPreferences } from "@/types";
+import type { StatusSheetFocusField } from "@/components/status-sheet/StatusSheet";
 
 interface ItemDetailSidebarProps {
   item: FullItem;
   preferences: UserPreferences | null;
-  onEditClick: () => void;
+  onEditField: (field: StatusSheetFocusField) => void;
+}
+
+function SidebarRow({
+  label,
+  value,
+  onEdit,
+  action,
+}: {
+  label: string;
+  value: React.ReactNode;
+  onEdit?: () => void;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between p-4 text-sm">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <span className="flex items-center gap-2 font-medium text-right min-w-0">
+        <span className="truncate">{value}</span>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            <IconPencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {action}
+      </span>
+    </div>
+  );
+}
+
+function igdbSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/['']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function ItemDetailSidebar({
   item,
   preferences,
-  onEditClick,
+  onEditField,
 }: ItemDetailSidebarProps) {
   const isGame = item.media_type === "game";
   const platformLabel = isGame ? "Platform" : "Format";
@@ -21,8 +60,10 @@ export function ItemDetailSidebar({
       ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
       : "https://books.google.com/googlebooks/images/no_cover_thumb.gif");
 
+  const igdbUrl = isGame ? `https://www.igdb.com/games/${igdbSlug(item.title)}` : null;
+
   return (
-    <div className="space-y-0 border-r border-r-[#cecece] dark:border-r-border">
+    <div className="space-y-0">
       {/* Cover Image — edge-to-edge, no rounding */}
       <div className="w-full aspect-[2/3] overflow-hidden bg-muted">
         <img
@@ -33,124 +74,90 @@ export function ItemDetailSidebar({
       </div>
 
       {/* Sidebar card — framed module below cover */}
-      <div className="rounded-b-lg bg-[#e6e6e6] dark:bg-card">
-        {/* Progress */}
-        <div className="flex justify-between p-4 text-sm">
-          <span className="text-muted-foreground">
-            {isGame ? "Time Played" : "Pages Read"}
-          </span>
-          <span className="flex font-medium gap-2">
-            {isGame
+      <div className="rounded-b-lg bg-[#e6e6e6] dark:bg-card border-r border-r-[#cecece] dark:border-r-border divide-y divide-border/60">
+        <SidebarRow
+          label={isGame ? "Time Played" : "Pages Read"}
+          value={
+            isGame
               ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
-              : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`}
-            <button
-              onClick={onEditClick}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <IconPencil className="h-3.5 w-3.5" />
-            </button>
-          </span>
-        </div>
+              : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`
+          }
+          onEdit={() => onEditField("progress")}
+        />
 
-        {/* Platform / Format row */}
-        <div className="flex items-center justify-between p-4 border-t border-border/60 text-sm">
-          <span className="text-muted-foreground tx-sm">{platformLabel}</span>
-          <span className="flex items-center gap-2 text-sm font-medium">
-            {isGame
+        <SidebarRow
+          label={platformLabel}
+          value={
+            isGame
               ? item.game.active_platform || item.game.platforms[0] || "—"
-              : item.book.format || "Digital"}
-            <button
-              onClick={onEditClick}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <IconPencil className="h-3.5 w-3.5" />
-            </button>
-          </span>
-        </div>
+              : item.book.format || "Digital"
+          }
+          onEdit={() => onEditField("platform")}
+        />
 
-        {/* Scores */}
-        <div className="border-t border-border/60 divide-y divide-border/60">
-          <div className="flex justify-between p-4 text-sm">
-            <span className="text-muted-foreground ">Your Score</span>
-            <span className="font-medium gap-2 flex">
-              {item.user_score != null ? `${item.user_score}/10` : "—"}
-              <button
-                onClick={onEditClick}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <IconPencil className="h-3.5 w-3.5" />
-              </button>
-            </span>
-          </div>
-          {isGame && (
-            <div className="flex justify-between p-4 text-sm">
-              <span className="text-muted-foreground">IGDB Score</span>
-              <span className="font-medium">
-                {item.source_score != null
-                  ? `${Math.round(item.source_score / 10)}/10`
-                  : "—"}
-              </span>
-            </div>
-          )}
-        </div>
+        <SidebarRow
+          label="Your Score"
+          value={item.user_score != null ? `${item.user_score} / 10` : "—"}
+          onEdit={() => onEditField("score")}
+        />
 
-        {/* Dates */}
-        <div className="border-t border-border/60 divide-y divide-border/60">
-          <div className="flex justify-between p-4 text-sm">
-            <span className="text-muted-foreground">Added</span>
-            <span>
-              {formatDateTime(
-                item.created_at,
-                preferences?.date_format,
-                preferences?.time_format,
-              )}
-              <button
-                onClick={onEditClick}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <IconPencil className="h-3.5 w-3.5" />
-              </button>
-            </span>
-          </div>
-          {item.started_at && (
-            <div className="flex justify-between p-4 text-sm">
-              <span className="text-muted-foreground">Started</span>
-              <span>
-                {formatDateTime(
-                  item.started_at,
-                  preferences?.date_format,
-                  preferences?.time_format,
-                )}
-              </span>
-              <button
-                onClick={onEditClick}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <IconPencil className="h-3.5 w-3.5" />
-              </button>
-            </div>
+        {isGame && (
+          <SidebarRow
+            label="IGDB Score"
+            value={
+              item.source_score != null
+                ? `${Math.round(item.source_score / 10)} / 10`
+                : "—"
+            }
+            action={
+              igdbUrl ? (
+                <a
+                  href={igdbUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                >
+                  <IconExternalLink className="h-3.5 w-3.5" />
+                </a>
+              ) : undefined
+            }
+          />
+        )}
+
+        <SidebarRow
+          label="Added"
+          value={formatDateTime(
+            item.created_at,
+            preferences?.date_format,
+            preferences?.time_format,
           )}
-          {item.completed_at && (
-            <div className="flex justify-between p-4 text-sm">
-              <span className="text-muted-foreground">Completed</span>
-              <span>
-                {formatDateTime(
-                  item.completed_at,
-                  preferences?.date_format,
-                  preferences?.time_format,
-                )}
-              </span>
-              <button
-                onClick={onEditClick}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <IconPencil className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
-        </div>
+          onEdit={() => onEditField("dates")}
+        />
+
+        {item.started_at && (
+          <SidebarRow
+            label="Started"
+            value={formatDateTime(
+              item.started_at,
+              preferences?.date_format,
+              preferences?.time_format,
+            )}
+            onEdit={() => onEditField("dates")}
+          />
+        )}
+
+        {item.completed_at && (
+          <SidebarRow
+            label="Completed"
+            value={formatDateTime(
+              item.completed_at,
+              preferences?.date_format,
+              preferences?.time_format,
+            )}
+            onEdit={() => onEditField("dates")}
+          />
+        )}
       </div>
-      {/* end bg-card wrapper */}
     </div>
   );
 }

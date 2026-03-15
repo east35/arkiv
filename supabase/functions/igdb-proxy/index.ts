@@ -253,7 +253,7 @@ async function getTwitchToken(): Promise<string> {
  * Make a request to the IGDB API.
  * IGDB uses Apicalypse query language sent as the POST body.
  */
-async function igdbFetch(endpoint: string, body: string): Promise<unknown> {
+async function igdbFetch(endpoint: string, body: string, retries = 2): Promise<unknown> {
   const token = await getTwitchToken()
   const clientId = Deno.env.get("TWITCH_CLIENT_ID")!
 
@@ -268,6 +268,11 @@ async function igdbFetch(endpoint: string, body: string): Promise<unknown> {
   })
 
   if (!res.ok) {
+    // Retry on 429 with a short backoff
+    if (res.status === 429 && retries > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      return igdbFetch(endpoint, body, retries - 1)
+    }
     // If unauthorized, clear cache so next request re-authenticates
     if (res.status === 401) {
       cachedToken = null

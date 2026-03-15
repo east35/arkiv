@@ -84,11 +84,14 @@ type FormValues = z.infer<typeof formSchema>;
 // Types
 // ---------------------------------------------------------------------------
 
+export type StatusSheetFocusField = "progress" | "platform" | "score" | "dates";
+
 interface StatusSheetProps {
   item: FullItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDeleteSuccess?: (item: FullItem) => void;
+  focusField?: StatusSheetFocusField;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,10 +103,16 @@ export function StatusSheet({
   open,
   onOpenChange,
   onDeleteSuccess,
+  focusField,
 }: StatusSheetProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const { editItem, deleteItem } = useItems();
   const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const progressSectionRef = React.useRef<HTMLDivElement>(null);
+  const platformSectionRef = React.useRef<HTMLDivElement>(null);
+  const scoreSectionRef = React.useRef<HTMLDivElement>(null);
+  const datesSectionRef = React.useRef<HTMLDivElement>(null);
 
   // -------------------------------------------------------------------------
   // Form Setup
@@ -125,6 +134,25 @@ export function StatusSheet({
       dropped_at: null,
     },
   });
+
+  // Scroll to and focus the relevant section when opened with a focusField
+  React.useEffect(() => {
+    if (!open || !focusField) return;
+    const timer = setTimeout(() => {
+      const refMap: Record<StatusSheetFocusField, React.RefObject<HTMLDivElement | null>> = {
+        progress: progressSectionRef,
+        platform: platformSectionRef,
+        score: scoreSectionRef,
+        dates: datesSectionRef,
+      };
+      refMap[focusField]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (focusField === "score") form.setFocus("user_score");
+      else if (focusField === "progress") {
+        form.setFocus(item?.media_type === "game" ? "progress_hours" : "progress");
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [open, focusField]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset form when item changes
   React.useEffect(() => {
@@ -277,6 +305,7 @@ export function StatusSheet({
 
         {/* Row 2: Score & Progress */}
         <div className="grid grid-cols-2 gap-4">
+          <div ref={scoreSectionRef}>
           <FormField
             control={form.control}
             name="user_score"
@@ -302,7 +331,9 @@ export function StatusSheet({
               </FormItem>
             )}
           />
+          </div>
 
+          <div ref={progressSectionRef}>
           {item.media_type === "book" ? (
             <FormField
               control={form.control}
@@ -383,9 +414,11 @@ export function StatusSheet({
               />
             </div>
           )}
+          </div>
         </div>
 
         {/* Row 3: Platform (games) / Format (books) */}
+        <div ref={platformSectionRef}>
         {item.media_type === "game" && item.game.platforms.length > 0 && (
           <FormField
             control={form.control}
@@ -436,9 +469,10 @@ export function StatusSheet({
             )}
           />
         )}
+        </div>
 
         {/* Row 4: Dates — always show Started, plus the status-specific date */}
-        <div className="space-y-4 border p-4 bg-muted/20">
+        <div className="space-y-4 border p-4 bg-muted/20" ref={datesSectionRef}>
           <h4 className="text-sm font-medium leading-none mb-4">Dates</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField

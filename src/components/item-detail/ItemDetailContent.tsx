@@ -38,12 +38,54 @@ interface ItemDetailHeroProps {
 export function ItemDetailHero({ item }: ItemDetailHeroProps) {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isClamped, setIsClamped] = useState(false);
+  const [maxDescHeight, setMaxDescHeight] = useState<number | null>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const titleMetaRef = useRef<HTMLDivElement>(null);
   const isGame = item.media_type === "game";
 
+  // Reset per-item state when navigating to a different item
   useEffect(() => {
-    const el = descRef.current;
-    if (el) setIsClamped(el.scrollHeight > el.clientHeight);
+    setIsDescriptionOpen(false);
+    setIsClamped(false);
+    setMaxDescHeight(null);
+  }, [item.id]);
+
+  // ResizeObserver on the stable hero + titleMeta elements (not the desc wrapper,
+  // which changes height when the "read more" button appears/disappears).
+  useEffect(() => {
+    const hero = heroRef.current;
+    const desc = descRef.current;
+    if (!hero || !desc) return;
+
+    const check = () => {
+      const lh = parseFloat(getComputedStyle(desc).lineHeight) || 24;
+      const heroPaddingV = 64; // p-8 = 32px top + 32px bottom
+      const buttonReserve = 28;
+      const heroH = hero.clientHeight;
+      const titleMetaH = titleMetaRef.current?.clientHeight ?? 0;
+      const available = heroH - heroPaddingV - titleMetaH - buttonReserve;
+      const snapped = Math.max(lh, Math.floor(available / lh) * lh);
+
+      // Temporarily remove maxHeight to read the full natural scroll height
+      desc.style.maxHeight = "none";
+      const naturalH = desc.scrollHeight;
+      desc.style.maxHeight = "";
+
+      if (naturalH <= snapped + buttonReserve) {
+        setMaxDescHeight(null);
+        setIsClamped(false);
+      } else {
+        setMaxDescHeight(snapped);
+        setIsClamped(true);
+      }
+    };
+
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(hero);
+    if (titleMetaRef.current) observer.observe(titleMetaRef.current);
+    return () => observer.disconnect();
   }, [item.description]);
 
   const meta: {
@@ -74,32 +116,38 @@ export function ItemDetailHero({ item }: ItemDetailHeroProps) {
 
   return (
     <div
+      ref={heroRef}
       className="p-8 flex flex-col overflow-hidden"
       style={{ height: 363, backgroundColor: "var(--muted)" }}
     >
-      <h1 className="text-5xl font-bold tracking-tight mb-3">{item.title}</h1>
-      {meta.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-muted-foreground text-base mb-5">
-          {meta.map((m, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              <m.icon className="h-4 w-4 shrink-0" />
-              {m.text}
-            </span>
-          ))}
-        </div>
-      )}
+      <div ref={titleMetaRef}>
+        <h1 className="text-5xl font-bold tracking-tight mb-3">{item.title}</h1>
+        {meta.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-muted-foreground text-base mb-5">
+            {meta.map((m, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                <m.icon className="h-4 w-4 shrink-0" />
+                {m.text}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
       {item.description && (
-        <div className="flex-1 min-h-0">
-          <p
-            ref={descRef}
-            className="text-base leading-relaxed text-muted-foreground whitespace-pre-line line-clamp-[8]"
-          >
-            {item.description}
-          </p>
-          {isClamped && (
+        <>
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <p
+              ref={descRef}
+              className="overflow-hidden text-base leading-relaxed text-muted-foreground whitespace-pre-line"
+              style={maxDescHeight !== null ? { maxHeight: maxDescHeight } : undefined}
+            >
+              {item.description}
+            </p>
+          </div>
+          {isClamped && !isDescriptionOpen && (
             <button
               onClick={() => setIsDescriptionOpen(true)}
-              className="text-primary font-medium text-sm mt-1 hover:underline"
+              className="self-start shrink-0 bg-primary text-white font-medium text-sm mt-2 px-3 py-1 rounded-none border-none hover:opacity-90 transition-opacity"
             >
               read more…
             </button>
@@ -115,7 +163,7 @@ export function ItemDetailHero({ item }: ItemDetailHeroProps) {
               </p>
             </DialogContent>
           </Dialog>
-        </div>
+        </>
       )}
     </div>
   );
@@ -130,6 +178,29 @@ export function ItemDetailContent({
 }: ItemDetailContentProps) {
   const isGame = item.media_type === "game";
   const items = useShelfStore((s) => s.items);
+  const libraryStateKey =
+    item.media_type === "game" ? `${item.id}:${item.game.library ?? ""}` : item.id;
+  const [libraryState, setLibraryState] = useState(() => ({
+    key: libraryStateKey,
+    empty: false,
+  }));
+  const libraryEmpty =
+    libraryState.key === libraryStateKey ? libraryState.empty : false;
+
+  const showLibraryRow =
+    item.media_type === "game" && Boolean(item.game.library) && !libraryEmpty;
+  const showSeriesRow =
+    item.media_type === "book" &&
+    Boolean(item.book.series_name) &&
+    items.some(
+      (libraryItem) =>
+        libraryItem.media_type === "book" &&
+        libraryItem.book.series_name === item.book.series_name &&
+        libraryItem.id !== item.id,
+    );
+  const showRecommendations =
+    item.media_type === "game" &&
+    Boolean(item.game.similar_games && item.game.similar_games.length > 0);
 
   return (
     <div className="min-w-0 bg-[efefef] dark:bg-card">
@@ -224,15 +295,26 @@ export function ItemDetailContent({
             </div>
           </div>
         )}
-        <div className="p-6 mb-3 border-b">
-          {/* Library / Series */}
-          <LibraryRow item={item} />
-          <SeriesRow item={item} />
-        </div>
-        <div className="p-6 mb-3 border-b">
-          {/* Recommendations */}
-          <RecommendationsRow item={item} />
-        </div>
+        {(showLibraryRow || showSeriesRow) && (
+          <div className="p-6 mb-3 border-b">
+            {/* Library / Series */}
+            {showLibraryRow && (
+              <LibraryRow
+                item={item}
+                onEmpty={() =>
+                  setLibraryState({ key: libraryStateKey, empty: true })
+                }
+              />
+            )}
+            {showSeriesRow && <SeriesRow item={item} />}
+          </div>
+        )}
+        {showRecommendations && (
+          <div className="p-6 mb-3 border-b">
+            {/* Recommendations */}
+            <RecommendationsRow item={item} />
+          </div>
+        )}
       </div>
     </div>
   );

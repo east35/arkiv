@@ -1,7 +1,7 @@
 /**
  * NotesPanel — the item workspace.
  *
- * Contains ProgressTracker, NotesList, BookmarkList, and (optionally) AIChat.
+ * Contains ProgressTracker, LinksPanel, NotesList, and (optionally) AIChat.
  * `NotesPanelContent` is the workspace body; `NotesPanel` wraps it in a Sheet
  * for the desktop slide-in view.
  */
@@ -16,15 +16,14 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useItemNotes } from "@/hooks/useItemNotes";
-import { useItemBookmarks } from "@/hooks/useItemBookmarks";
 import { useItemProgress } from "@/hooks/useItemProgress";
 import { useAIChat } from "@/hooks/useAIChat";
 import { useShelfStore } from "@/store/useShelfStore";
 import { NotesList } from "./NotesList";
-import { BookmarkList } from "./BookmarkList";
 import { ProgressTracker } from "./ProgressTracker";
 import { AIChat } from "./AIChat";
 import { AIPromptSuggestions } from "./AIPromptSuggestions";
+import { LinksPanel } from "./LinksPanel";
 import type { MediaType } from "@/types";
 
 interface NotesPanelContentProps {
@@ -45,13 +44,10 @@ export function NotesPanelContent({
 
   const { notes, fetchNotes, createNote, updateNote, deleteNote } =
     useItemNotes();
-  const { bookmarks, fetchBookmarks, createBookmark, deleteBookmark } =
-    useItemBookmarks();
   const { progress, fetchProgress, upsertProgress } = useItemProgress();
 
   useEffect(() => {
     fetchNotes(itemId);
-    fetchBookmarks(itemId);
     fetchProgress(itemId);
   }, [itemId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -59,7 +55,6 @@ export function NotesPanelContent({
   const outer = isSections ? "bg-[#e6e6e6] dark:bg-card" : "space-y-6 px-3";
   const section = (extra?: string) =>
     cn(isSections ? "p-6 border-b" : "", extra);
-
   return (
     <div className={outer}>
       <div className={section()}>
@@ -71,18 +66,19 @@ export function NotesPanelContent({
         />
         {hasAI && mediaType && onPromptClick && (
           <div className="mt-4">
-            <AIPromptSuggestions mediaType={mediaType} onSelect={onPromptClick} />
+            <AIPromptSuggestions
+              mediaType={mediaType}
+              onSelect={onPromptClick}
+            />
           </div>
         )}
       </div>
 
       <div className={section(isSections ? "" : "border-t pt-6")}>
-        <BookmarkList
-          bookmarks={bookmarks}
-          onCreate={async (title, url) => {
-            await createBookmark(itemId, title, url);
-          }}
-          onDelete={deleteBookmark}
+        <LinksPanel
+          itemId={itemId}
+          itemHref={`/item/${itemId}`}
+          mode="embedded"
         />
       </div>
 
@@ -102,10 +98,18 @@ export function NotesPanelContent({
 
 // ─── Discuss tab content ──────────────────────────────────────────────────────
 
-export function DiscussContent({ itemId, pendingMessage, onPendingMessageSent }: {
-  itemId: string
-  pendingMessage?: string | null
-  onPendingMessageSent?: () => void
+export function DiscussContent({
+  itemId,
+  title,
+  pendingMessage,
+  onPendingMessageSent,
+  fillHeight = false,
+}: {
+  itemId: string;
+  title?: string;
+  pendingMessage?: string | null;
+  onPendingMessageSent?: () => void;
+  fillHeight?: boolean;
 }) {
   const preferences = useShelfStore((s) => s.preferences);
   const hasAI = Boolean(preferences?.ai_provider && preferences?.ai_api_key);
@@ -151,13 +155,14 @@ export function DiscussContent({ itemId, pendingMessage, onPendingMessageSent }:
   }
 
   return (
-    <div className="px-3">
+    <div className={fillHeight ? "flex flex-col flex-1 min-h-0" : ""}>
       <AIChat
         conversation={conversation}
         loading={loading}
         error={error}
         onSend={handleSend}
         onRetry={handleRetry}
+        fillHeight={fillHeight}
       />
     </div>
   );

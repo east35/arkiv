@@ -11,9 +11,10 @@ const ALL_FUNCTIONS = [
   { name: "hardcover-proxy", file: "supabase/functions/hardcover-proxy/index.ts", port: 54333 },
   { name: "google-books-proxy", file: "supabase/functions/google-books-proxy/index.ts", port: 54334 },
   { name: "ai-chat-proxy", file: "supabase/functions/ai-chat-proxy/index.ts", port: 54335 },
+  { name: "bookmark-metadata", file: "supabase/functions/bookmark-metadata/index.ts", port: 54336 },
 ]
 
-const DEFAULT_FUNCTIONS = ["igdb-proxy", "hardcover-proxy"]
+const DEFAULT_FUNCTIONS = ["igdb-proxy", "hardcover-proxy", "bookmark-metadata"]
 const HOP_BY_HOP_HEADERS = new Set([
   "connection",
   "keep-alive",
@@ -128,6 +129,15 @@ function validateEnv(env, functions) {
     }
     if (!env.SUPABASE_SERVICE_ROLE_KEY) {
       issues.push("ai-chat-proxy requires SUPABASE_SERVICE_ROLE_KEY")
+    }
+  }
+
+  if (functions.some((definition) => definition.name === "bookmark-metadata")) {
+    if (!isValidHttpUrl(env.SUPABASE_URL) && !isValidHttpUrl(env.VITE_SUPABASE_URL)) {
+      issues.push("bookmark-metadata requires a valid SUPABASE_URL or VITE_SUPABASE_URL")
+    }
+    if (!env.SUPABASE_ANON_KEY && !env.VITE_SUPABASE_ANON_KEY) {
+      issues.push("bookmark-metadata requires SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY")
     }
   }
 

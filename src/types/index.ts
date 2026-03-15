@@ -162,6 +162,7 @@ export interface ActivityLogEntry {
 // ---------------------------------------------------------------------------
 
 export type AIProvider = "openai" | "anthropic" | "gemini"
+export type LinkType = "guide" | "wiki" | "review" | "forum" | "store" | "other"
 
 export interface UserPreferences {
   user_id: string
@@ -197,7 +198,11 @@ export interface ItemBookmark {
   user_id: string
   title: string
   url: string
+  note: string | null
+  link_type: LinkType
+  thumbnail_url: string | null
   created_at: string
+  updated_at: string
 }
 
 export interface ItemProgress {

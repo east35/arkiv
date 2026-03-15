@@ -17,7 +17,7 @@ export function NativeSelect({
   ...props
 }: NativeSelectProps) {
   const baseClassName =
-    "h-11 min-h-[44px] w-full appearance-none bg-[#F1F1F1] hover:bg-[#D5D5D5] py-2 pr-8 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [color-scheme:light] dark:bg-[#171717] dark:hover:bg-[#252525] dark:[color-scheme:dark]"
+    "h-11 min-h-[44px] w-full appearance-none bg-[#F1F1F1] hover:bg-[#D5D5D5] py-2 pr-8 text-sm text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [color-scheme:light] dark:bg-[#262626] dark:hover:bg-[#262626] dark:[color-scheme:dark]"
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onValueChange?.(e.target.value)
