@@ -1,5 +1,5 @@
 import { IconPencil, IconExternalLink } from "@tabler/icons-react";
-import { formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import type { FullItem, BookItem, UserPreferences } from "@/types";
 import type { StatusSheetFocusField } from "@/components/status-sheet/StatusSheet";
 
@@ -7,6 +7,10 @@ interface ItemDetailSidebarProps {
   item: FullItem;
   preferences: UserPreferences | null;
   onEditField: (field: StatusSheetFocusField) => void;
+}
+
+interface ItemDetailSidebarDetailsProps extends ItemDetailSidebarProps {
+  className?: string;
 }
 
 function SidebarRow({
@@ -57,15 +61,11 @@ export function ItemDetailSidebar({
   preferences,
   onEditField,
 }: ItemDetailSidebarProps) {
-  const isGame = item.media_type === "game";
-  const platformLabel = isGame ? "Platform" : "Format";
   const coverUrl =
     item.cover_url ||
-    (isGame
+    (item.media_type === "game"
       ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png"
       : "https://books.google.com/googlebooks/images/no_cover_thumb.gif");
-
-  const igdbUrl = isGame ? `https://www.igdb.com/games/${igdbSlug(item.title)}` : null;
 
   return (
     <div className="space-y-0">
@@ -79,113 +79,138 @@ export function ItemDetailSidebar({
       </div>
 
       {/* Sidebar card — framed module below cover */}
-      <div className="rounded-b-lg bg-[#e6e6e6] dark:bg-card border-r border-r-[#cecece] dark:border-r-border divide-y divide-[#cecece] dark:divide-border/60">
+      <ItemDetailSidebarDetails
+        item={item}
+        preferences={preferences}
+        onEditField={onEditField}
+        className="rounded-b-lg border-r border-r-[#cecece] dark:border-r-border"
+      />
+    </div>
+  );
+}
+
+export function ItemDetailSidebarDetails({
+  item,
+  preferences,
+  onEditField,
+  className,
+}: ItemDetailSidebarDetailsProps) {
+  const isGame = item.media_type === "game";
+  const platformLabel = isGame ? "Platform" : "Format";
+  const igdbUrl = isGame ? `https://www.igdb.com/games/${igdbSlug(item.title)}` : null;
+
+  return (
+    <div
+      className={cn(
+        "bg-[#e6e6e6] dark:bg-card divide-y divide-[#cecece] dark:divide-border/60",
+        className,
+      )}
+    >
+      <SidebarRow
+        label={isGame ? "Time Played" : "Pages Read"}
+        value={
+          isGame
+            ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
+            : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`
+        }
+        onEdit={() => onEditField("progress")}
+      />
+
+      <SidebarRow
+        label={platformLabel}
+        value={
+          isGame
+            ? item.game.active_platform || item.game.platforms[0] || "—"
+            : item.book.format
+              ? item.book.format.charAt(0).toUpperCase() + item.book.format.slice(1).toLowerCase()
+              : "Digital"
+        }
+        onEdit={() => onEditField("platform")}
+      />
+
+      <SidebarRow
+        label="Your Score"
+        value={item.user_score != null ? `${item.user_score} / 10` : "—"}
+        onEdit={() => onEditField("score")}
+      />
+
+      {isGame && (
         <SidebarRow
-          label={isGame ? "Time Played" : "Pages Read"}
+          label="IGDB Score"
           value={
-            isGame
-              ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
-              : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`
+            item.source_score != null
+              ? `${Math.round(item.source_score / 10)} / 10`
+              : "—"
           }
-          onEdit={() => onEditField("progress")}
-        />
-
-        <SidebarRow
-          label={platformLabel}
-          value={
-            isGame
-              ? item.game.active_platform || item.game.platforms[0] || "—"
-              : item.book.format
-                ? item.book.format.charAt(0).toUpperCase() + item.book.format.slice(1).toLowerCase()
-                : "Digital"
-          }
-          onEdit={() => onEditField("platform")}
-        />
-
-        <SidebarRow
-          label="Your Score"
-          value={item.user_score != null ? `${item.user_score} / 10` : "—"}
-          onEdit={() => onEditField("score")}
-        />
-
-        {isGame && (
-          <SidebarRow
-            label="IGDB Score"
-            value={
-              item.source_score != null
-                ? `${Math.round(item.source_score / 10)} / 10`
-                : "—"
-            }
-            action={
-              igdbUrl ? (
-                <a
-                  href={igdbUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                >
-                  <IconExternalLink className="h-3.5 w-3.5" />
-                </a>
-              ) : undefined
-            }
-          />
-        )}
-
-        {!isGame && (
-          <SidebarRow
-            label="Hardcover"
-            value={
-              item.source_score != null
-                ? `${(item.source_score / 2).toFixed(1)} / 5`
-                : "—"
-            }
-            action={
+          action={
+            igdbUrl ? (
               <a
-                href={hardcoverUrl(item as BookItem)}
+                href={igdbUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
               >
                 <IconExternalLink className="h-3.5 w-3.5" />
               </a>
-            }
-          />
-        )}
+            ) : undefined
+          }
+        />
+      )}
 
+      {!isGame && (
         <SidebarRow
-          label="Added"
+          label="Hardcover"
+          value={
+            item.source_score != null
+              ? `${(item.source_score / 2).toFixed(1)} / 5`
+              : "—"
+          }
+          action={
+            <a
+              href={hardcoverUrl(item as BookItem)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <IconExternalLink className="h-3.5 w-3.5" />
+            </a>
+          }
+        />
+      )}
+
+      <SidebarRow
+        label="Added"
+        value={formatDateTime(
+          item.created_at,
+          preferences?.date_format,
+          preferences?.time_format,
+        )}
+        onEdit={() => onEditField("dates")}
+      />
+
+      {item.started_at && (
+        <SidebarRow
+          label="Started"
           value={formatDateTime(
-            item.created_at,
+            item.started_at,
             preferences?.date_format,
             preferences?.time_format,
           )}
           onEdit={() => onEditField("dates")}
         />
+      )}
 
-        {item.started_at && (
-          <SidebarRow
-            label="Started"
-            value={formatDateTime(
-              item.started_at,
-              preferences?.date_format,
-              preferences?.time_format,
-            )}
-            onEdit={() => onEditField("dates")}
-          />
-        )}
-
-        {item.completed_at && (
-          <SidebarRow
-            label="Completed"
-            value={formatDateTime(
-              item.completed_at,
-              preferences?.date_format,
-              preferences?.time_format,
-            )}
-            onEdit={() => onEditField("dates")}
-          />
-        )}
-      </div>
+      {item.completed_at && (
+        <SidebarRow
+          label="Completed"
+          value={formatDateTime(
+            item.completed_at,
+            preferences?.date_format,
+            preferences?.time_format,
+          )}
+          onEdit={() => onEditField("dates")}
+        />
+      )}
     </div>
   );
 }

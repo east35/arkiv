@@ -9,7 +9,6 @@ import {
 import {
   IconSearchOff,
   IconArrowLeft,
-  IconPencil,
   IconPlaylist,
   IconUser,
   IconCalendar,
@@ -34,12 +33,14 @@ import { ManageCollectionsDialog } from "@/components/collections/ManageCollecti
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import type { FullItem } from "@/types";
-import { formatDateTime } from "@/lib/utils";
 
 import { useMetadataEnrich } from "@/hooks/useMetadataEnrich";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { ItemDetailHeader } from "@/components/item-detail/ItemDetailHeader";
-import { ItemDetailSidebar } from "@/components/item-detail/ItemDetailSidebar";
+import {
+  ItemDetailSidebar,
+  ItemDetailSidebarDetails,
+} from "@/components/item-detail/ItemDetailSidebar";
 import {
   ItemDetailContent,
   ItemDetailHero,
@@ -257,10 +258,7 @@ export default function ItemDetail() {
 
   const mobileDetailLabelClass =
     "text-sm font-medium leading-tight text-muted-foreground/75";
-  const mobileDetailRowValueClass =
-    "max-w-[62%] text-right text-sm font-medium leading-tight text-foreground";
   const mobileBadgeClassName = "bg-gray-600 p-3 text-white";
-  const platformLabel = isGame ? "Platform" : "Format";
 
   return (
     <>
@@ -394,123 +392,18 @@ export default function ItemDetail() {
                 <AccordionSection
                   title="Your Details"
                   icon={IconBookmark}
-                  contentClassName="pb-0"
+                  defaultOpen
+                  contentClassName="!pb-0"
                 >
-                  <div className="space-y-0">
-                    {/* Progress */}
-                    <div className="flex items-start justify-between gap-4 pb-4">
-                      <span className={mobileDetailLabelClass}>
-                        {isGame ? "Time Played" : "Pages Read"}
-                      </span>
-                      <span className={mobileDetailRowValueClass}>
-                        {isGame
-                          ? `${item.game.progress_hours}h ${item.game.progress_minutes}m`
-                          : `${item.book.progress ?? 0} / ${item.book.page_count ?? "?"}`}
-                      </span>
-                    </div>
-
-                    {/* Platform */}
-                    <div className="flex items-center justify-between gap-4 border-t border-border/60 py-4">
-                      <span className={mobileDetailLabelClass}>
-                        {platformLabel}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsSheetOpen(true)}
-                        className="flex items-center gap-2 text-right text-sm font-semibold leading-tight text-foreground transition-colors hover:text-foreground/80"
-                      >
-                        {isGame
-                          ? item.game.active_platform ||
-                            item.game.platforms[0] ||
-                            "—"
-                          : selectedPlatformDisplay}
-                        <IconPencil className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                    </div>
-
-                    {/* Scores */}
-                    <div className="grid grid-cols-2 gap-6 border-t border-border/60 py-4">
-                      <div className="space-y-1.5">
-                        <div className={mobileDetailLabelClass}>Your Score</div>
-                        <div className="text-[2rem] font-bold tracking-tight leading-none">
-                          {item.user_score ? (
-                            <>
-                              {item.user_score}
-                              <span className="text-sm font-normal text-muted-foreground">
-                                /10
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground/30">—</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className={mobileDetailLabelClass}>
-                          Community Score
-                        </div>
-                        <div className="text-[2rem] font-bold tracking-tight leading-none">
-                          {item.source_score ? (
-                            <>
-                              {Math.round(item.source_score / 10)}
-                              <span className="text-sm font-normal text-muted-foreground">
-                                /10
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground/30">—</span>
-                          )}
-                        </div>
-                        {item.source_votes != null && item.source_votes > 0 && (
-                          <div className="text-[11px] font-medium leading-none text-muted-foreground/75">
-                            {item.source_votes.toLocaleString()} votes
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Dates */}
-                    <div className="border-t border-border/60 divide-y divide-border/60">
-                      <div className="flex items-start justify-between gap-4 py-3.5">
-                        <span className={mobileDetailLabelClass}>Added</span>
-                        <span className={mobileDetailRowValueClass}>
-                          {formatDateTime(
-                            item.created_at,
-                            preferences?.date_format,
-                            preferences?.time_format,
-                          )}
-                        </span>
-                      </div>
-                      {item.started_at && (
-                        <div className="flex items-start justify-between gap-4 py-3.5">
-                          <span className={mobileDetailLabelClass}>
-                            Started
-                          </span>
-                          <span className={mobileDetailRowValueClass}>
-                            {formatDateTime(
-                              item.started_at,
-                              preferences?.date_format,
-                              preferences?.time_format,
-                            )}
-                          </span>
-                        </div>
-                      )}
-                      {item.completed_at && (
-                        <div className="flex items-start justify-between gap-4 py-3.5">
-                          <span className={mobileDetailLabelClass}>
-                            Completed
-                          </span>
-                          <span className={mobileDetailRowValueClass}>
-                            {formatDateTime(
-                              item.completed_at,
-                              preferences?.date_format,
-                              preferences?.time_format,
-                            )}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <ItemDetailSidebarDetails
+                    item={item}
+                    preferences={preferences}
+                    onEditField={(field) => {
+                      setSheetFocusField(field);
+                      setIsSheetOpen(true);
+                    }}
+                    className="-mx-4 overflow-hidden rounded-none bg-transparent"
+                  />
                 </AccordionSection>
 
                 {/* Game / Book Details */}

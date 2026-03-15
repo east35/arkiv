@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -651,16 +650,7 @@ export function StatusSheet({
           <SheetDescription>
             {item.media_type === "game" ? "Game" : "Book"} details and progress
           </SheetDescription>
-          <Link
-            to={`/item/${item.id}`}
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "w-full mt-1",
-            )}
-            onClick={() => onOpenChange(false)}
-          >
-            View Details
-          </Link>
+
         </SheetHeader>
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
           {Content}

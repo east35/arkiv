@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useShelfStore } from "@/store/useShelfStore";
 import { useItems } from "@/hooks/useItems";
+import { usePreferences } from "@/hooks/usePreferences";
 import { PosterItem } from "@/components/library/PosterItem";
 import { TableItem } from "@/components/library/TableItem";
 import { LibraryControls } from "@/components/library/LibraryControls";
@@ -11,16 +12,50 @@ import { IconLayoutGrid } from "@tabler/icons-react";
 import type { FullItem } from "@/types";
 
 export default function Home() {
-  const { items, viewMode, sort, homeStatuses, setHomeStatuses } = useShelfStore();
+  const {
+    items,
+    viewMode,
+    sort,
+    homeStatuses,
+    setHomeStatuses,
+    preferences,
+    isDemoMode,
+  } = useShelfStore();
   const { fetchItems } = useItems();
+  const { updatePreferences } = usePreferences();
   const [selectedItem, setSelectedItem] = useState<FullItem | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(!items.length);
+  const persistTimeoutRef = useRef<number | null>(null);
 
   // Fetch on mount
   useEffect(() => {
     fetchItems().finally(() => setLoading(false));
   }, [fetchItems]);
+
+  useEffect(() => {
+    return () => {
+      if (persistTimeoutRef.current !== null) {
+        window.clearTimeout(persistTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleHomeStatusesChange = (statuses: FullItem["status"][]) => {
+    setHomeStatuses(statuses);
+
+    if (isDemoMode || !preferences) return;
+
+    if (persistTimeoutRef.current !== null) {
+      window.clearTimeout(persistTimeoutRef.current);
+    }
+
+    persistTimeoutRef.current = window.setTimeout(() => {
+      void updatePreferences({ home_statuses: statuses }).catch((error) => {
+        console.error("Failed to persist home status settings", error);
+      });
+    }, 250);
+  };
 
   const filteredItems = items.filter((item) =>
     homeStatuses.includes(item.status),
@@ -105,7 +140,7 @@ export default function Home() {
           hideSearch
           statusFilterMode="multi"
           selectedStatuses={homeStatuses}
-          onSelectedStatusesChange={setHomeStatuses}
+          onSelectedStatusesChange={handleHomeStatusesChange}
         />
       </div>
 

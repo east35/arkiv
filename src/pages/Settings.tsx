@@ -6,6 +6,7 @@ import {
   IconCircleCheck,
   IconLogout,
   IconChevronDown,
+  IconAdjustmentsHorizontal,
   IconCheck,
   IconDeviceFloppy,
 } from "@tabler/icons-react";
@@ -309,16 +310,12 @@ export default function Settings() {
         {/* Sticky header */}
         <div className="sticky top-0 z-20 bg-background">
           {/* Title row */}
-          <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6">
+          <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 sm:pb-6 flex items-center justify-between gap-4">
             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
             {/* Mobile: sheet picker */}
             <Sheet open={tabSheetOpen} onOpenChange={setTabSheetOpen}>
-              <SheetTrigger
-                className={buttonVariants({
-                  variant: "outline",
-                  className: "w-full mt-4 justify-between md:hidden",
-                })}
-              >
+              <SheetTrigger className="md:hidden flex items-center gap-2 bg-muted px-3 h-11 min-h-[44px] text-sm font-medium text-foreground">
+                <IconAdjustmentsHorizontal className="h-4 w-4 text-muted-foreground" />
                 {activeTabLabel}
                 <IconChevronDown className="h-4 w-4 text-muted-foreground" />
               </SheetTrigger>

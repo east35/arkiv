@@ -173,6 +173,7 @@ export interface UserPreferences {
   theme: "light" | "dark" | "system"
   date_format: DateFormat
   time_format: TimeFormat
+  home_statuses: Status[]
   steam_id: string | null
   calibre_path: string | null
   ai_provider: AIProvider | null

@@ -104,6 +104,28 @@ function buildFuse(items: FullItem[]): Fuse<FullItem> {
   return new Fuse(items, FUSE_OPTIONS)
 }
 
+const DEFAULT_HOME_STATUSES: Status[] = ["in_progress"]
+const VALID_STATUSES = new Set<Status>([
+  "in_library",
+  "backlog",
+  "in_progress",
+  "paused",
+  "completed",
+  "dropped",
+  "revisiting",
+])
+
+function normalizeHomeStatuses(statuses?: Status[] | null): Status[] {
+  const normalized = Array.isArray(statuses)
+    ? statuses.filter(
+        (status, index, list) =>
+          VALID_STATUSES.has(status) && list.indexOf(status) === index,
+      )
+    : []
+
+  return normalized.length > 0 ? normalized : DEFAULT_HOME_STATUSES
+}
+
 /** Get the numeric sort value for progress (media-type aware) */
 function getProgressValue(item: FullItem): number {
   if (item.media_type === "book") {
@@ -190,7 +212,7 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
     direction: "asc",
   },
   viewMode: "poster",
-  homeStatuses: ["in_progress"] as Status[],
+  homeStatuses: DEFAULT_HOME_STATUSES,
 
   // --- Demo Mode ---
   isDemoMode: false,
@@ -226,7 +248,11 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
 
   setCollections: (collections) => set({ collections }),
 
-  setPreferences: (preferences) => set({ preferences }),
+  setPreferences: (preferences) =>
+    set({
+      preferences,
+      homeStatuses: normalizeHomeStatuses(preferences.home_statuses),
+    }),
 
   // --- Actions: UI ---
 
@@ -242,7 +268,8 @@ export const useShelfStore = create<ShelfState>((set, get) => ({
 
   setViewMode: (viewMode) => set({ viewMode }),
 
-  setHomeStatuses: (homeStatuses) => set({ homeStatuses }),
+  setHomeStatuses: (homeStatuses) =>
+    set({ homeStatuses: normalizeHomeStatuses(homeStatuses) }),
 
   // --- Demo ---
 

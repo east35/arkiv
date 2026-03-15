@@ -3,13 +3,29 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   IconLayoutGrid,
   IconLayoutGridFilled,
-  IconSettings,
-  IconSettingsFilled,
+  IconSettings2,
   IconListDetails,
   IconListDetailsFilled,
   IconBooks,
   IconPlus,
 } from "@tabler/icons-react";
+
+const settings2OuterPath =
+  "M19.875 6.27a2.225 2.225 0 0 1 1.125 1.948v7.284c0 .809 -.443 1.555 -1.158 1.948l-6.75 4.27a2.269 2.269 0 0 1 -2.184 0l-6.75 -4.27a2.225 2.225 0 0 1 -1.158 -1.948v-7.285c0 -.809 .443 -1.554 1.158 -1.947l6.75 -3.98a2.33 2.33 0 0 1 2.25 0l6.75 3.98h-.033";
+const settings2InnerPath = "M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0";
+
+function IconSettings2Filled({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="none" className={className} aria-hidden="true">
+      <path
+        d={`${settings2OuterPath} ${settings2InnerPath}`}
+        fill="currentColor"
+        fillRule="evenodd"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
 import { cn } from "@/lib/utils";
 import { LibraryTypeSwitcher } from "@/components/library/LibraryTypeSwitcher";
 import { useShelfStore } from "@/store/useShelfStore";
@@ -105,8 +121,8 @@ export function BottomNav({ visible = true }: BottomNavProps) {
           },
           {
             to: "/settings",
-            icon: IconSettings,
-            iconFilled: IconSettingsFilled,
+            icon: IconSettings2,
+            iconFilled: IconSettings2Filled,
             label: "Settings",
           },
         ].map((item) => {
