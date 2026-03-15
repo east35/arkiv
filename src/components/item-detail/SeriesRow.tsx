@@ -16,6 +16,7 @@ const STATUS_BAR: Record<Status, string> = {
   completed: "bg-green-500 text-green-950",
   paused: "bg-yellow-400 text-yellow-950",
   dropped: "bg-red-500 text-red-950",
+  revisiting: "bg-[#64FFFC] text-neutral-900",
 };
 
 const COVER_FALLBACK =

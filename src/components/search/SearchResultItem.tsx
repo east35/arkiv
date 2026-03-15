@@ -81,7 +81,7 @@ function PosterSearchResult({
       </Link>
 
       <button
-        className="flex w-full shrink-0 items-center gap-2 bg-zinc-300 px-3 py-2 text-[11px] font-semibold text-zinc-950 transition-colors hover:bg-zinc-400 disabled:opacity-60"
+        className="flex w-full shrink-0 items-center gap-2 bg-zinc-300 px-3 py-2 text-[11px] font-semibold text-zinc-950 transition-colors hover:bg-zinc-400 disabled:opacity-60 cursor-pointer"
         disabled={isAdding}
         onClick={() => onAdd(result)}
         aria-label={`Add ${result.title} to library`}
@@ -139,7 +139,7 @@ function TableSearchResult({
 
       {/* Add button — flush, no border, white/black bg */}
       <button
-        className="shrink-0 flex items-center gap-2 px-4 text-sm font-semibold bg-white text-black dark:bg-black dark:text-white hover:bg-white/90 dark:hover:bg-white/10 transition-colors disabled:opacity-50"
+        className="shrink-0 flex items-center gap-2 px-4 text-sm font-semibold bg-white text-black dark:bg-black dark:text-white hover:bg-white/90 dark:hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
         disabled={isAdding}
         onClick={() => onAdd(result)}
         aria-label={`Add ${result.title} to library`}

@@ -62,12 +62,13 @@ export function useAuth() {
    */
   const signUp = useCallback(async (email: string, password: string) => {
     setLoading(true)
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password })
+      if (error) throw error
+      return data
+    } finally {
       setLoading(false)
-      throw error
     }
-    return data
   }, [setLoading])
 
   /**
@@ -75,12 +76,13 @@ export function useAuth() {
    */
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      return data
+    } finally {
       setLoading(false)
-      throw error
     }
-    return data
   }, [setLoading])
 
   /**

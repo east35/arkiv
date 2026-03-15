@@ -116,8 +116,21 @@
 }
 
 @layer base {
+    ::selection {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+    }
+    ::-moz-selection {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+    }
     * {
         @apply border-border outline-ring/50;
+    }
+    @media (max-width: 767px) {
+        input, textarea, select {
+            font-size: 16px !important;
+        }
     }
     body:has(main.app-scroll-area) {
         overflow: hidden;
@@ -192,6 +205,15 @@ main.app-scroll-area::-webkit-scrollbar-thumb:hover {
 
 main.app-scroll-area::-webkit-scrollbar-thumb:active {
     background-color: var(--app-scrollbar-thumb-active);
+}
+
+@media (min-width: 1280px) {
+    .poster-grid {
+        grid-template-columns: repeat(
+            auto-fill,
+            minmax(var(--poster-grid-min, 11rem), 1fr)
+        );
+    }
 }
 
 /* Hide number input spinners on mobile for cleaner look */

@@ -9,6 +9,15 @@ import { useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 import type { ActivityLogEntry } from "@/types"
 
+function toRangeBoundaryIso(date: string, endOfDay = false) {
+  const [year, month, day] = date.split("-").map(Number)
+  const boundary = endOfDay
+    ? new Date(year, month - 1, day, 23, 59, 59, 999)
+    : new Date(year, month - 1, day, 0, 0, 0, 0)
+
+  return boundary.toISOString()
+}
+
 export function useActivity() {
   /**
    * Fetch all activity entries for the current user,
@@ -40,16 +49,21 @@ export function useActivity() {
 
   /**
    * Fetch activity within a date range (for statistics filtering).
+   * The endDate is treated as inclusive (end of day) to avoid truncating
+   * same-day events when Postgres casts a bare date string to midnight UTC.
    */
   const fetchActivityInRange = useCallback(async (
     startDate: string,
     endDate: string,
   ): Promise<ActivityLogEntry[]> => {
+    const startBoundary = toRangeBoundaryIso(startDate)
+    const endBoundary = toRangeBoundaryIso(endDate, true)
+
     const { data, error } = await supabase
       .from("activity_log")
       .select("*")
-      .gte("occurred_at", startDate)
-      .lte("occurred_at", endDate)
+      .gte("occurred_at", startBoundary)
+      .lte("occurred_at", endBoundary)
       .order("occurred_at", { ascending: false })
 
     if (error) throw error

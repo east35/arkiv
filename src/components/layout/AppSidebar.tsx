@@ -111,7 +111,9 @@ export function AppSidebar({
   const { signOut } = useAuth();
   const isDemoMode = useShelfStore((s) => s.isDemoMode);
   const isActiveRoute = (to: string) =>
-    to === "/home" ? location.pathname === "/home" : location.pathname.startsWith(to);
+    to === "/home"
+      ? location.pathname === "/home"
+      : location.pathname.startsWith(to);
 
   const mainItems = [
     {
@@ -143,14 +145,14 @@ export function AppSidebar({
   return (
     <div
       className={cn(
-        "h-full border-r border-black/10 bg-[#FBFBFB] text-[#0A0A0A] dark:border-white/10 dark:bg-[#050505] dark:text-white",
+        "h-full  border-black/10 bg-[#FBFBFB] text-[#0A0A0A] dark:border-white/10 dark:bg-[#050505] dark:text-white",
         className,
       )}
     >
       <div className="h-full flex flex-col">
         <div
           className={cn(
-            "border-b border-black/10 bg-primary dark:border-white/10",
+            "bg-primary dark:border-white/10",
             collapsed ? "px-1 py-4 flex justify-center" : "px-5",
           )}
         >
@@ -187,7 +189,7 @@ export function AppSidebar({
               to="/search"
               onClick={onNavClick}
               title="Add to Library"
-              className="flex h-12 items-center justify-center rounded-md text-black/85 hover:bg-black/6 hover:text-black dark:text-white/90 dark:hover:bg-white/6 dark:hover:text-white"
+              className="bg-primary flex h-12 items-center justify-center rounded-md text-white hover:text-white/90 transition-colors"
             >
               <IconPlus className="h-5 w-5" />
             </Link>
@@ -253,14 +255,22 @@ export function AppSidebar({
                   "w-full h-12 text-base font-medium gap-0 text-black/80 hover:text-black hover:bg-black/6 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/6",
                   collapsed ? "justify-center px-0" : "justify-start px-5",
                 )}
-                title={collapsed ? (isDemoMode ? "Exit Demo" : "Sign Out") : undefined}
+                title={
+                  collapsed
+                    ? isDemoMode
+                      ? "Exit Demo"
+                      : "Sign Out"
+                    : undefined
+                }
               >
                 <IconLogout className={cn("h-5 w-5", !collapsed && "mr-4")} />
                 {!collapsed && (isDemoMode ? "Exit Demo" : "Sign Out")}
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>{isDemoMode ? "Exit Demo" : "Sign Out"}</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {isDemoMode ? "Exit Demo" : "Sign Out"}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
                     {isDemoMode
                       ? "Any changes you made won't be saved."
@@ -270,11 +280,13 @@ export function AppSidebar({
                 {isDemoMode && (
                   <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
                     <p className="font-medium">Ready to track for real?</p>
-                    <p className="text-muted-foreground mt-0.5">Create a free account to save your library.</p>
+                    <p className="text-muted-foreground mt-0.5">
+                      Create a free account to save your library.
+                    </p>
                     <button
                       type="button"
                       onClick={() => navigate("/register")}
-                      className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                      className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
                     >
                       Sign Up Free
                     </button>
@@ -290,7 +302,11 @@ export function AppSidebar({
                         signOut();
                       }
                     }}
-                    className={isDemoMode ? "" : "bg-destructive text-white hover:bg-destructive/90"}
+                    className={
+                      isDemoMode
+                        ? ""
+                        : "bg-destructive text-white hover:bg-destructive/90"
+                    }
                   >
                     {isDemoMode ? "Exit Demo" : "Sign Out"}
                   </AlertDialogAction>

@@ -21,6 +21,7 @@ const STATUS_BAR: Record<Status, string> = {
   completed: "bg-green-500 text-green-950",
   paused: "bg-yellow-400 text-yellow-950",
   dropped: "bg-red-500 text-red-950",
+  revisiting: "bg-[#64FFFC] text-neutral-900",
 };
 
 const COVER_FALLBACK =
@@ -138,6 +139,7 @@ export function RecommendationsRow({ item }: RecommendationsRowProps) {
 
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
         {item.game.similar_games.map((rec) => {
+          const recommendationKey = `${rec.id ?? "search"}-${rec.name}`;
           const libraryItem = rec.id
             ? libraryByExternalId.get(String(rec.id))
             : undefined;
@@ -161,7 +163,7 @@ export function RecommendationsRow({ item }: RecommendationsRowProps) {
           if (!linkTo) {
             return (
               <div
-                key={rec.name}
+                key={recommendationKey}
                 className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col"
               >
                 <button
@@ -230,7 +232,7 @@ export function RecommendationsRow({ item }: RecommendationsRowProps) {
 
           return (
             <Link
-              key={rec.name}
+              key={recommendationKey}
               to={linkTo}
               state={{ backLabel: item.title }}
               className="overflow-hidden bg-card dark:bg-[#0A0A0A] flex flex-col group"

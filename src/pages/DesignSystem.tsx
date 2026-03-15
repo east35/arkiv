@@ -140,6 +140,7 @@ const statusOrder: Status[] = [
   "completed",
   "paused",
   "dropped",
+  "revisiting",
 ]
 
 const iconsInUse = [

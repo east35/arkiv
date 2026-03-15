@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/form";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 import {
@@ -62,6 +61,7 @@ const statusSchema = z.enum([
   "paused",
   "completed",
   "dropped",
+  "revisiting",
 ]);
 
 // We allow string | number | null for form inputs to handle the "empty" state of number inputs
@@ -77,7 +77,7 @@ const formSchema = z.object({
   completed_at: z.date().nullable().optional(),
   paused_at: z.date().nullable().optional(),
   dropped_at: z.date().nullable().optional(),
-  notes: z.string().nullable().optional(),
+  revisit_started_at: z.date().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -86,11 +86,14 @@ type FormValues = z.infer<typeof formSchema>;
 // Types
 // ---------------------------------------------------------------------------
 
+export type StatusSheetFocusField = "progress" | "platform" | "score" | "dates";
+
 interface StatusSheetProps {
   item: FullItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDeleteSuccess?: (item: FullItem) => void;
+  focusField?: StatusSheetFocusField;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,10 +105,16 @@ export function StatusSheet({
   open,
   onOpenChange,
   onDeleteSuccess,
+  focusField,
 }: StatusSheetProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const { editItem, deleteItem } = useItems();
   const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const progressSectionRef = React.useRef<HTMLDivElement>(null);
+  const platformSectionRef = React.useRef<HTMLDivElement>(null);
+  const scoreSectionRef = React.useRef<HTMLDivElement>(null);
+  const datesSectionRef = React.useRef<HTMLDivElement>(null);
 
   // -------------------------------------------------------------------------
   // Form Setup
@@ -125,9 +134,28 @@ export function StatusSheet({
       completed_at: null,
       paused_at: null,
       dropped_at: null,
-      notes: "",
+      revisit_started_at: null,
     },
   });
+
+  // Scroll to and focus the relevant section when opened with a focusField
+  React.useEffect(() => {
+    if (!open || !focusField) return;
+    const timer = setTimeout(() => {
+      const refMap: Record<StatusSheetFocusField, React.RefObject<HTMLDivElement | null>> = {
+        progress: progressSectionRef,
+        platform: platformSectionRef,
+        score: scoreSectionRef,
+        dates: datesSectionRef,
+      };
+      refMap[focusField]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (focusField === "score") form.setFocus("user_score");
+      else if (focusField === "progress") {
+        form.setFocus(item?.media_type === "game" ? "progress_hours" : "progress");
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [open, focusField]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset form when item changes
   React.useEffect(() => {
@@ -148,7 +176,7 @@ export function StatusSheet({
         completed_at: item.completed_at ? new Date(item.completed_at) : null,
         paused_at: item.paused_at ? new Date(item.paused_at) : null,
         dropped_at: item.dropped_at ? new Date(item.dropped_at) : null,
-        notes: item.notes || "",
+        revisit_started_at: item.revisit_started_at ? new Date(item.revisit_started_at) : null,
       });
     }
   }, [item, form]);
@@ -177,11 +205,11 @@ export function StatusSheet({
       const coreUpdates: Partial<FullItem> = {
         status: values.status,
         user_score: cleanNumber(values.user_score, 0, 10),
-        notes: values.notes || null,
         started_at: values.started_at?.toISOString() ?? null,
         completed_at: values.completed_at?.toISOString() ?? null,
         paused_at: values.paused_at?.toISOString() ?? null,
         dropped_at: values.dropped_at?.toISOString() ?? null,
+        revisit_started_at: values.revisit_started_at?.toISOString() ?? null,
       };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -240,6 +268,8 @@ export function StatusSheet({
       form.setValue("paused_at", now, { shouldDirty: true });
     } else if (value === "dropped" && !form.getValues("dropped_at")) {
       form.setValue("dropped_at", now, { shouldDirty: true });
+    } else if (value === "revisiting" && !form.getValues("revisit_started_at")) {
+      form.setValue("revisit_started_at", now, { shouldDirty: true });
     }
   };
 
@@ -273,6 +303,7 @@ export function StatusSheet({
                   <option value="paused">Paused</option>
                   <option value="completed">Completed</option>
                   <option value="dropped">Dropped</option>
+                  <option value="revisiting">Revisiting</option>
                 </NativeSelect>
               </FormControl>
               <FormMessage />
@@ -282,6 +313,7 @@ export function StatusSheet({
 
         {/* Row 2: Score & Progress */}
         <div className="grid grid-cols-2 gap-4">
+          <div ref={scoreSectionRef}>
           <FormField
             control={form.control}
             name="user_score"
@@ -307,7 +339,9 @@ export function StatusSheet({
               </FormItem>
             )}
           />
+          </div>
 
+          <div ref={progressSectionRef}>
           {item.media_type === "book" ? (
             <FormField
               control={form.control}
@@ -388,9 +422,11 @@ export function StatusSheet({
               />
             </div>
           )}
+          </div>
         </div>
 
         {/* Row 3: Platform (games) / Format (books) */}
+        <div ref={platformSectionRef}>
         {item.media_type === "game" && item.game.platforms.length > 0 && (
           <FormField
             control={form.control}
@@ -441,9 +477,10 @@ export function StatusSheet({
             )}
           />
         )}
+        </div>
 
         {/* Row 4: Dates — always show Started, plus the status-specific date */}
-        <div className="space-y-4 border p-4 bg-muted/20">
+        <div className="space-y-4 border p-4 bg-muted/20" ref={datesSectionRef}>
           <h4 className="text-sm font-medium leading-none mb-4">Dates</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
@@ -496,28 +533,21 @@ export function StatusSheet({
                 )}
               />
             )}
+            {watchedStatus === "revisiting" && (
+              <FormField
+                control={form.control}
+                name="revisit_started_at"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Revisit Started</FormLabel>
+                    <DatePicker date={field.value} setDate={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
         </div>
-
-        {/* Row 4: Notes */}
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Add your thoughts..."
-                  className="resize-none min-h-[100px]"
-                  {...field}
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         {/* Metadata (Read-only) */}
         <div className="text-xs text-muted-foreground pt-4 border-t">

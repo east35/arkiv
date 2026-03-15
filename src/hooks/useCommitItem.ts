@@ -11,9 +11,9 @@
  * objects returned by the igdb-proxy and hardcover-proxy Edge Functions.
  */
 
-import { useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { useItems } from "@/hooks/useItems"
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useItems } from "@/hooks/useItems";
 import type {
   MediaType,
   FullItem,
@@ -22,19 +22,19 @@ import type {
   GameFields,
   IgdbGameDetails,
   HardcoverBookDetails,
-} from "@/types"
-import { toast } from "sonner"
+} from "@/types";
+import { toast } from "sonner";
 
 /** Duration (ms) to wait before clearing the sheet after it closes. */
-export const SHEET_CLOSE_DELAY_MS = 300
+export const SHEET_CLOSE_DELAY_MS = 300;
 
 /**
  * Normalize a 0–5 rating (Hardcover) to our 0–10 scale.
  * Returns null when the input is missing or out of range.
  */
 function normalizeBookRating(rating: number | null): number | null {
-  if (rating == null || rating < 0 || rating > 5) return null
-  return Math.round(rating * 20) / 10 // e.g. 4.5 → 9.0
+  if (rating == null || rating < 0 || rating > 5) return null;
+  return Math.round(rating * 20) / 10; // e.g. 4.5 → 9.0
 }
 
 /**
@@ -46,19 +46,22 @@ function validateDetails(
   mediaType: MediaType,
 ): asserts details is IgdbGameDetails | HardcoverBookDetails {
   if (!details) {
-    throw new Error("No details returned from API")
+    throw new Error("No details returned from API");
   }
-  const title = mediaType === "game"
-    ? (details as IgdbGameDetails).name
-    : (details as HardcoverBookDetails).title
+  const title =
+    mediaType === "game"
+      ? (details as IgdbGameDetails).name
+      : (details as HardcoverBookDetails).title;
   if (!title) {
-    throw new Error("API returned an item with no title")
+    throw new Error("API returned an item with no title");
   }
 }
 
 export function useCommitItem() {
-  const [committingId, setCommittingId] = useState<string | number | null>(null)
-  const { createItem, fetchItemByExternalId } = useItems()
+  const [committingId, setCommittingId] = useState<string | number | null>(
+    null,
+  );
+  const { createItem, fetchItemByExternalId } = useItems();
 
   /**
    * Fetch full details for an external item, map it to our schema,
@@ -69,25 +72,30 @@ export function useCommitItem() {
     id: string | number,
     mediaType: MediaType,
   ): Promise<FullItem | null> => {
-    setCommittingId(id)
+    setCommittingId(id);
     try {
       // 1. Fetch full details via Edge Function
-      const functionName = mediaType === "game" ? "igdb-proxy" : "hardcover-proxy"
-      const { data: details, error: fetchError } = await supabase.functions.invoke(functionName, {
-        body: { action: "details", id },
-      })
+      const functionName =
+        mediaType === "game" ? "igdb-proxy" : "hardcover-proxy";
+      const { data: details, error: fetchError } =
+        await supabase.functions.invoke(functionName, {
+          body: { action: "details", id },
+        });
 
-      if (fetchError) throw fetchError
+      if (fetchError) throw fetchError;
 
       // 2. Validate response
-      validateDetails(details, mediaType)
+      validateDetails(details, mediaType);
 
       // 3. Map to core item schema
-      const isGame = mediaType === "game"
-      const gameDetails = isGame ? (details as IgdbGameDetails) : null
-      const bookDetails = isGame ? null : (details as HardcoverBookDetails)
+      const isGame = mediaType === "game";
+      const gameDetails = isGame ? (details as IgdbGameDetails) : null;
+      const bookDetails = isGame ? null : (details as HardcoverBookDetails);
 
-      const coreItem: Omit<Item, "id" | "user_id" | "created_at" | "updated_at"> = {
+      const coreItem: Omit<
+        Item,
+        "id" | "user_id" | "created_at" | "updated_at"
+      > = {
         media_type: mediaType,
         title: gameDetails?.name ?? bookDetails!.title,
         cover_url: gameDetails?.cover ?? bookDetails!.image ?? null,
@@ -98,18 +106,20 @@ export function useCommitItem() {
         source_score: isGame
           ? (gameDetails!.sourceScore ?? null)
           : normalizeBookRating(bookDetails!.rating ?? null),
-        source_votes: isGame ? (gameDetails!.ratingsCount ?? null) : (bookDetails!.ratingsCount ?? null),
-        notes: null,
+        source_votes: isGame
+          ? (gameDetails!.ratingsCount ?? null)
+          : (bookDetails!.ratingsCount ?? null),
         source: isGame ? "igdb" : "hardcover",
         external_id: String(id),
         started_at: null,
         completed_at: null,
         paused_at: null,
         dropped_at: null,
-      }
+        revisit_started_at: null,
+      };
 
       // 4. Map to extension fields
-      let extension: Omit<BookFields, "item_id"> | Omit<GameFields, "item_id">
+      let extension: Omit<BookFields, "item_id"> | Omit<GameFields, "item_id">;
 
       if (bookDetails) {
         extension = {
@@ -121,12 +131,14 @@ export function useCommitItem() {
           format: "digital",
           themes: [],
           isbn: bookDetails.isbn ?? null,
+          hardcover_slug: bookDetails.slug ?? null,
           library: null,
           series_name: bookDetails.seriesName ?? null,
           series_position: bookDetails.seriesPosition ?? null,
           tag_categories: Object.keys(bookDetails.tagCategories ?? {}).length
-            ? bookDetails.tagCategories : null,
-        } satisfies Omit<BookFields, "item_id">
+            ? bookDetails.tagCategories
+            : null,
+        } satisfies Omit<BookFields, "item_id">;
       } else {
         extension = {
           developer: gameDetails!.developer ?? null,
@@ -150,35 +162,41 @@ export function useCommitItem() {
           hltb_main: gameDetails!.hltb_main ?? null,
           hltb_main_extra: gameDetails!.hltb_main_extra ?? null,
           hltb_completionist: gameDetails!.hltb_completionist ?? null,
-        } satisfies Omit<GameFields, "item_id">
+        } satisfies Omit<GameFields, "item_id">;
       }
 
       // 5. Persist to Supabase
-      const newItem = await createItem(coreItem, extension)
-      return newItem
+      const newItem = await createItem(coreItem, extension);
+      return newItem;
     } catch (err) {
-      const message = err instanceof Error
-        ? err.message
-        : typeof err === "object" && err !== null && "message" in err
-          ? String((err as Record<string, unknown>).message)
-          : String(err)
-      const code = typeof err === "object" && err !== null && "code" in err
-        ? String((err as Record<string, unknown>).code)
-        : ""
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as Record<string, unknown>).message)
+            : String(err);
+      const code =
+        typeof err === "object" && err !== null && "code" in err
+          ? String((err as Record<string, unknown>).code)
+          : "";
 
       // Duplicate constraint — item already exists, return it so callers can navigate
-      if (code === "23505" || message.includes("duplicate") || message.includes("unique")) {
-        toast.info("Already in your library.")
-        const existing = await fetchItemByExternalId(String(id), mediaType)
-        return existing ?? null
+      if (
+        code === "23505" ||
+        message.includes("duplicate") ||
+        message.includes("unique")
+      ) {
+        toast.info("Already in your library.");
+        const existing = await fetchItemByExternalId(String(id), mediaType);
+        return existing ?? null;
       }
 
-      toast.error(`Failed to add item: ${message}`)
-      return null
+      toast.error(`Failed to add item: ${message}`);
+      return null;
     } finally {
-      setCommittingId(null)
+      setCommittingId(null);
     }
-  }
+  };
 
-  return { commit, committingId }
+  return { commit, committingId };
 }

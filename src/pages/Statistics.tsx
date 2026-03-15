@@ -321,7 +321,7 @@ export function StatisticsDashboard({ embedded = false }: StatisticsDashboardPro
             <CardDescription>Your status changes over time</CardDescription>
           </CardHeader>
           <CardContent>
-            <ActivityTimeline activity={stats.rawActivity} items={items} />
+            <ActivityTimeline items={items} />
           </CardContent>
         </Card>
 

@@ -22,7 +22,7 @@ export function HowLongToBeatSection({
   const metrics = getHowLongToBeatMetrics(value);
 
   return (
-    <section className={cn("md:p-6 md:border-b space-y-5", className)}>
+    <section className={cn("md:p-6 md:border-b md:border-[#cecece] dark:md:border-border/60 space-y-5", className)}>
       <div className="text-foreground tx-sm mb-3">How Long To Beat</div>
       <div className="grid grid-cols-2 overflow-hidden  md:grid-cols-4">
         {metrics.map((metric) => (

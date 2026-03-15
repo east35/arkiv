@@ -87,7 +87,8 @@ function needsEnrichment(item: FullItem): boolean {
 
   if (item.media_type === "book") {
     const missingAuthor = !item.book.author
-    return missingDescription || missingGenres || missingAuthor
+    const missingSlug = !item.book.hardcover_slug
+    return missingDescription || missingGenres || missingAuthor || missingSlug
   }
 
   return false
@@ -288,6 +289,7 @@ async function fetchBookDetailsByTitle(title: string): Promise<HardcoverBookDeta
         isbn: null,
         rating: null,
         ratingsCount: null,
+        slug: null,
         seriesName: null,
         seriesPosition: null,
       }
@@ -364,6 +366,7 @@ function buildBookUpdate(details: HardcoverBookDetails) {
   if (details.releaseDate) extUpdate.publish_date = details.releaseDate
   if (details.pages) extUpdate.page_count = details.pages
   if (details.isbn) extUpdate.isbn = details.isbn
+  if (details.slug) extUpdate.hardcover_slug = details.slug
   if (details.seriesName) extUpdate.series_name = details.seriesName
   if (details.seriesPosition != null) extUpdate.series_position = details.seriesPosition
   if (Object.keys(details.tagCategories ?? {}).length) extUpdate.tag_categories = details.tagCategories

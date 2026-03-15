@@ -6,6 +6,8 @@ import {
   IconCalendar,
   IconStack2,
   IconDeviceGamepad2,
+  IconDeviceTablet,
+  IconBook2,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,23 +31,65 @@ interface ItemDetailContentProps {
   isHltbLoading?: boolean;
 }
 
-export function ItemDetailContent({
-  item,
-  itemCollections,
-  isHltbLoading,
-}: ItemDetailContentProps) {
+// ─── Hero block (title, metadata, description) ───────────────────────────────
+
+interface ItemDetailHeroProps {
+  item: FullItem;
+}
+
+export function ItemDetailHero({ item }: ItemDetailHeroProps) {
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isClamped, setIsClamped] = useState(false);
+  const [maxDescHeight, setMaxDescHeight] = useState<number | null>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const titleMetaRef = useRef<HTMLDivElement>(null);
   const isGame = item.media_type === "game";
-  const items = useShelfStore((s) => s.items);
 
+  // Reset per-item state when navigating to a different item
   useEffect(() => {
-    const el = descRef.current;
-    if (el) setIsClamped(el.scrollHeight > el.clientHeight);
+    setIsDescriptionOpen(false);
+    setIsClamped(false);
+    setMaxDescHeight(null);
+  }, [item.id]);
+
+  // ResizeObserver on the stable hero + titleMeta elements (not the desc wrapper,
+  // which changes height when the "read more" button appears/disappears).
+  useEffect(() => {
+    const hero = heroRef.current;
+    const desc = descRef.current;
+    if (!hero || !desc) return;
+
+    const check = () => {
+      const lh = parseFloat(getComputedStyle(desc).lineHeight) || 24;
+      const heroPaddingV = 64; // p-8 = 32px top + 32px bottom
+      const buttonReserve = 28;
+      const heroH = hero.clientHeight;
+      const titleMetaH = titleMetaRef.current?.clientHeight ?? 0;
+      const available = heroH - heroPaddingV - titleMetaH - buttonReserve;
+      const snapped = Math.max(lh, Math.floor(available / lh) * lh);
+
+      // Temporarily remove maxHeight to read the full natural scroll height
+      desc.style.maxHeight = "none";
+      const naturalH = desc.scrollHeight;
+      desc.style.maxHeight = "";
+
+      if (naturalH <= snapped + buttonReserve) {
+        setMaxDescHeight(null);
+        setIsClamped(false);
+      } else {
+        setMaxDescHeight(snapped);
+        setIsClamped(true);
+      }
+    };
+
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(hero);
+    if (titleMetaRef.current) observer.observe(titleMetaRef.current);
+    return () => observer.disconnect();
   }, [item.description]);
 
-  /* Build metadata segments with icons */
   const meta: {
     icon: React.ComponentType<{ className?: string }>;
     text: string;
@@ -69,17 +113,26 @@ export function ItemDetailContent({
   const selectedPlatformText = isGame
     ? item.game.active_platform || item.game.platforms[0] || null
     : item.book.format || null;
-  if (selectedPlatformText)
-    meta.push({ icon: IconDeviceGamepad2, text: selectedPlatformText });
+  if (selectedPlatformText) {
+    let platformIcon = IconDeviceGamepad2;
+    if (!isGame) {
+      const fmt = selectedPlatformText.toLowerCase();
+      platformIcon = fmt === "physical" ? IconBook2 : IconDeviceTablet;
+    }
+    const platformText = isGame
+      ? selectedPlatformText
+      : selectedPlatformText.charAt(0).toUpperCase() +
+        selectedPlatformText.slice(1).toLowerCase();
+    meta.push({ icon: platformIcon, text: platformText });
+  }
 
   return (
-    <div className="min-w-0 bg-[efefef] dark:bg-card">
-      {/* ── Group 1: Hero block — title, metadata, description ── */}
-      {/* min-h matches the cover art (280px × 1.5 aspect ratio = 420px) */}
-      <div
-        className="bg-card rounded-lg p-8 flex flex-col overflow-hidden border-b"
-        style={{ height: 419, backgroundColor: "var(--muted)" }}
-      >
+    <div
+      ref={heroRef}
+      className="p-8 flex flex-col overflow-hidden"
+      style={{ height: 365, backgroundColor: "var(--muted)" }}
+    >
+      <div ref={titleMetaRef}>
         <h1 className="text-5xl font-bold tracking-tight mb-3">{item.title}</h1>
         {meta.length > 0 && (
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-muted-foreground text-base mb-5">
@@ -91,48 +144,81 @@ export function ItemDetailContent({
             ))}
           </div>
         )}
-        {item.description && (
-          <div className="flex-1 min-h-0">
+      </div>
+      {item.description && (
+        <>
+          <div className="flex-1 min-h-0 overflow-hidden">
             <p
               ref={descRef}
-              className="text-base leading-relaxed text-muted-foreground whitespace-pre-line line-clamp-[10]"
+              className="overflow-hidden text-base leading-relaxed text-muted-foreground whitespace-pre-line"
+              style={
+                maxDescHeight !== null
+                  ? { maxHeight: maxDescHeight }
+                  : undefined
+              }
             >
               {item.description}
             </p>
-            {isClamped && (
-              <button
-                onClick={() => setIsDescriptionOpen(true)}
-                className="text-primary font-medium text-sm mt-1 hover:underline"
-              >
-                read more…
-              </button>
-            )}
-            <Dialog
-              open={isDescriptionOpen}
-              onOpenChange={setIsDescriptionOpen}
-            >
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{item.title}</DialogTitle>
-                  <DialogDescription>Full description</DialogDescription>
-                </DialogHeader>
-                <p className="whitespace-pre-line leading-relaxed mt-4">
-                  {item.description}
-                </p>
-              </DialogContent>
-            </Dialog>
           </div>
-        )}
-      </div>
+          {isClamped && !isDescriptionOpen && (
+            <button
+              onClick={() => setIsDescriptionOpen(true)}
+              className="self-start shrink-0 bg-primary text-white font-medium text-sm mt-2 px-3 py-1 rounded-none border-none hover:opacity-90 transition-opacity"
+            >
+              read more…
+            </button>
+          )}
+          <Dialog open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{item.title}</DialogTitle>
+                <DialogDescription>Full description</DialogDescription>
+              </DialogHeader>
+              <p className="whitespace-pre-line leading-relaxed mt-4">
+                {item.description}
+              </p>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+    </div>
+  );
+}
 
-      {/* ── Group 2: Tags, collections, recommendations ── */}
+// ─── Body (tags, collections, recommendations) ────────────────────────────────
+
+export function ItemDetailContent({
+  item,
+  itemCollections,
+  isHltbLoading,
+}: ItemDetailContentProps) {
+  const isGame = item.media_type === "game";
+  const items = useShelfStore((s) => s.items);
+  const showLibraryRow =
+    item.media_type === "game" && Boolean(item.game.library);
+  const showSeriesRow =
+    item.media_type === "book" &&
+    Boolean(item.book.series_name) &&
+    items.some(
+      (libraryItem) =>
+        libraryItem.media_type === "book" &&
+        libraryItem.book.series_name === item.book.series_name &&
+        libraryItem.id !== item.id,
+    );
+  const showRecommendations =
+    item.media_type === "game" &&
+    Boolean(item.game.similar_games && item.game.similar_games.length > 0);
+
+  return (
+    <div className="min-w-0 bg-[efefef] dark:bg-card">
+      {/* ── Tags, collections, recommendations ── */}
       <div className="bg-[#e6e6e6] dark:bg-card">
         {isGame && (
           <HowLongToBeatSection value={item.game} isLoading={isHltbLoading} />
         )}
 
         {/* Genres & Themes */}
-        <div className="flex p-6 border-b flex-wrap gap-x-12 gap-y-6">
+        <div className="flex p-6 border-b border-[#cecece] dark:border-border/60 last:border-b-0 flex-wrap gap-x-12 gap-y-6">
           {item.genres.length > 0 && (
             <div>
               <h3 className="text-foreground tx-sm mb-3">Genres</h3>
@@ -169,7 +255,7 @@ export function ItemDetailContent({
 
         {/* Collections */}
         {itemCollections.length > 0 && (
-          <div className="p-6 border-b">
+          <div className="p-6 border-b border-[#cecece] dark:border-border/60 last:border-b-0">
             <h3 className="text-foreground tx-sm mb-3">Collections</h3>
             <div className="space-y-2">
               {itemCollections.map((collection) => {
@@ -178,7 +264,7 @@ export function ItemDetailContent({
                 return (
                   <div
                     key={collection.id}
-                    className="flex overflow-hidden border bg-background/50"
+                    className="flex overflow-hidden bg-background/50"
                   >
                     <div className="h-[88px] w-[72px] shrink-0 overflow-hidden bg-secondary/50">
                       {coverUrl ? (
@@ -206,7 +292,7 @@ export function ItemDetailContent({
                     </div>
                     <Link
                       to={`/collections/${collection.id}`}
-                      className="flex shrink-0 items-center border-l border-border/60 px-5 text-sm font-semibold transition-colors hover:bg-accent/40"
+                      className="flex shrink-0 items-center border-l border-[#cecece] dark:border-border/60 px-5 text-sm font-semibold transition-colors hover:bg-accent/40"
                     >
                       View Collection
                     </Link>
@@ -216,15 +302,19 @@ export function ItemDetailContent({
             </div>
           </div>
         )}
-        <div className="p-6 border-b">
-          {/* Library / Series */}
-          <LibraryRow item={item} />
-          <SeriesRow item={item} />
-        </div>
-        <div className="p-6 border-b">
-          {/* Recommendations */}
-          <RecommendationsRow item={item} />
-        </div>
+        {(showLibraryRow || showSeriesRow) && (
+          <div className="p-6 mb-3 border-b border-[#cecece] dark:border-border/60 last:border-b-0">
+            {/* Library / Series */}
+            {showLibraryRow && <LibraryRow key={item.id} item={item} />}
+            {showSeriesRow && <SeriesRow item={item} />}
+          </div>
+        )}
+        {showRecommendations && (
+          <div className="p-6 mb-3 border-b border-[#cecece] dark:border-border/60 last:border-b-0">
+            {/* Recommendations */}
+            <RecommendationsRow item={item} />
+          </div>
+        )}
       </div>
     </div>
   );

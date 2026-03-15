@@ -109,7 +109,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
         aria-label={`Delete ${collection.name}`}
         className={cn(
           "absolute top-2 right-2 flex h-8 w-8 items-center justify-center bg-background/90 text-muted-foreground shadow-sm transition-all",
-          "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-destructive",
+          "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-destructive cursor-pointer",
         )}
         onClick={(e) => {
           e.preventDefault();

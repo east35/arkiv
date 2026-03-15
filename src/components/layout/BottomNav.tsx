@@ -76,7 +76,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
         <button
           onClick={handleCollectionTap}
           className={cn(
-            "flex flex-col items-center justify-center w-full min-h-[44px] space-y-1",
+            "flex flex-col items-center justify-center w-full min-h-[44px] space-y-1 cursor-pointer",
             isCollectionActive
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground",
@@ -129,7 +129,7 @@ export function BottomNav({ visible = true }: BottomNavProps) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-col items-center justify-center w-full min-h-[44px] space-y-1",
+                "flex flex-col items-center justify-center w-full min-h-[44px] space-y-1 cursor-pointer",
                 isActive
                   ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground",

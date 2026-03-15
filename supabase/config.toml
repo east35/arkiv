@@ -10,6 +10,9 @@ verify_jwt = false
 [functions.igdb-proxy]
 verify_jwt = false
 
+[functions.ai-chat-proxy]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

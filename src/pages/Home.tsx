@@ -131,7 +131,7 @@ export default function Home() {
               >
                 <h2 className="text-3xl font-semibold mb-6">Video Games</h2>
                 {viewMode === "poster" ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="poster-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {filteredGames.map((item) => (
                       <PosterItem
                         key={item.id}
@@ -162,7 +162,7 @@ export default function Home() {
               <section className={`flex-1 px-4 sm:px-6 pt-6 ${viewMode === "poster" ? bottomClearanceClass : "pb-24 md:pb-0"} bg-[#E8E8E8] dark:bg-[#212121]`}>
                 <h2 className="text-3xl font-semibold mb-6">Books</h2>
                 {viewMode === "poster" ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="poster-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {filteredBooks.map((item) => (
                       <PosterItem
                         key={item.id}

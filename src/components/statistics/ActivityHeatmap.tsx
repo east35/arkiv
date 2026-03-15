@@ -53,10 +53,13 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
     return format(prevWeek[0].date, "MMM") !== monthStr ? monthStr : null
   })
 
+  // Day labels for the left axis (Sun-start weeks; show Mon/Wed/Fri only)
+  const DAY_LABELS = ["", "M", "", "W", "", "F", ""]
+
   return (
     <div className="w-full overflow-x-auto pb-2">
-      {/* Month labels row */}
-      <div className="flex gap-1 min-w-max mb-1">
+      {/* Month labels row — offset by day-label column width (w-6 + gap-2 = 32px = ml-8) */}
+      <div className="flex gap-1 min-w-max mb-1 ml-8">
         {calendarData.map((_, wIndex) => (
           <div
             key={wIndex}
@@ -67,30 +70,43 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
           </div>
         ))}
       </div>
-      <div className="flex gap-1 min-w-max">
-        {calendarData.map((week, wIndex) => (
-          <div key={wIndex} className="flex flex-col gap-1">
-            {week.map((day) => (
-              <TooltipProvider key={day.dateStr}>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <div
-                      className={cn(
-                        "w-3 h-3 rounded-[2px]",
-                        getIntensityClass(day.count)
-                      )}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-xs">
-                      <span className="font-semibold">{day.count} items</span> on {format(day.date, "MMM d, yyyy")}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
-          </div>
-        ))}
+
+      <div className="flex gap-2 min-w-max">
+        {/* Weekday labels column */}
+        <div className="flex flex-col gap-1">
+          {DAY_LABELS.map((label, i) => (
+            <div key={i} className="w-6 h-3 text-[9px] text-muted-foreground leading-none flex items-center">
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* Cell grid */}
+        <div className="flex gap-1">
+          {calendarData.map((week, wIndex) => (
+            <div key={wIndex} className="flex flex-col gap-1">
+              {week.map((day) => (
+                <TooltipProvider key={day.dateStr}>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <div
+                        className={cn(
+                          "w-3 h-3 rounded-[2px]",
+                          getIntensityClass(day.count)
+                        )}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="text-xs">
+                        <span className="font-semibold">{day.count} {day.count === 1 ? "entry" : "entries"}</span> on {format(day.date, "MMM d, yyyy")}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
       <div className="flex justify-end items-center gap-2 mt-2 text-xs text-muted-foreground">
         <span>Less</span>
